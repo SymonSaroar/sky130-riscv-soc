@@ -1,0 +1,28 @@
+Startpoint: _15291_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _15275_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   1.14    1.14   clock network delay (propagated)
+   0.00    1.14 ^ _15291_/CLK (sky130_fd_sc_hd__dfxtp_2)
+   0.31    1.44 ^ _15291_/Q (sky130_fd_sc_hd__dfxtp_2)
+   0.00    1.44 ^ _15275_/D (sky130_fd_sc_hd__dfxtp_2)
+           1.44   data arrival time
+
+   0.00    0.00   clock clk (rise edge)
+   1.14    1.14   clock network delay (propagated)
+   0.25    1.39   clock uncertainty
+   0.00    1.39   clock reconvergence pessimism
+           1.39 ^ _15275_/CLK (sky130_fd_sc_hd__dfxtp_2)
+  -0.02    1.37   library hold time
+           1.37   data required time
+---------------------------------------------------------
+           1.37   data required time
+          -1.44   data arrival time
+---------------------------------------------------------
+           0.08   slack (MET)
+
+
