@@ -20,7 +20,11 @@ module tb_soc;
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("tb_soc.vcd"); $dumpvars(0, tb_soc); end
     #200 rst_n = 1;
+`ifdef GLS
+    #20_000_000 $display("TIMEOUT"); $finish;
+`else
     #20_000_000 $display("TIMEOUT pc=%h", dut.u_cpu.pc); $finish;
+`endif
   end
 
   // UART monitor

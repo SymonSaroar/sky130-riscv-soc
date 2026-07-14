@@ -79,3 +79,10 @@ signoff: rcx sta gds lvs klayout_drc
 metrics:
 	python3 metrics.py $(RUN)
 all: synth floorplan place cts route signoff metrics
+
+SC_V := $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog
+.PHONY: gls
+gls: fw
+	iverilog -g2012 -DGLS -DFUNCTIONAL -DUNIT_DELAY=#1 -o $(OUT)/tb_gls \
+	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v $(SC_V)/primitives.v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/soc_top.v
+	vvp -n $(OUT)/tb_gls
