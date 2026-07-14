@@ -71,6 +71,8 @@ klayout_drc:
 	  -rd feol=true -rd beol=true -rd offgrid=true > $(OUT)/drc_klayout.log
 lvs: magic
 	netgen -batch source signoff/lvs.tcl > $(OUT)/lvs.log
+	{ sed -n "$$(grep -n 'Subcircuit summary' $(REP)/lvs.rpt | tail -1 | cut -d: -f1),\$$p" $(REP)/lvs.rpt | head -80; \
+	  grep -A1 '^Final result' $(REP)/lvs.rpt; } > $(REP)/lvs.summary
 signoff: rcx sta gds lvs klayout_drc
 
 .PHONY: metrics all
