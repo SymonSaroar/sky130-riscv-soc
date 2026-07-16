@@ -7,6 +7,8 @@ clock_tree_synthesis -root_buf sky130_fd_sc_hd__clkbuf_16 \
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement
 repair_clock_nets
+estimate_parasitics -placement
+repair_timing -setup
 detailed_placement
 check_placement -verbose
 
