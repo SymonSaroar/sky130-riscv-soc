@@ -11,6 +11,7 @@ set rep      $::env(REP)
 set core_util   50
 set core_aspect 1
 set core_space  10
+set macro_channel 40
 
 # placement
 set place_density 0.6

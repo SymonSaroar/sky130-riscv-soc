@@ -19,11 +19,13 @@ foreach layer {li1 met1 met2 met3 met4 met5} {
   make_tracks $layer -x_offset $xo -x_pitch $xp -y_offset $yo -y_pitch $yp
 }
 
-place_pins -hor_layers met3 -ver_layers met2
-# SRAM flush with the core's lower-left corner, fetch port (top edge) facing the core
+# SRAM in the lower-left corner with routing channels on its left and bottom,
+# fetch port (top edge) facing the core. I/O pins stay off the edges it blocks.
 set c [[ord::get_db_block] getCoreArea]
 place_macro -macro_name u_sram.mem -orientation R0 \
-  -location [list [ord::dbu_to_microns [$c xMin]] [ord::dbu_to_microns [$c yMin]]]
+  -location [list [expr {[ord::dbu_to_microns [$c xMin]] + $macro_channel}] \
+                  [expr {[ord::dbu_to_microns [$c yMin]] + $macro_channel}]]
+place_pins -hor_layers met3 -ver_layers met2 -exclude left:* -exclude bottom:*
 
 tapcell -distance 13 -tapcell_master sky130_fd_sc_hd__tapvpwrvgnd_1 \
   -endcap_master sky130_fd_sc_hd__decap_3 -halo_width_x 10 -halo_width_y 10
