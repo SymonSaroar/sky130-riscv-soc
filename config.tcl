@@ -15,6 +15,8 @@ set macro_channel 40
 
 # placement
 set place_density 0.6
+set gpl_pad 4
+set dpl_pad 2
 
 proc read_libs {} {
   global sc sm sram tech_lef
@@ -30,6 +32,7 @@ proc load {stage} {
   read_libs
   read_db $out/$stage.odb
   read_sdc constraints/soc.sdc
+  set_placement_padding -global -left $::dpl_pad -right $::dpl_pad
   set_wire_rc -signal -layer met2
   set_wire_rc -clock -layer met5
   set f [open $pdk/libs.tech/openlane/sky130_fd_sc_hd/no_synth.cells]
