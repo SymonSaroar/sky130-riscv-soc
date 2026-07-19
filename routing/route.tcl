@@ -6,7 +6,7 @@ set_routing_layers -signal met1-met5 -clock met1-met5
 global_route -congestion_report_file $rep/congestion.rpt
 estimate_parasitics -global_routing
 repair_antennas sky130_fd_sc_hd__diode_2
-detailed_route -output_drc $rep/route_drc.rpt -droute_end_iter 64 -verbose 0
+detailed_route -output_drc $rep/route_drc.rpt -droute_end_iter 64 -verbose 1
 filler_placement {sky130_fd_sc_hd__decap_12 sky130_fd_sc_hd__decap_8 sky130_fd_sc_hd__decap_6 \
                   sky130_fd_sc_hd__decap_4 sky130_fd_sc_hd__decap_3 sky130_fd_sc_hd__fill_2 sky130_fd_sc_hd__fill_1}
 global_connect
