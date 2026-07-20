@@ -3,7 +3,7 @@ import csv, os, re, sys
 
 run = sys.argv[1]
 rep, out = f"reports/{run}", f"build/{run}"
-FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "fmax_mhz", "die_um", "util_pct",
+FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "fmax_mhz", "die_um", "util_pct",
           "power_mw", "grt_congestion", "route_drc", "antenna_nets", "magic_drc", "klayout_drc", "lvs"]
 
 
@@ -20,6 +20,7 @@ row = {"run": run}
 row["clock_ns"] = grab(r"-period\s+([\d.]+)", read("constraints/soc.sdc"))
 sta = dict(l.split() for l in read(f"{rep}/sta.summary").splitlines())
 row.update(wns_ns=sta.get("wns", ""), tns_ns=sta.get("tns", ""), whs_ns=sta.get("whs", ""),
+           viol_endpoints=sta.get("viol_endpoints", ""),
            fmax_mhz=sta.get("fmax_mhz", ""))
 die = grab(r"DIEAREA \( 0 0 \) \( (\d+) (\d+) \)", read(f"{out}/soc_top.def"), ())
 row["die_um"] = f"{int(die[0]) / 1000:.0f}x{int(die[1]) / 1000:.0f}" if die else ""
@@ -43,3 +44,14 @@ with open(path, "w", newline="") as f:
     w.writeheader()
     w.writerows(rows)
 print(row)
+
+# README results table, between the metrics markers
+cols = ["run", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "fmax_mhz", "util_pct", "power_mw",
+        "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "lvs"]
+table = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
+table += "".join("| " + " | ".join(r.get(c) or "-" for c in cols) + " |\n" for r in rows)
+readme = read("README.md")
+if "<!-- metrics -->" in readme:
+    head, rest = readme.split("<!-- metrics -->", 1)
+    tail = rest.split("<!-- /metrics -->", 1)[1]
+    open("README.md", "w").write(f"{head}<!-- metrics -->\n{table}<!-- /metrics -->{tail}")

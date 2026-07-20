@@ -21,6 +21,7 @@ foreach {k v} [list wns [sta::worst_slack_cmd max] tns [sta::total_negative_slac
                    whs [sta::worst_slack_cmd min] ths [sta::total_negative_slack_cmd min]] {
   puts $f [format "%s %.3f" $k [expr {$v * 1e9}]]
 }
+puts $f "viol_endpoints [sta::endpoint_violation_count max]"
 set period [get_property [get_clocks clk] period]
 puts $f [format "fmax_mhz %.1f" [expr {1e3 / ($period - [sta::worst_slack_cmd max] * 1e9)}]]
 close $f
