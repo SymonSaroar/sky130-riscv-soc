@@ -56,13 +56,15 @@ route:
 
 MAGIC := magic -dnull -noconsole -rcfile $(PDK_ROOT)/sky130A/libs.tech/magic/sky130A.magicrc
 
-.PHONY: rcx sta gds magic klayout_drc lvs signoff
+.PHONY: rcx sta gds render magic klayout_drc lvs signoff
 rcx:
 	openroad -no_init -exit -log $(OUT)/rcx.log extraction/rcx.tcl > /dev/null
 sta:
 	sta -no_init -exit sta/sta.tcl > $(OUT)/sta.log
 gds:
 	klayout -b -r signoff/def2gds.py > $(OUT)/gds.log
+render:
+	klayout -b -r signoff/render.py
 magic:
 	ulimit -n 1024 && $(MAGIC) signoff/magic.tcl > $(OUT)/magic.log
 klayout_drc:
@@ -73,7 +75,7 @@ lvs: magic
 	netgen -batch source signoff/lvs.tcl > $(OUT)/lvs.log
 	{ sed -n "$$(grep -n 'Subcircuit summary' $(REP)/lvs.rpt | tail -1 | cut -d: -f1),\$$p" $(REP)/lvs.rpt | head -80; \
 	  grep -A1 '^Final result' $(REP)/lvs.rpt; } > $(REP)/lvs.summary
-signoff: rcx sta gds lvs klayout_drc
+signoff: rcx sta gds render lvs klayout_drc
 
 .PHONY: metrics all
 metrics:
