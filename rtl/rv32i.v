@@ -1,4 +1,4 @@
-// RV32I + Zicsr core. Stages: IF (SRAM read port), EX, WB (bus response).
+// RV32I + Zicsr core. Stages: IF (SRAM read port), ID (instruction register), EX, WB (bus response).
 // Instruction fetch reads the SRAM read port directly; data goes over AXI4-Lite.
 module rv32i (
   input             clk,
@@ -28,10 +28,14 @@ module rv32i (
 );
   localparam RESET_PC = 32'h0;
 
+  // ---------------- fetch: the SRAM returns the word at f_pc this cycle ----------------
+  reg         f_valid;
+  reg  [31:0] f_pc;
+
   // ---------------- EX stage ----------------
   reg         e_valid;
   reg  [31:0] pc;
-  wire [31:0] ins = i_rdata;
+  reg  [31:0] ins;
 
   wire [6:0] op     = ins[6:0];
   wire [4:0] rd     = ins[11:7];
@@ -163,11 +167,10 @@ module rv32i (
   wire [31:0] target = is_jalr ? {sum[31:1], 1'b0} : pc + (is_jal ? imm_j : imm_b);
   wire [31:0] pc4    = pc + 4;
 
-  assign i_addr = !e_valid ? RESET_PC :
-                  irq      ? mtvec    :
-                  stall    ? pc       :
-                  is_mret  ? mepc     :
-                  taken    ? target   : pc4;
+  wire redirect = e_valid && (irq || (!stall && (is_mret || taken)));
+  assign i_addr = !f_valid ? RESET_PC :
+                  redirect ? (irq ? mtvec : is_mret ? mepc : target) :
+                  stall    ? f_pc : f_pc + 4;
 
   // ---------------- writeback from EX ----------------
   wire        e_we = adv && rd != 0 && (is_lui || is_auipc || is_jal || is_jalr || is_opimm || is_op || is_csr);
@@ -186,8 +189,8 @@ module rv32i (
 
   always @(posedge clk) begin
     if (rst) begin
+      f_valid <= 1'b0;
       e_valid <= 1'b0;
-      pc      <= RESET_PC;
       w_busy  <= 1'b0;
       mie_g   <= 1'b0;
       mpie    <= 1'b0;
@@ -197,8 +200,13 @@ module rv32i (
       mepc    <= 32'b0;
       mcause  <= 32'b0;
     end else begin
-      e_valid <= 1'b1;
-      pc      <= i_addr;
+      f_valid <= 1'b1;
+      f_pc    <= i_addr;
+      if (!stall) begin
+        ins     <= i_rdata;
+        pc      <= f_pc;
+        e_valid <= f_valid && !redirect;
+      end
 
       if (w_done) w_busy <= 1'b0;
       if (adv && mem) begin
