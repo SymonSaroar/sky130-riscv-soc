@@ -1,7 +1,36 @@
+# Flow outputs: netlists, databases, DEF/GDS, SPEF, logs
 build/
-*.tar.gz
-*.tgz
+hier_rtlmp/
+
+# Per-run reports too large to keep; their counts are in reports/metrics.csv
 reports/*/antenna.rpt
+reports/*/congestion.rpt
 reports/*/lvs.rpt
 reports/dev/
-reports/*/congestion.rpt
+
+# Simulation
+*.vcd
+*.fst
+
+# Tool scratch output in the working directory
+*.ext
+comp.out
+*.lyrdb
+
+# Python
+__pycache__/
+*.pyc
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+
+# Local files that are not part of the project
+*.tar.gz
+*.tgz
+*.xsa
