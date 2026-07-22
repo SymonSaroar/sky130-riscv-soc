@@ -14,7 +14,7 @@
 
 | Block | RTL | Notes |
 |---|---|---|
-| CPU | `rv32i.v` | RV32I + Zicsr, 3 stages (IF, EX, WB), machine mode only |
+| CPU | `rv32i.v` | RV32I + Zicsr, 4 stages (IF, ID, EX, WB), machine mode only |
 | Boot loader | `boot.v` | Copies 2 KB from SPI flash to SRAM, then releases the CPU |
 | Interconnect | `axil_ic.v` | AXI4-Lite, 2 masters, 2 slaves, one transaction at a time |
 | SRAM | `sram_axil.v` | `sky130_sram_2kbyte_1rw1r_32x512_8`. Port 0 on AXI, port 1 for instruction fetch |
@@ -53,7 +53,7 @@
 ## CPU
 
 - Reset vector `0x0`.
-- Fetch reads SRAM port 1 directly. Branches and jumps resolve in EX with no penalty.
+- Fetch reads SRAM port 1 directly into an instruction register. Branches and jumps resolve in EX. A taken branch or jump costs one cycle.
 - One load or store in flight. Load data is forwarded into EX.
 - CSRs: `mstatus`, `mie`, `mip`, `mtvec`, `mepc`, `mcause`. `mret` supported.
 - Interrupts: machine timer and machine external. No synchronous exceptions.

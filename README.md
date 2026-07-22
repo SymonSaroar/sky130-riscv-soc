@@ -37,6 +37,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 03-sram-channels | -8.855 | -8749.597 | 0.084 | 1218 | 34.7 | 52 | 9.10 | 0 | 0 | 0 | 0 | mismatch |
 | 04-cts-setup-repair | - | - | - | - | - | 53 | - | 0 | - | - | - | - |
 | 05-placement-padding | -3.677 | -3405.824 | 0.077 | 1209 | 42.2 | 53 | 9.53 | 0 | 0 | 0 | 0 | clean |
+| 06-instruction-register | -4.744 | -4707.600 | 0.083 | 1275 | 40.4 | 52 | 9.72 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
