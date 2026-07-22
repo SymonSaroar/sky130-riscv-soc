@@ -81,9 +81,10 @@ module rv32i (
       w_f3 == 3'b101 ? {16'b0, ld_sh[15:0]}           : ld_sh;
   wire        ld_we = w_done && w_load && w_rd != 0;
 
-  // load result is forwarded straight into EX
-  wire [31:0] x1 = rs1 == 0 ? 32'b0 : ld_we && w_rd == rs1 ? ld_data : rf[rs1];
-  wire [31:0] x2 = rs2 == 0 ? 32'b0 : ld_we && w_rd == rs2 ? ld_data : rf[rs2];
+  wire [31:0] x1 = rs1 == 0 ? 32'b0 : rf[rs1];
+  wire [31:0] x2 = rs2 == 0 ? 32'b0 : rf[rs2];
+  // EX waits one cycle for a register that a load in WB is writing
+  wire        ld_use = w_busy && w_load && w_rd != 0 && (w_rd == rs1 || w_rd == rs2);
 
   // ---------------- ALU ----------------
   wire [31:0] b    = is_op ? x2 : imm_i;
@@ -143,7 +144,8 @@ module rv32i (
   wire        mem   = is_load || is_store;
   wire [31:0] maddr = x1 + (is_store ? imm_s : imm_i);
   // interrupts are taken on a non-memory instruction once WB is free
-  wire        irq   = mie_g && ((irq_timer && mtie) || (irq_ext && meie)) && (!w_busy || w_done) && !mem;
+  wire        irq   = mie_g && ((irq_timer && mtie) || (irq_ext && meie)) &&
+                      (!w_busy || (w_done && !ld_use)) && !mem;
   wire        go    = e_valid && !irq;          // EX instruction executes
   wire        req   = go && mem && !w_busy;
   wire        req_ok = is_load ? m_arready : m_awready && m_wready;
@@ -159,7 +161,7 @@ module rv32i (
   assign m_rready  = 1'b1;
   assign m_bready  = 1'b1;
 
-  wire stall = e_valid && ((w_busy && !w_done) || (mem && !(req && req_ok)));
+  wire stall = e_valid && ((w_busy && !w_done) || ld_use || (mem && !(req && req_ok)));
   wire adv   = go && !stall;                    // EX instruction retires
 
   // ---------------- next PC ----------------
