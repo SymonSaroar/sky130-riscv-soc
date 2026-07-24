@@ -3,7 +3,7 @@ import csv, os, re, sys
 
 run = sys.argv[1]
 rep, out = f"reports/{run}", f"build/{run}"
-FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "fmax_mhz", "die_um", "util_pct",
+FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "slew_viol", "cap_viol", "fmax_mhz", "die_um", "util_pct",
           "power_mw", "grt_congestion", "route_drc", "antenna_nets", "magic_drc", "klayout_drc", "lvs"]
 
 
@@ -22,6 +22,11 @@ sta = dict(l.split() for l in read(f"{rep}/sta.summary").splitlines())
 row.update(wns_ns=sta.get("wns", ""), tns_ns=sta.get("tns", ""), whs_ns=sta.get("whs", ""),
            viol_endpoints=sta.get("viol_endpoints", ""),
            fmax_mhz=sta.get("fmax_mhz", ""))
+drv = read(f"{rep}/sta.drv.rpt")
+for key, sec in (("slew_viol", "max slew"), ("cap_viol", "max capacitance")):
+    part = re.split(r"\n(?=max (?:slew|capacitance|fanout)\n)", "\n" + drv)
+    body = [x for x in part if x.startswith(sec)]
+    row[key] = str(body[0].count("VIOLATED")) if body else ("0" if drv else "")
 die = grab(r"DIEAREA \( 0 0 \) \( (\d+) (\d+) \)", read(f"{out}/soc_top.def"), ())
 row["die_um"] = f"{int(die[0]) / 1000:.0f}x{int(die[1]) / 1000:.0f}" if die else ""
 row["util_pct"] = grab(r"Design area \d+ um\^2 (\d+)% utilization", read(f"{out}/cts.log"))
@@ -46,7 +51,7 @@ with open(path, "w", newline="") as f:
 print(row)
 
 # README results table, between the metrics markers
-cols = ["run", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "fmax_mhz", "util_pct", "power_mw",
+cols = ["run", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "slew_viol", "cap_viol", "fmax_mhz", "util_pct", "power_mw",
         "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "lvs"]
 table = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
 table += "".join("| " + " | ".join(r.get(c) or "-" for c in cols) + " |\n" for r in rows)
