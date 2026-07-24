@@ -54,7 +54,7 @@
 
 - Reset vector `0x0`.
 - Fetch reads SRAM port 1 directly into an instruction register. Branches and jumps resolve in EX. A taken branch or jump costs one cycle.
-- One load or store in flight. Load data is forwarded into EX.
+- One load or store in flight. An instruction that reads a register still being loaded waits one cycle.
 - CSRs: `mstatus`, `mie`, `mip`, `mtvec`, `mepc`, `mcause`. `mret` supported.
 - Interrupts: machine timer and machine external. No synchronous exceptions.
 - `fence`, `ecall`, `ebreak` and `wfi` execute as no-ops.
