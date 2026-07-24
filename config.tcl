@@ -13,6 +13,10 @@ set core_aspect 1
 set core_space  10
 set macro_channel 40
 
+# signal wire RC per um for estimates: met2 R from the tech LEF, C calibrated to OpenRCX
+set wire_r 8.93e-4
+set wire_c 1.87e-4
+
 # placement
 set place_density 0.6
 set gpl_pad 4
@@ -33,7 +37,7 @@ proc load {stage} {
   read_db $out/$stage.odb
   read_sdc constraints/soc.sdc
   set_placement_padding -global -left $::dpl_pad -right $::dpl_pad
-  set_wire_rc -signal -layer met2
+  set_wire_rc -signal -resistance $::wire_r -capacitance $::wire_c
   set_wire_rc -clock -layer met5
   set f [open $pdk/libs.tech/openlane/sky130_fd_sc_hd/no_synth.cells]
   set_dont_use [concat [split [string trim [read $f]]] *lpflow* *probe*]
