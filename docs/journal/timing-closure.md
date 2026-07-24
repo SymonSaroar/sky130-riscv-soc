@@ -17,11 +17,11 @@ The SRAM launches both read ports on the falling clock edge. Every failing path 
 
 Decision: fix it in the RTL.
 
-| Change | WNS (ns) | TNS (ns) | Failing endpoints | DRC / LVS |
-|---|---|---|---|---|
-| Instruction register | -4.74 | -4708 | 1275 | clean |
-| Load-use stall instead of load forwarding | -0.23 | -2.9 | 19 | clean |
-| Wire capacitance calibrated to OpenRCX | | | | |
+| Change | WNS (ns) | TNS (ns) | Failing endpoints | Slew / cap violations | DRC / LVS |
+|---|---|---|---|---|---|
+| Instruction register | -4.74 | -4708 | 1275 | 2410 / 147 | clean |
+| Load-use stall instead of load forwarding | -0.23 | -2.9 | 19 | 2785 / 203 | clean |
+| Wire capacitance calibrated to OpenRCX | +2.78 | 0 | 0 | 229 / 37 | clean |
 
 ## Instruction register
 
@@ -41,7 +41,7 @@ Decision: drop load forwarding. An instruction that reads a register still being
 
 ## Load-use stall
 
-The SRAM read data now only feeds the load alignment and the register file write. Every path through the core starts and ends on a rising edge.
+SRAM load data now only feeds the load alignment and the register file write. Those are the only paths left that start on the falling edge.
 
 WNS is -0.23 ns, TNS -2.9 ns, 19 failing endpoints, 49.4 MHz. DRC and LVS are clean.
 
@@ -54,4 +54,17 @@ The estimate uses met2 from the tech LEF: 8.93e-4 kΩ/µm and 77.9e-6 pF/µm.
 Decision: estimate signal wires at 8.93e-4 kΩ/µm and 1.87e-4 pF/µm (2.40 x 77.9e-6).
 
 ## Calibrated wire capacitance
+
+`repair_design` after placement now finds 337 slew and 90 capacitance violations (before: 224 and 41) and inserts 412 buffers (before: 166).
+
+Setup closes: WNS +2.78 ns, TNS 0, 58.1 MHz. Hold is +0.084 ns. DRC and LVS are clean. The post-CTS estimate of +3.23 ns is within 0.45 ns of signoff.
+
+The design-rule report disagrees. Signoff has 229 max-slew and 37 max-capacitance violations, and every earlier layout had more: 1856 slew violations with placement padding and 2785 with the load-use stall. The metrics table did not count them until now.
+
+- 22 are SRAM input pins against the 40 ps limit. The nets into port 0 cross to the bottom edge of the macro with no buffer, because of the dont_touch on those nets, and reach 7 to 9 ns.
+- The rest sit on nets that gained load after routing. Net `_10282_` picked up 11 antenna diodes and reaches 8.28 ns. The flow repairs slew and capacitance only at placement.
+
+Decisions: buffer each SRAM input next to its pin and keep only that short net out of `repair_design`; repair design rules and setup again after global routing.
+
+## SRAM input buffers
 

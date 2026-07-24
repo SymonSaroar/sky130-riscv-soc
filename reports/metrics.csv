@@ -1,8 +1,9 @@
-run,clock_ns,wns_ns,tns_ns,whs_ns,viol_endpoints,fmax_mhz,die_um,util_pct,power_mw,grt_congestion,route_drc,antenna_nets,magic_drc,klayout_drc,lvs
-01-baseline,20,-10.063,-9075.234,0.076,1210,33.3,892x892,52,8.98,0,0,65,1943,0,mismatch
-02-sram-corner,20,,,,,,,52,,4290,,,,,
-03-sram-channels,20,-8.855,-8749.597,0.084,1218,34.7,892x892,52,9.10,0,0,48,0,0,mismatch
-04-cts-setup-repair,20,,,,,,,53,,0,,,,,
-05-placement-padding,20,-3.677,-3405.824,0.077,1209,42.2,892x892,53,9.53,0,0,102,0,0,clean
-06-instruction-register,20,-4.744,-4707.600,0.083,1275,40.4,895x895,52,9.72,0,0,78,0,0,clean
-07-load-use-stall,20,-0.226,-2.867,0.083,19,49.4,895x895,52,9.92,0,0,62,0,0,clean
+run,clock_ns,wns_ns,tns_ns,whs_ns,viol_endpoints,slew_viol,cap_viol,fmax_mhz,die_um,util_pct,power_mw,grt_congestion,route_drc,antenna_nets,magic_drc,klayout_drc,lvs
+01-baseline,20,-10.063,-9075.234,0.076,1210,3406,156,33.3,892x892,52,8.98,0,0,65,1943,0,mismatch
+02-sram-corner,20,,,,,,,,,52,,4290,,,,,
+03-sram-channels,20,-8.855,-8749.597,0.084,1218,3963,190,34.7,892x892,52,9.10,0,0,48,0,0,mismatch
+04-cts-setup-repair,20,,,,,,,,,53,,0,,,,,
+05-placement-padding,20,-3.677,-3405.824,0.077,1209,1856,145,42.2,892x892,53,9.53,0,0,102,0,0,clean
+06-instruction-register,20,-4.744,-4707.600,0.083,1275,2410,147,40.4,895x895,52,9.72,0,0,78,0,0,clean
+07-load-use-stall,20,-0.226,-2.867,0.083,19,2785,203,49.4,895x895,52,9.92,0,0,62,0,0,clean
+08-wire-rc-calibration,20,2.777,0.000,0.084,0,229,37,58.1,895x895,53,9.90,0,0,84,0,0,clean

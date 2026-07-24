@@ -30,15 +30,16 @@ Details are in [docs/spec_v1.md](docs/spec_v1.md).
 All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics, clock 20 ns.
 
 <!-- metrics -->
-| run | wns_ns | tns_ns | whs_ns | viol_endpoints | fmax_mhz | util_pct | power_mw | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 01-baseline | -10.063 | -9075.234 | 0.076 | 1210 | 33.3 | 52 | 8.98 | 0 | 0 | 1943 | 0 | mismatch |
-| 02-sram-corner | - | - | - | - | - | 52 | - | 4290 | - | - | - | - |
-| 03-sram-channels | -8.855 | -8749.597 | 0.084 | 1218 | 34.7 | 52 | 9.10 | 0 | 0 | 0 | 0 | mismatch |
-| 04-cts-setup-repair | - | - | - | - | - | 53 | - | 0 | - | - | - | - |
-| 05-placement-padding | -3.677 | -3405.824 | 0.077 | 1209 | 42.2 | 53 | 9.53 | 0 | 0 | 0 | 0 | clean |
-| 06-instruction-register | -4.744 | -4707.600 | 0.083 | 1275 | 40.4 | 52 | 9.72 | 0 | 0 | 0 | 0 | clean |
-| 07-load-use-stall | -0.226 | -2.867 | 0.083 | 19 | 49.4 | 52 | 9.92 | 0 | 0 | 0 | 0 | clean |
+| run | wns_ns | tns_ns | whs_ns | viol_endpoints | slew_viol | cap_viol | fmax_mhz | util_pct | power_mw | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 01-baseline | -10.063 | -9075.234 | 0.076 | 1210 | 3406 | 156 | 33.3 | 52 | 8.98 | 0 | 0 | 1943 | 0 | mismatch |
+| 02-sram-corner | - | - | - | - | - | - | - | 52 | - | 4290 | - | - | - | - |
+| 03-sram-channels | -8.855 | -8749.597 | 0.084 | 1218 | 3963 | 190 | 34.7 | 52 | 9.10 | 0 | 0 | 0 | 0 | mismatch |
+| 04-cts-setup-repair | - | - | - | - | - | - | - | 53 | - | 0 | - | - | - | - |
+| 05-placement-padding | -3.677 | -3405.824 | 0.077 | 1209 | 1856 | 145 | 42.2 | 53 | 9.53 | 0 | 0 | 0 | 0 | clean |
+| 06-instruction-register | -4.744 | -4707.600 | 0.083 | 1275 | 2410 | 147 | 40.4 | 52 | 9.72 | 0 | 0 | 0 | 0 | clean |
+| 07-load-use-stall | -0.226 | -2.867 | 0.083 | 19 | 2785 | 203 | 49.4 | 52 | 9.92 | 0 | 0 | 0 | 0 | clean |
+| 08-wire-rc-calibration | 2.777 | 0.000 | 0.084 | 0 | 229 | 37 | 58.1 | 53 | 9.90 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
