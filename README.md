@@ -41,11 +41,13 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 07-load-use-stall | -0.226 | -2.867 | 0.083 | 19 | 2785 | 203 | 49.4 | 52 | 9.92 | 0 | 0 | 0 | 0 | clean |
 | 08-wire-rc-calibration | 2.777 | 0.000 | 0.084 | 0 | 229 | 37 | 58.1 | 53 | 9.90 | 0 | 0 | 0 | 0 | clean |
 | 09-sram-input-buffers | 4.237 | 0.000 | 0.083 | 0 | 172 | 22 | 63.4 | 53 | 9.98 | 0 | 0 | 0 | 0 | clean |
+| 10-grt-repair | 5.691 | 0.000 | 0.079 | 0 | 22 | 0 | 69.9 | 53 | 11.50 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
 
 - [Boot and peripherals](docs/journal/boot-and-peripherals.md)
+- [Timing closure](docs/journal/timing-closure.md)
 
 ## Layout of the repo
 

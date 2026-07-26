@@ -23,7 +23,7 @@ Decision: fix it in the RTL.
 | Load-use stall instead of load forwarding | -0.23 | -2.9 | 19 | 2785 / 203 | clean |
 | Wire capacitance calibrated to OpenRCX | +2.78 | 0 | 0 | 229 / 37 | clean |
 | Buffer at every SRAM input | +4.24 | 0 | 0 | 172 / 22 | clean |
-| Repair after global routing | | | | | |
+| Repair after global routing | +5.69 | 0 | 0 | 22 / 0 | clean |
 
 ## Instruction register
 
@@ -77,4 +77,18 @@ SRAM input slews drop from 7 to 9 ns to 0.09 to 0.11 ns. 23 pins still exceed th
 WNS is +4.24 ns, 63.4 MHz. Of the 172 slew violations, 23 are SRAM pins and 82 are antenna diode pins. The worst of the rest is 2.16 ns against a 1.5 ns limit, on the net into `sram_buf_addr0_033`.
 
 ## Repair after global routing
+
+Global-route parasitics now use the LEF layer RC with capacitance scaled by 1.91. That factor is the ratio of OpenRCX to global-route wire capacitance over 769 nets of the calibrated layout. Placement estimates keep the 2.40 factor on met2.
+
+After global routing, `repair_design` finds 617 slew and 235 capacitance violations, inserts 536 buffers and resizes 506 cells. `repair_timing` resizes 29 more. The changed nets are rerouted incrementally.
+
+WNS is +5.69 ns, TNS 0, 69.9 MHz. Hold is +0.079 ns. There are no capacitance violations. The 22 slew violations left are all SRAM pins, 0.05 to 0.06 ns against the 40 ps limit. DRC and LVS are clean, with 64 antenna nets. Power rises from 9.98 to 11.50 mW.
+
+The worst path starts at SRAM `dout0` on the falling edge and ends in the register file.
+
+![layout](../../reports/10-grt-repair/layout.png)
+
+## Status
+
+50 MHz closes at tt_025C_1v80 with 5.69 ns of setup slack and no hold violations. DRC and LVS are clean. Open items: 64 antenna nets, and 22 SRAM input pins over the 40 ps characterization limit.
 
