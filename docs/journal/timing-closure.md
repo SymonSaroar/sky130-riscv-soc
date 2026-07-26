@@ -22,6 +22,8 @@ Decision: fix it in the RTL.
 | Instruction register | -4.74 | -4708 | 1275 | 2410 / 147 | clean |
 | Load-use stall instead of load forwarding | -0.23 | -2.9 | 19 | 2785 / 203 | clean |
 | Wire capacitance calibrated to OpenRCX | +2.78 | 0 | 0 | 229 / 37 | clean |
+| Buffer at every SRAM input | +4.24 | 0 | 0 | 172 / 22 | clean |
+| Repair after global routing | | | | | |
 
 ## Instruction register
 
@@ -67,4 +69,12 @@ The design-rule report disagrees. Signoff has 229 max-slew and 37 max-capacitanc
 Decisions: buffer each SRAM input next to its pin and keep only that short net out of `repair_design`; repair design rules and setup again after global routing.
 
 ## SRAM input buffers
+
+After global placement, a `buf_4` goes next to each of the 57 SRAM data, address and control inputs. Only the 57 short buffer-to-pin nets are dont_touch. `insert_buffer` crashed (signal 11 in `dbBlock::makeNewName`) until the buffers got explicit names.
+
+SRAM input slews drop from 7 to 9 ns to 0.09 to 0.11 ns. 23 pins still exceed the 40 ps limit.
+
+WNS is +4.24 ns, 63.4 MHz. Of the 172 slew violations, 23 are SRAM pins and 82 are antenna diode pins. The worst of the rest is 2.16 ns against a 1.5 ns limit, on the net into `sram_buf_addr0_033`.
+
+## Repair after global routing
 
