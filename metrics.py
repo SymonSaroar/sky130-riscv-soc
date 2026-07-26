@@ -56,8 +56,8 @@ with open(path, "w", newline="") as f:
 print(row)
 
 # README results table, between the metrics markers
-cols = ["run", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "slew_viol", "cap_viol", "fmax_mhz", "util_pct", "power_mw",
-        "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "lvs"]
+cols = ["run", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "fmax_mhz", "slew_viol", "slew_waived", "cap_viol",
+        "antenna_nets", "power_mw", "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "lvs"]
 table = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
 table += "".join("| " + " | ".join(r.get(c) or "-" for c in cols) + " |\n" for r in rows)
 readme = read("README.md")

@@ -90,5 +90,7 @@ The worst path starts at SRAM `dout0` on the falling edge and ends in the regist
 
 ## Status
 
-50 MHz closes at tt_025C_1v80 with 5.69 ns of setup slack and no hold violations. DRC and LVS are clean. Open items: 64 antenna nets, and 22 SRAM input pins over the 40 ps characterization limit.
+50 MHz closes at tt_025C_1v80 with 5.69 ns of setup slack and no hold violations. DRC and LVS are clean. 64 antenna nets are open.
+
+The 22 SRAM input pins over the 40 ps limit are waived in [signoff/waivers.txt](../../signoff/waivers.txt). Every setup and hold table in the SRAM liberty is flat across slew (setup 0.103 ns, hold -0.056 ns), so the extrapolated checks at 50 to 60 ps match the characterized ones. The metrics count waived pins in their own column.
 
