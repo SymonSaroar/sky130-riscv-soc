@@ -13,9 +13,9 @@ set core_aspect 1
 set core_space  10
 set macro_channel 40
 
-# signal wire RC per um for estimates: met2 R from the tech LEF, C calibrated to OpenRCX
-set wire_r 8.93e-4
-set wire_c 1.87e-4
+# estimated wire capacitance relative to the tech LEF, calibrated to OpenRCX
+set place_cap_scale 2.40
+set grt_cap_scale   1.91
 
 # placement
 set place_density 0.6
@@ -37,7 +37,17 @@ proc load {stage} {
   read_db $out/$stage.odb
   read_sdc constraints/soc.sdc
   set_placement_padding -global -left $::dpl_pad -right $::dpl_pad
-  set_wire_rc -signal -resistance $::wire_r -capacitance $::wire_c
+  set tech [[ord::get_db] getTech]
+  foreach name {met1 met2 met3 met4 met5} {
+    set l [$tech findLayer $name]
+    set w [ord::dbu_to_microns [$l getWidth]]
+    set r [expr {[$l getResistance] / $w / 1000.0}]
+    set c [expr {[$l getCapacitance] * $w + 2 * [$l getEdgeCapacitance]}]
+    set_layer_rc -layer $name -resistance $r -capacitance [expr {$c * $::grt_cap_scale}]
+    if {$name eq "met2"} {
+      set_wire_rc -signal -resistance $r -capacitance [expr {$c * $::place_cap_scale}]
+    }
+  }
   set_wire_rc -clock -layer met5
   set f [open $pdk/libs.tech/openlane/sky130_fd_sc_hd/no_synth.cells]
   set_dont_use [concat [split [string trim [read $f]]] *lpflow* *probe*]
@@ -46,7 +56,7 @@ proc load {stage} {
 
 proc report_stage {stage} {
   global rep
-  estimate_parasitics -placement
+  if {$stage ne "grt"} { estimate_parasitics -placement }
   report_checks -path_delay max -fields {slew cap fanout} -format full_clock_expanded > $rep/$stage.setup.rpt
   report_checks -path_delay min > $rep/$stage.hold.rpt
   set f [open $rep/$stage.summary w]
