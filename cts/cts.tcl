@@ -9,6 +9,7 @@ estimate_parasitics -placement
 repair_clock_nets
 estimate_parasitics -placement
 repair_timing -setup
+repair_timing -hold
 detailed_placement
 check_placement -verbose
 

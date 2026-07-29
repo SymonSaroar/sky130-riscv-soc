@@ -7,6 +7,7 @@ global_route -congestion_report_file $rep/congestion.rpt
 estimate_parasitics -global_routing
 repair_design
 repair_timing -setup
+repair_timing -hold
 global_route -start_incremental
 detailed_placement
 global_route -end_incremental -congestion_report_file $rep/congestion.rpt
