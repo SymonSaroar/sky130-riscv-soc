@@ -43,6 +43,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 09-sram-input-buffers | 4.237 | 0.000 | 0.083 | 0 | - | 63.4 | - | - | 150 | 22 | 22 | 84 | 9.98 | 0 | 0 | 0 | 0 | clean |
 | 10-grt-repair | 5.691 | 0.000 | 0.079 | 0 | - | 69.9 | - | - | 0 | 22 | 0 | 64 | 11.50 | 0 | 0 | 0 | 0 | clean |
 | 11-sdram-port | 3.394 | 0.000 | -0.256 | 0 | 32 | 68.4 | 3.394 | 151.4 | 0 | 22 | 0 | 58 | 16.20 | 0 | 0 | 0 | 0 | clean |
+| 12-hold-repair | 3.385 | 0.000 | -0.222 | 0 | 32 | 68.4 | 3.385 | 151.2 | 0 | 22 | 0 | 48 | 16.20 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal

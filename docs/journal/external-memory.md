@@ -11,7 +11,8 @@ The SDRAM pins are timed against the forwarded clock `sdram_clk` with MT48LC16M1
 | Change | Setup WNS clk / mclk (ns) | Hold WNS (ns) | Hold failures | DRC / LVS |
 |---|---|---|---|---|
 | SDRAM port | +5.38 / +3.39 | -0.256 | 32 | clean |
-| Hold repair | | | | |
+| Hold repair | +5.38 / +3.39 | -0.222 | 32 | clean |
+| SDRAM pins launched on the falling edge | | | | |
 
 ## SDRAM port
 
@@ -26,3 +27,14 @@ The flow has no hold repair.
 Decision: run `repair_timing -hold` after CTS and after global routing.
 
 ## Hold repair
+
+After CTS, `repair_timing -hold` finds 3 endpoints and inserts 3 buffers. After global routing it finds none. Signoff still fails hold on the same 32 SDRAM outputs, by up to 0.222 ns.
+
+The pre-route estimate has the clock tree far from what gets built. On `sdram_cke`, `mclk` reaches the launching flop at 4.23 ns in the estimate and at 1.18 ns after extraction. The estimate puts 0.57 pF on the `mclk` input net and 1.10 pF on the first clock buffer. Output hold depends on the difference between the internal tree and the forwarded clock, so the estimated slack is +1.20 ns while the extracted slack is -0.11 ns.
+
+A trial on the same database repaired hold after detailed routing with OpenRCX parasitics. It found 38 failing endpoints and inserted 3 buffers.
+
+Decision: register the SDRAM pins on the falling edge of `mclk`.
+
+## Falling-edge SDRAM pins
+

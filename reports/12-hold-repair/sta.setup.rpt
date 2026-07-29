@@ -1,0 +1,992 @@
+Startpoint: u_sram.mem (falling edge-triggered flip-flop clocked by clk)
+Endpoint: _19287_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                         10.00   10.00   clock clk (fall edge)
+                          1.76   11.76   clock network delay (propagated)
+                  0.12    0.00   11.76 v u_sram.mem/clk0 (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.00    0.00    0.40   12.15 v u_sram.mem/dout0[23] (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.01    0.03    0.11   12.26 v wire451/X (sky130_fd_sc_hd__buf_2)
+     1    0.04    0.05    0.13   12.40 v wire450/X (sky130_fd_sc_hd__buf_6)
+     1    0.16    0.09    0.19   12.58 v wire944/X (sky130_fd_sc_hd__buf_12)
+     1    0.01    0.03    0.17   12.75 v wire449/X (sky130_fd_sc_hd__buf_2)
+     1    0.01    0.04    0.13   12.88 v wire448/X (sky130_fd_sc_hd__buf_2)
+     2    0.03    0.13    0.44   13.32 v _10274_/X (sky130_fd_sc_hd__a221o_2)
+     1    0.00    0.05    0.10   13.42 ^ _10292_/Y (sky130_fd_sc_hd__nand2_2)
+     1    0.01    0.11    0.10   13.52 v _10294_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.02    0.59    0.51   14.03 ^ _10297_/Y (sky130_fd_sc_hd__o21ai_0)
+    16    0.13    0.74    0.73   14.75 ^ _10298_/X (sky130_fd_sc_hd__or4b_2)
+     1    0.02    0.20    0.23   14.98 v _15130_/Y (sky130_fd_sc_hd__o21ai_2)
+     1    0.03    0.04    0.20   15.19 v wire856/X (sky130_fd_sc_hd__buf_12)
+     1    0.03    0.07    0.25   15.44 v _15131_/X (sky130_fd_sc_hd__a21o_4)
+    31    0.15    0.09    0.18   15.62 v wire843/X (sky130_fd_sc_hd__buf_12)
+     1    0.00    0.04    0.28   15.90 v _16356_/X (sky130_fd_sc_hd__a22o_2)
+     1    0.00    0.03    0.18   16.08 v _16357_/X (sky130_fd_sc_hd__a21o_2)
+                  0.03    0.00   16.08 v _19287_/D (sky130_fd_sc_hd__dfxtp_2)
+                                 16.08   data arrival time
+
+                         20.00   20.00   clock clk (rise edge)
+                          1.82   21.82   clock network delay (propagated)
+                         -0.25   21.57   clock uncertainty
+                          0.00   21.57   clock reconvergence pessimism
+                                 21.57 ^ _19287_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.11   21.46   library setup time
+                                 21.46   data required time
+-----------------------------------------------------------------------------
+                                 21.46   data required time
+                                -16.08   data arrival time
+-----------------------------------------------------------------------------
+                                  5.38   slack (MET)
+
+
+Startpoint: u_sram.mem (falling edge-triggered flip-flop clocked by clk)
+Endpoint: _19447_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                         10.00   10.00   clock clk (fall edge)
+                          1.76   11.76   clock network delay (propagated)
+                  0.12    0.00   11.76 v u_sram.mem/clk0 (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.00    0.00    0.40   12.15 v u_sram.mem/dout0[23] (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.01    0.03    0.11   12.26 v wire451/X (sky130_fd_sc_hd__buf_2)
+     1    0.04    0.05    0.13   12.40 v wire450/X (sky130_fd_sc_hd__buf_6)
+     1    0.16    0.09    0.19   12.58 v wire944/X (sky130_fd_sc_hd__buf_12)
+     1    0.01    0.03    0.17   12.75 v wire449/X (sky130_fd_sc_hd__buf_2)
+     1    0.01    0.04    0.13   12.88 v wire448/X (sky130_fd_sc_hd__buf_2)
+     2    0.03    0.13    0.44   13.32 v _10274_/X (sky130_fd_sc_hd__a221o_2)
+     1    0.00    0.05    0.10   13.42 ^ _10292_/Y (sky130_fd_sc_hd__nand2_2)
+     1    0.01    0.11    0.10   13.52 v _10294_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.02    0.59    0.51   14.03 ^ _10297_/Y (sky130_fd_sc_hd__o21ai_0)
+    16    0.13    0.74    0.73   14.75 ^ _10298_/X (sky130_fd_sc_hd__or4b_2)
+     1    0.02    0.20    0.23   14.98 v _15130_/Y (sky130_fd_sc_hd__o21ai_2)
+     1    0.03    0.04    0.20   15.19 v wire856/X (sky130_fd_sc_hd__buf_12)
+     1    0.03    0.07    0.25   15.44 v _15131_/X (sky130_fd_sc_hd__a21o_4)
+    31    0.15    0.09    0.18   15.62 v wire843/X (sky130_fd_sc_hd__buf_12)
+     1    0.00    0.05    0.41   16.03 v _16702_/X (sky130_fd_sc_hd__a221o_2)
+                  0.05    0.00   16.03 v _19447_/D (sky130_fd_sc_hd__dfxtp_2)
+                                 16.03   data arrival time
+
+                         20.00   20.00   clock clk (rise edge)
+                          1.82   21.82   clock network delay (propagated)
+                         -0.25   21.57   clock uncertainty
+                          0.00   21.57   clock reconvergence pessimism
+                                 21.57 ^ _19447_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.11   21.45   library setup time
+                                 21.45   data required time
+-----------------------------------------------------------------------------
+                                 21.45   data required time
+                                -16.03   data arrival time
+-----------------------------------------------------------------------------
+                                  5.42   slack (MET)
+
+
+Startpoint: u_sram.mem (falling edge-triggered flip-flop clocked by clk)
+Endpoint: _19191_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                         10.00   10.00   clock clk (fall edge)
+                          1.76   11.76   clock network delay (propagated)
+                  0.12    0.00   11.76 v u_sram.mem/clk0 (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.00    0.00    0.40   12.15 v u_sram.mem/dout0[23] (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.01    0.03    0.11   12.26 v wire451/X (sky130_fd_sc_hd__buf_2)
+     1    0.04    0.05    0.13   12.40 v wire450/X (sky130_fd_sc_hd__buf_6)
+     1    0.16    0.09    0.19   12.58 v wire944/X (sky130_fd_sc_hd__buf_12)
+     1    0.01    0.03    0.17   12.75 v wire449/X (sky130_fd_sc_hd__buf_2)
+     1    0.01    0.04    0.13   12.88 v wire448/X (sky130_fd_sc_hd__buf_2)
+     2    0.03    0.13    0.44   13.32 v _10274_/X (sky130_fd_sc_hd__a221o_2)
+     1    0.00    0.05    0.10   13.42 ^ _10292_/Y (sky130_fd_sc_hd__nand2_2)
+     1    0.01    0.11    0.10   13.52 v _10294_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.02    0.59    0.51   14.03 ^ _10297_/Y (sky130_fd_sc_hd__o21ai_0)
+    16    0.13    0.74    0.73   14.75 ^ _10298_/X (sky130_fd_sc_hd__or4b_2)
+     1    0.02    0.20    0.23   14.98 v _15130_/Y (sky130_fd_sc_hd__o21ai_2)
+     1    0.03    0.04    0.20   15.19 v wire856/X (sky130_fd_sc_hd__buf_12)
+     1    0.03    0.07    0.25   15.44 v _15131_/X (sky130_fd_sc_hd__a21o_4)
+    31    0.15    0.09    0.18   15.62 v wire843/X (sky130_fd_sc_hd__buf_12)
+     1    0.00    0.05    0.40   16.02 v _16150_/X (sky130_fd_sc_hd__a221o_2)
+                  0.05    0.00   16.02 v _19191_/D (sky130_fd_sc_hd__dfxtp_2)
+                                 16.02   data arrival time
+
+                         20.00   20.00   clock clk (rise edge)
+                          1.80   21.80   clock network delay (propagated)
+                         -0.25   21.55   clock uncertainty
+                          0.00   21.55   clock reconvergence pessimism
+                                 21.55 ^ _19191_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.11   21.44   library setup time
+                                 21.44   data required time
+-----------------------------------------------------------------------------
+                                 21.44   data required time
+                                -16.02   data arrival time
+-----------------------------------------------------------------------------
+                                  5.42   slack (MET)
+
+
+Startpoint: u_sram.mem (falling edge-triggered flip-flop clocked by clk)
+Endpoint: _19127_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                         10.00   10.00   clock clk (fall edge)
+                          1.76   11.76   clock network delay (propagated)
+                  0.12    0.00   11.76 v u_sram.mem/clk0 (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.00    0.00    0.40   12.15 v u_sram.mem/dout0[23] (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.01    0.03    0.11   12.26 v wire451/X (sky130_fd_sc_hd__buf_2)
+     1    0.04    0.05    0.13   12.40 v wire450/X (sky130_fd_sc_hd__buf_6)
+     1    0.16    0.09    0.19   12.58 v wire944/X (sky130_fd_sc_hd__buf_12)
+     1    0.01    0.03    0.17   12.75 v wire449/X (sky130_fd_sc_hd__buf_2)
+     1    0.01    0.04    0.13   12.88 v wire448/X (sky130_fd_sc_hd__buf_2)
+     2    0.03    0.13    0.44   13.32 v _10274_/X (sky130_fd_sc_hd__a221o_2)
+     1    0.00    0.05    0.10   13.42 ^ _10292_/Y (sky130_fd_sc_hd__nand2_2)
+     1    0.01    0.11    0.10   13.52 v _10294_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.02    0.59    0.51   14.03 ^ _10297_/Y (sky130_fd_sc_hd__o21ai_0)
+    16    0.13    0.74    0.73   14.75 ^ _10298_/X (sky130_fd_sc_hd__or4b_2)
+     1    0.02    0.20    0.23   14.98 v _15130_/Y (sky130_fd_sc_hd__o21ai_2)
+     1    0.03    0.04    0.20   15.19 v wire856/X (sky130_fd_sc_hd__buf_12)
+     1    0.03    0.07    0.25   15.44 v _15131_/X (sky130_fd_sc_hd__a21o_4)
+    31    0.15    0.09    0.18   15.62 v wire843/X (sky130_fd_sc_hd__buf_12)
+     1    0.00    0.05    0.41   16.03 v _16012_/X (sky130_fd_sc_hd__a221o_2)
+                  0.05    0.00   16.03 v _19127_/D (sky130_fd_sc_hd__dfxtp_2)
+                                 16.03   data arrival time
+
+                         20.00   20.00   clock clk (rise edge)
+                          1.82   21.82   clock network delay (propagated)
+                         -0.25   21.57   clock uncertainty
+                          0.00   21.57   clock reconvergence pessimism
+                                 21.57 ^ _19127_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.11   21.45   library setup time
+                                 21.45   data required time
+-----------------------------------------------------------------------------
+                                 21.45   data required time
+                                -16.03   data arrival time
+-----------------------------------------------------------------------------
+                                  5.43   slack (MET)
+
+
+Startpoint: u_sram.mem (falling edge-triggered flip-flop clocked by clk)
+Endpoint: _19607_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                         10.00   10.00   clock clk (fall edge)
+                          1.76   11.76   clock network delay (propagated)
+                  0.12    0.00   11.76 v u_sram.mem/clk0 (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.00    0.00    0.40   12.15 v u_sram.mem/dout0[23] (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.01    0.03    0.11   12.26 v wire451/X (sky130_fd_sc_hd__buf_2)
+     1    0.04    0.05    0.13   12.40 v wire450/X (sky130_fd_sc_hd__buf_6)
+     1    0.16    0.09    0.19   12.58 v wire944/X (sky130_fd_sc_hd__buf_12)
+     1    0.01    0.03    0.17   12.75 v wire449/X (sky130_fd_sc_hd__buf_2)
+     1    0.01    0.04    0.13   12.88 v wire448/X (sky130_fd_sc_hd__buf_2)
+     2    0.03    0.13    0.44   13.32 v _10274_/X (sky130_fd_sc_hd__a221o_2)
+     1    0.00    0.05    0.10   13.42 ^ _10292_/Y (sky130_fd_sc_hd__nand2_2)
+     1    0.01    0.11    0.10   13.52 v _10294_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.02    0.59    0.51   14.03 ^ _10297_/Y (sky130_fd_sc_hd__o21ai_0)
+    16    0.13    0.74    0.73   14.75 ^ _10298_/X (sky130_fd_sc_hd__or4b_2)
+     1    0.02    0.20    0.23   14.98 v _15130_/Y (sky130_fd_sc_hd__o21ai_2)
+     1    0.03    0.04    0.20   15.19 v wire856/X (sky130_fd_sc_hd__buf_12)
+     1    0.03    0.07    0.25   15.44 v _15131_/X (sky130_fd_sc_hd__a21o_4)
+    31    0.15    0.09    0.18   15.62 v wire843/X (sky130_fd_sc_hd__buf_12)
+     1    0.00    0.05    0.41   16.02 v _17046_/X (sky130_fd_sc_hd__a221o_2)
+                  0.05    0.00   16.02 v _19607_/D (sky130_fd_sc_hd__dfxtp_2)
+                                 16.02   data arrival time
+
+                         20.00   20.00   clock clk (rise edge)
+                          1.82   21.82   clock network delay (propagated)
+                         -0.25   21.57   clock uncertainty
+                          0.00   21.57   clock reconvergence pessimism
+                                 21.57 ^ _19607_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.11   21.45   library setup time
+                                 21.45   data required time
+-----------------------------------------------------------------------------
+                                 21.45   data required time
+                                -16.02   data arrival time
+-----------------------------------------------------------------------------
+                                  5.43   slack (MET)
+
+
+Startpoint: u_sram.mem (falling edge-triggered flip-flop clocked by clk)
+Endpoint: _19063_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                         10.00   10.00   clock clk (fall edge)
+                          1.76   11.76   clock network delay (propagated)
+                  0.12    0.00   11.76 v u_sram.mem/clk0 (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.00    0.00    0.40   12.15 v u_sram.mem/dout0[23] (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.01    0.03    0.11   12.26 v wire451/X (sky130_fd_sc_hd__buf_2)
+     1    0.04    0.05    0.13   12.40 v wire450/X (sky130_fd_sc_hd__buf_6)
+     1    0.16    0.09    0.19   12.58 v wire944/X (sky130_fd_sc_hd__buf_12)
+     1    0.01    0.03    0.17   12.75 v wire449/X (sky130_fd_sc_hd__buf_2)
+     1    0.01    0.04    0.13   12.88 v wire448/X (sky130_fd_sc_hd__buf_2)
+     2    0.03    0.13    0.44   13.32 v _10274_/X (sky130_fd_sc_hd__a221o_2)
+     1    0.00    0.05    0.10   13.42 ^ _10292_/Y (sky130_fd_sc_hd__nand2_2)
+     1    0.01    0.11    0.10   13.52 v _10294_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.02    0.59    0.51   14.03 ^ _10297_/Y (sky130_fd_sc_hd__o21ai_0)
+    16    0.13    0.74    0.73   14.75 ^ _10298_/X (sky130_fd_sc_hd__or4b_2)
+     1    0.02    0.20    0.23   14.98 v _15130_/Y (sky130_fd_sc_hd__o21ai_2)
+     1    0.03    0.04    0.20   15.19 v wire856/X (sky130_fd_sc_hd__buf_12)
+     1    0.03    0.07    0.25   15.44 v _15131_/X (sky130_fd_sc_hd__a21o_4)
+    31    0.15    0.09    0.18   15.62 v wire843/X (sky130_fd_sc_hd__buf_12)
+     1    0.00    0.05    0.39   16.01 v _15874_/X (sky130_fd_sc_hd__a221o_2)
+                  0.05    0.00   16.01 v _19063_/D (sky130_fd_sc_hd__dfxtp_2)
+                                 16.01   data arrival time
+
+                         20.00   20.00   clock clk (rise edge)
+                          1.81   21.81   clock network delay (propagated)
+                         -0.25   21.56   clock uncertainty
+                          0.00   21.56   clock reconvergence pessimism
+                                 21.56 ^ _19063_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.11   21.44   library setup time
+                                 21.44   data required time
+-----------------------------------------------------------------------------
+                                 21.44   data required time
+                                -16.01   data arrival time
+-----------------------------------------------------------------------------
+                                  5.44   slack (MET)
+
+
+Startpoint: u_sram.mem (falling edge-triggered flip-flop clocked by clk)
+Endpoint: _18903_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                         10.00   10.00   clock clk (fall edge)
+                          1.76   11.76   clock network delay (propagated)
+                  0.12    0.00   11.76 v u_sram.mem/clk0 (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.00    0.00    0.40   12.15 v u_sram.mem/dout0[23] (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.01    0.03    0.11   12.26 v wire451/X (sky130_fd_sc_hd__buf_2)
+     1    0.04    0.05    0.13   12.40 v wire450/X (sky130_fd_sc_hd__buf_6)
+     1    0.16    0.09    0.19   12.58 v wire944/X (sky130_fd_sc_hd__buf_12)
+     1    0.01    0.03    0.17   12.75 v wire449/X (sky130_fd_sc_hd__buf_2)
+     1    0.01    0.04    0.13   12.88 v wire448/X (sky130_fd_sc_hd__buf_2)
+     2    0.03    0.13    0.44   13.32 v _10274_/X (sky130_fd_sc_hd__a221o_2)
+     1    0.00    0.05    0.10   13.42 ^ _10292_/Y (sky130_fd_sc_hd__nand2_2)
+     1    0.01    0.11    0.10   13.52 v _10294_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.02    0.59    0.51   14.03 ^ _10297_/Y (sky130_fd_sc_hd__o21ai_0)
+    16    0.13    0.74    0.73   14.75 ^ _10298_/X (sky130_fd_sc_hd__or4b_2)
+     1    0.02    0.20    0.23   14.98 v _15130_/Y (sky130_fd_sc_hd__o21ai_2)
+     1    0.03    0.04    0.20   15.19 v wire856/X (sky130_fd_sc_hd__buf_12)
+     1    0.03    0.07    0.25   15.44 v _15131_/X (sky130_fd_sc_hd__a21o_4)
+    31    0.15    0.09    0.18   15.62 v wire843/X (sky130_fd_sc_hd__buf_12)
+     1    0.00    0.05    0.39   16.01 v _15530_/X (sky130_fd_sc_hd__a221o_2)
+                  0.05    0.00   16.01 v _18903_/D (sky130_fd_sc_hd__dfxtp_2)
+                                 16.01   data arrival time
+
+                         20.00   20.00   clock clk (rise edge)
+                          1.82   21.82   clock network delay (propagated)
+                         -0.25   21.57   clock uncertainty
+                          0.00   21.57   clock reconvergence pessimism
+                                 21.57 ^ _18903_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.12   21.45   library setup time
+                                 21.45   data required time
+-----------------------------------------------------------------------------
+                                 21.45   data required time
+                                -16.01   data arrival time
+-----------------------------------------------------------------------------
+                                  5.44   slack (MET)
+
+
+Startpoint: u_sram.mem (falling edge-triggered flip-flop clocked by clk)
+Endpoint: _19290_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                         10.00   10.00   clock clk (fall edge)
+                          1.76   11.76   clock network delay (propagated)
+                  0.12    0.00   11.76 v u_sram.mem/clk0 (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.00    0.00    0.40   12.15 v u_sram.mem/dout0[23] (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.01    0.03    0.11   12.26 v wire451/X (sky130_fd_sc_hd__buf_2)
+     1    0.04    0.05    0.13   12.40 v wire450/X (sky130_fd_sc_hd__buf_6)
+     1    0.16    0.09    0.19   12.58 v wire944/X (sky130_fd_sc_hd__buf_12)
+     1    0.01    0.03    0.17   12.75 v wire449/X (sky130_fd_sc_hd__buf_2)
+     1    0.01    0.04    0.13   12.88 v wire448/X (sky130_fd_sc_hd__buf_2)
+     2    0.03    0.13    0.44   13.32 v _10274_/X (sky130_fd_sc_hd__a221o_2)
+     1    0.00    0.05    0.10   13.42 ^ _10292_/Y (sky130_fd_sc_hd__nand2_2)
+     1    0.01    0.11    0.10   13.52 v _10294_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.02    0.59    0.51   14.03 ^ _10297_/Y (sky130_fd_sc_hd__o21ai_0)
+    16    0.13    0.74    0.73   14.75 ^ _10298_/X (sky130_fd_sc_hd__or4b_2)
+     1    0.02    0.17    0.18   14.93 v _15183_/Y (sky130_fd_sc_hd__o21ai_4)
+     1    0.05    0.04    0.20   15.13 v wire853/X (sky130_fd_sc_hd__buf_12)
+     1    0.04    0.09    0.27   15.40 v _15184_/X (sky130_fd_sc_hd__a21o_4)
+    31    0.17    0.09    0.19   15.59 v wire840/X (sky130_fd_sc_hd__buf_12)
+     1    0.00    0.04    0.28   15.88 v _16363_/X (sky130_fd_sc_hd__a22o_2)
+     1    0.00    0.03    0.18   16.05 v _16364_/X (sky130_fd_sc_hd__a21o_2)
+                  0.03    0.00   16.05 v _19290_/D (sky130_fd_sc_hd__dfxtp_2)
+                                 16.05   data arrival time
+
+                         20.00   20.00   clock clk (rise edge)
+                          1.85   21.85   clock network delay (propagated)
+                         -0.25   21.60   clock uncertainty
+                          0.00   21.60   clock reconvergence pessimism
+                                 21.60 ^ _19290_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.11   21.50   library setup time
+                                 21.50   data required time
+-----------------------------------------------------------------------------
+                                 21.50   data required time
+                                -16.05   data arrival time
+-----------------------------------------------------------------------------
+                                  5.44   slack (MET)
+
+
+Startpoint: u_sram.mem (falling edge-triggered flip-flop clocked by clk)
+Endpoint: _18839_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                         10.00   10.00   clock clk (fall edge)
+                          1.76   11.76   clock network delay (propagated)
+                  0.12    0.00   11.76 v u_sram.mem/clk0 (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.00    0.00    0.40   12.15 v u_sram.mem/dout0[23] (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.01    0.03    0.11   12.26 v wire451/X (sky130_fd_sc_hd__buf_2)
+     1    0.04    0.05    0.13   12.40 v wire450/X (sky130_fd_sc_hd__buf_6)
+     1    0.16    0.09    0.19   12.58 v wire944/X (sky130_fd_sc_hd__buf_12)
+     1    0.01    0.03    0.17   12.75 v wire449/X (sky130_fd_sc_hd__buf_2)
+     1    0.01    0.04    0.13   12.88 v wire448/X (sky130_fd_sc_hd__buf_2)
+     2    0.03    0.13    0.44   13.32 v _10274_/X (sky130_fd_sc_hd__a221o_2)
+     1    0.00    0.05    0.10   13.42 ^ _10292_/Y (sky130_fd_sc_hd__nand2_2)
+     1    0.01    0.11    0.10   13.52 v _10294_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.02    0.59    0.51   14.03 ^ _10297_/Y (sky130_fd_sc_hd__o21ai_0)
+    16    0.13    0.74    0.73   14.75 ^ _10298_/X (sky130_fd_sc_hd__or4b_2)
+     1    0.02    0.20    0.23   14.98 v _15130_/Y (sky130_fd_sc_hd__o21ai_2)
+     1    0.03    0.04    0.20   15.19 v wire856/X (sky130_fd_sc_hd__buf_12)
+     1    0.03    0.07    0.25   15.44 v _15131_/X (sky130_fd_sc_hd__a21o_4)
+    31    0.15    0.09    0.18   15.62 v wire843/X (sky130_fd_sc_hd__buf_12)
+     1    0.00    0.05    0.38   16.00 v _15391_/X (sky130_fd_sc_hd__a221o_2)
+                  0.05    0.00   16.00 v _18839_/D (sky130_fd_sc_hd__dfxtp_2)
+                                 16.00   data arrival time
+
+                         20.00   20.00   clock clk (rise edge)
+                          1.80   21.80   clock network delay (propagated)
+                         -0.25   21.55   clock uncertainty
+                          0.00   21.55   clock reconvergence pessimism
+                                 21.55 ^ _18839_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.11   21.44   library setup time
+                                 21.44   data required time
+-----------------------------------------------------------------------------
+                                 21.44   data required time
+                                -16.00   data arrival time
+-----------------------------------------------------------------------------
+                                  5.44   slack (MET)
+
+
+Startpoint: u_sram.mem (falling edge-triggered flip-flop clocked by clk)
+Endpoint: _19639_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                         10.00   10.00   clock clk (fall edge)
+                          1.76   11.76   clock network delay (propagated)
+                  0.12    0.00   11.76 v u_sram.mem/clk0 (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.00    0.00    0.40   12.15 v u_sram.mem/dout0[23] (sky130_sram_2kbyte_1rw1r_32x512_8)
+     1    0.01    0.03    0.11   12.26 v wire451/X (sky130_fd_sc_hd__buf_2)
+     1    0.04    0.05    0.13   12.40 v wire450/X (sky130_fd_sc_hd__buf_6)
+     1    0.16    0.09    0.19   12.58 v wire944/X (sky130_fd_sc_hd__buf_12)
+     1    0.01    0.03    0.17   12.75 v wire449/X (sky130_fd_sc_hd__buf_2)
+     1    0.01    0.04    0.13   12.88 v wire448/X (sky130_fd_sc_hd__buf_2)
+     2    0.03    0.13    0.44   13.32 v _10274_/X (sky130_fd_sc_hd__a221o_2)
+     1    0.00    0.05    0.10   13.42 ^ _10292_/Y (sky130_fd_sc_hd__nand2_2)
+     1    0.01    0.11    0.10   13.52 v _10294_/Y (sky130_fd_sc_hd__o21ai_0)
+     2    0.02    0.59    0.51   14.03 ^ _10297_/Y (sky130_fd_sc_hd__o21ai_0)
+    16    0.13    0.74    0.73   14.75 ^ _10298_/X (sky130_fd_sc_hd__or4b_2)
+     1    0.02    0.20    0.23   14.98 v _15130_/Y (sky130_fd_sc_hd__o21ai_2)
+     1    0.03    0.04    0.20   15.19 v wire856/X (sky130_fd_sc_hd__buf_12)
+     1    0.03    0.07    0.25   15.44 v _15131_/X (sky130_fd_sc_hd__a21o_4)
+    31    0.15    0.09    0.18   15.62 v wire843/X (sky130_fd_sc_hd__buf_12)
+     1    0.00    0.05    0.37   15.99 v _17116_/X (sky130_fd_sc_hd__a221o_2)
+                  0.05    0.00   15.99 v _19639_/D (sky130_fd_sc_hd__dfxtp_2)
+                                 15.99   data arrival time
+
+                         20.00   20.00   clock clk (rise edge)
+                          1.80   21.80   clock network delay (propagated)
+                         -0.25   21.55   clock uncertainty
+                          0.00   21.55   clock reconvergence pessimism
+                                 21.55 ^ _19639_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.12   21.43   library setup time
+                                 21.43   data required time
+-----------------------------------------------------------------------------
+                                 21.43   data required time
+                                -15.99   data arrival time
+-----------------------------------------------------------------------------
+                                  5.44   slack (MET)
+
+
+Startpoint: sdram_dq_in[8] (input port clocked by sdram_clk)
+Endpoint: _17620_ (rising edge-triggered flip-flop clocked by mclk)
+Path Group: mclk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock sdram_clk (rise edge)
+                          0.76    0.76   clock network delay (propagated)
+                          6.40    7.16 ^ input external delay
+     1    0.08    0.34    0.24    7.40 ^ sdram_dq_in[8] (in)
+                  0.34    0.00    7.40 ^ _17620_/D (sky130_fd_sc_hd__dfxtp_2)
+                                  7.40   data arrival time
+
+                         10.00   10.00   clock mclk (rise edge)
+                          1.16   11.16   clock network delay (propagated)
+                         -0.25   10.91   clock uncertainty
+                          0.00   10.91   clock reconvergence pessimism
+                                 10.91 ^ _17620_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.13   10.78   library setup time
+                                 10.78   data required time
+-----------------------------------------------------------------------------
+                                 10.78   data required time
+                                 -7.40   data arrival time
+-----------------------------------------------------------------------------
+                                  3.39   slack (MET)
+
+
+Startpoint: sdram_dq_in[9] (input port clocked by sdram_clk)
+Endpoint: _17621_ (rising edge-triggered flip-flop clocked by mclk)
+Path Group: mclk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock sdram_clk (rise edge)
+                          0.76    0.76   clock network delay (propagated)
+                          6.40    7.16 ^ input external delay
+     1    0.07    0.33    0.24    7.40 ^ sdram_dq_in[9] (in)
+                  0.34    0.00    7.40 ^ _17621_/D (sky130_fd_sc_hd__dfxtp_2)
+                                  7.40   data arrival time
+
+                         10.00   10.00   clock mclk (rise edge)
+                          1.17   11.17   clock network delay (propagated)
+                         -0.25   10.92   clock uncertainty
+                          0.00   10.92   clock reconvergence pessimism
+                                 10.92 ^ _17621_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.13   10.80   library setup time
+                                 10.80   data required time
+-----------------------------------------------------------------------------
+                                 10.80   data required time
+                                 -7.40   data arrival time
+-----------------------------------------------------------------------------
+                                  3.40   slack (MET)
+
+
+Startpoint: sdram_dq_in[13] (input port clocked by sdram_clk)
+Endpoint: _17625_ (rising edge-triggered flip-flop clocked by mclk)
+Path Group: mclk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock sdram_clk (rise edge)
+                          0.76    0.76   clock network delay (propagated)
+                          6.40    7.16 ^ input external delay
+     1    0.06    0.26    0.18    7.34 ^ sdram_dq_in[13] (in)
+                  0.26    0.00    7.34 ^ _17625_/D (sky130_fd_sc_hd__dfxtp_2)
+                                  7.34   data arrival time
+
+                         10.00   10.00   clock mclk (rise edge)
+                          1.16   11.16   clock network delay (propagated)
+                         -0.25   10.91   clock uncertainty
+                          0.00   10.91   clock reconvergence pessimism
+                                 10.91 ^ _17625_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.11   10.80   library setup time
+                                 10.80   data required time
+-----------------------------------------------------------------------------
+                                 10.80   data required time
+                                 -7.34   data arrival time
+-----------------------------------------------------------------------------
+                                  3.46   slack (MET)
+
+
+Startpoint: sdram_dq_in[7] (input port clocked by sdram_clk)
+Endpoint: _17619_ (rising edge-triggered flip-flop clocked by mclk)
+Path Group: mclk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock sdram_clk (rise edge)
+                          0.76    0.76   clock network delay (propagated)
+                          6.40    7.16 ^ input external delay
+     1    0.05    0.21    0.15    7.30 ^ sdram_dq_in[7] (in)
+                  0.21    0.00    7.30 ^ _17619_/D (sky130_fd_sc_hd__dfxtp_2)
+                                  7.30   data arrival time
+
+                         10.00   10.00   clock mclk (rise edge)
+                          1.15   11.15   clock network delay (propagated)
+                         -0.25   10.90   clock uncertainty
+                          0.00   10.90   clock reconvergence pessimism
+                                 10.90 ^ _17619_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.10   10.80   library setup time
+                                 10.80   data required time
+-----------------------------------------------------------------------------
+                                 10.80   data required time
+                                 -7.30   data arrival time
+-----------------------------------------------------------------------------
+                                  3.49   slack (MET)
+
+
+Startpoint: sdram_dq_in[15] (input port clocked by sdram_clk)
+Endpoint: _17627_ (rising edge-triggered flip-flop clocked by mclk)
+Path Group: mclk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock sdram_clk (rise edge)
+                          0.76    0.76   clock network delay (propagated)
+                          6.40    7.16 ^ input external delay
+     1    0.04    0.20    0.14    7.30 ^ sdram_dq_in[15] (in)
+                  0.20    0.00    7.30 ^ _17627_/D (sky130_fd_sc_hd__dfxtp_2)
+                                  7.30   data arrival time
+
+                         10.00   10.00   clock mclk (rise edge)
+                          1.15   11.15   clock network delay (propagated)
+                         -0.25   10.90   clock uncertainty
+                          0.00   10.90   clock reconvergence pessimism
+                                 10.90 ^ _17627_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.10   10.80   library setup time
+                                 10.80   data required time
+-----------------------------------------------------------------------------
+                                 10.80   data required time
+                                 -7.30   data arrival time
+-----------------------------------------------------------------------------
+                                  3.50   slack (MET)
+
+
+Startpoint: sdram_dq_in[3] (input port clocked by sdram_clk)
+Endpoint: _17615_ (rising edge-triggered flip-flop clocked by mclk)
+Path Group: mclk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock sdram_clk (rise edge)
+                          0.76    0.76   clock network delay (propagated)
+                          6.40    7.16 ^ input external delay
+     1    0.05    0.22    0.16    7.31 ^ sdram_dq_in[3] (in)
+                  0.22    0.00    7.31 ^ _17615_/D (sky130_fd_sc_hd__dfxtp_2)
+                                  7.31   data arrival time
+
+                         10.00   10.00   clock mclk (rise edge)
+                          1.17   11.17   clock network delay (propagated)
+                         -0.25   10.92   clock uncertainty
+                          0.00   10.92   clock reconvergence pessimism
+                                 10.92 ^ _17615_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.10   10.82   library setup time
+                                 10.82   data required time
+-----------------------------------------------------------------------------
+                                 10.82   data required time
+                                 -7.31   data arrival time
+-----------------------------------------------------------------------------
+                                  3.51   slack (MET)
+
+
+Startpoint: sdram_dq_in[1] (input port clocked by sdram_clk)
+Endpoint: _17613_ (rising edge-triggered flip-flop clocked by mclk)
+Path Group: mclk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock sdram_clk (rise edge)
+                          0.76    0.76   clock network delay (propagated)
+                          6.40    7.16 ^ input external delay
+     1    0.04    0.19    0.13    7.29 ^ sdram_dq_in[1] (in)
+                  0.19    0.00    7.29 ^ _17613_/D (sky130_fd_sc_hd__dfxtp_2)
+                                  7.29   data arrival time
+
+                         10.00   10.00   clock mclk (rise edge)
+                          1.15   11.15   clock network delay (propagated)
+                         -0.25   10.90   clock uncertainty
+                          0.00   10.90   clock reconvergence pessimism
+                                 10.90 ^ _17613_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.09   10.80   library setup time
+                                 10.80   data required time
+-----------------------------------------------------------------------------
+                                 10.80   data required time
+                                 -7.29   data arrival time
+-----------------------------------------------------------------------------
+                                  3.51   slack (MET)
+
+
+Startpoint: sdram_dq_in[12] (input port clocked by sdram_clk)
+Endpoint: _17624_ (rising edge-triggered flip-flop clocked by mclk)
+Path Group: mclk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock sdram_clk (rise edge)
+                          0.76    0.76   clock network delay (propagated)
+                          6.40    7.16 ^ input external delay
+     1    0.04    0.18    0.13    7.29 ^ sdram_dq_in[12] (in)
+                  0.19    0.00    7.29 ^ _17624_/D (sky130_fd_sc_hd__dfxtp_2)
+                                  7.29   data arrival time
+
+                         10.00   10.00   clock mclk (rise edge)
+                          1.15   11.15   clock network delay (propagated)
+                         -0.25   10.90   clock uncertainty
+                          0.00   10.90   clock reconvergence pessimism
+                                 10.90 ^ _17624_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.09   10.81   library setup time
+                                 10.81   data required time
+-----------------------------------------------------------------------------
+                                 10.81   data required time
+                                 -7.29   data arrival time
+-----------------------------------------------------------------------------
+                                  3.52   slack (MET)
+
+
+Startpoint: sdram_dq_in[14] (input port clocked by sdram_clk)
+Endpoint: _17626_ (rising edge-triggered flip-flop clocked by mclk)
+Path Group: mclk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock sdram_clk (rise edge)
+                          0.76    0.76   clock network delay (propagated)
+                          6.40    7.16 ^ input external delay
+     1    0.04    0.17    0.12    7.28 ^ sdram_dq_in[14] (in)
+                  0.18    0.00    7.28 ^ _17626_/D (sky130_fd_sc_hd__dfxtp_2)
+                                  7.28   data arrival time
+
+                         10.00   10.00   clock mclk (rise edge)
+                          1.15   11.15   clock network delay (propagated)
+                         -0.25   10.90   clock uncertainty
+                          0.00   10.90   clock reconvergence pessimism
+                                 10.90 ^ _17626_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.09   10.81   library setup time
+                                 10.81   data required time
+-----------------------------------------------------------------------------
+                                 10.81   data required time
+                                 -7.28   data arrival time
+-----------------------------------------------------------------------------
+                                  3.53   slack (MET)
+
+
+Startpoint: sdram_dq_in[2] (input port clocked by sdram_clk)
+Endpoint: _17614_ (rising edge-triggered flip-flop clocked by mclk)
+Path Group: mclk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock sdram_clk (rise edge)
+                          0.76    0.76   clock network delay (propagated)
+                          6.40    7.16 ^ input external delay
+     1    0.03    0.16    0.11    7.27 ^ sdram_dq_in[2] (in)
+                  0.16    0.00    7.27 ^ _17614_/D (sky130_fd_sc_hd__dfxtp_2)
+                                  7.27   data arrival time
+
+                         10.00   10.00   clock mclk (rise edge)
+                          1.15   11.15   clock network delay (propagated)
+                         -0.25   10.90   clock uncertainty
+                          0.00   10.90   clock reconvergence pessimism
+                                 10.90 ^ _17614_/CLK (sky130_fd_sc_hd__dfxtp_2)
+                         -0.09   10.81   library setup time
+                                 10.81   data required time
+-----------------------------------------------------------------------------
+                                 10.81   data required time
+                                 -7.27   data arrival time
+-----------------------------------------------------------------------------
+                                  3.54   slack (MET)
+
+
+Startpoint: _17796_ (rising edge-triggered flip-flop clocked by mclk)
+Endpoint: sdram_a[11] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock mclk (rise edge)
+                          1.16    1.16   clock network delay (propagated)
+                  0.05    0.00    1.16 ^ _17796_/CLK (sky130_fd_sc_hd__dfxtp_2)
+     2    0.08    0.40    0.56    1.72 ^ _17796_/Q (sky130_fd_sc_hd__dfxtp_2)
+     1    0.04    0.18    0.32    2.03 ^ _19829_/X (sky130_fd_sc_hd__buf_2)
+                  0.18    0.00    2.04 ^ sdram_a[11] (out)
+                                  2.04   data arrival time
+
+                         10.00   10.00   clock sdram_clk (rise edge)
+                          0.76   10.76   clock network delay (propagated)
+                         -0.25   10.51   clock uncertainty
+                          0.00   10.51   clock reconvergence pessimism
+                         -1.50    9.01   output external delay
+                                  9.01   data required time
+-----------------------------------------------------------------------------
+                                  9.01   data required time
+                                 -2.04   data arrival time
+-----------------------------------------------------------------------------
+                                  6.97   slack (MET)
+
+
+Startpoint: _18386_ (rising edge-triggered flip-flop clocked by mclk)
+Endpoint: sdram_dqm[1] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock mclk (rise edge)
+                          1.16    1.16   clock network delay (propagated)
+                  0.04    0.00    1.16 ^ _18386_/CLK (sky130_fd_sc_hd__dfxtp_2)
+     2    0.08    0.40    0.56    1.71 ^ _18386_/Q (sky130_fd_sc_hd__dfxtp_2)
+     1    0.04    0.18    0.32    2.03 ^ _19817_/X (sky130_fd_sc_hd__buf_2)
+                  0.18    0.00    2.03 ^ sdram_dqm[1] (out)
+                                  2.03   data arrival time
+
+                         10.00   10.00   clock sdram_clk (rise edge)
+                          0.76   10.76   clock network delay (propagated)
+                         -0.25   10.51   clock uncertainty
+                          0.00   10.51   clock reconvergence pessimism
+                         -1.50    9.01   output external delay
+                                  9.01   data required time
+-----------------------------------------------------------------------------
+                                  9.01   data required time
+                                 -2.03   data arrival time
+-----------------------------------------------------------------------------
+                                  6.97   slack (MET)
+
+
+Startpoint: _18373_ (rising edge-triggered flip-flop clocked by mclk)
+Endpoint: sdram_dq_out[4] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock mclk (rise edge)
+                          1.16    1.16   clock network delay (propagated)
+                  0.04    0.00    1.16 ^ _18373_/CLK (sky130_fd_sc_hd__dfxtp_2)
+     2    0.08    0.38    0.55    1.72 ^ _18373_/Q (sky130_fd_sc_hd__dfxtp_2)
+     1    0.03    0.17    0.29    2.01 ^ _19804_/X (sky130_fd_sc_hd__buf_2)
+                  0.17    0.00    2.01 ^ sdram_dq_out[4] (out)
+                                  2.01   data arrival time
+
+                         10.00   10.00   clock sdram_clk (rise edge)
+                          0.76   10.76   clock network delay (propagated)
+                         -0.25   10.51   clock uncertainty
+                          0.00   10.51   clock reconvergence pessimism
+                         -1.50    9.01   output external delay
+                                  9.01   data required time
+-----------------------------------------------------------------------------
+                                  9.01   data required time
+                                 -2.01   data arrival time
+-----------------------------------------------------------------------------
+                                  7.00   slack (MET)
+
+
+Startpoint: _17794_ (rising edge-triggered flip-flop clocked by mclk)
+Endpoint: sdram_a[9] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock mclk (rise edge)
+                          1.16    1.16   clock network delay (propagated)
+                  0.05    0.00    1.16 ^ _17794_/CLK (sky130_fd_sc_hd__dfxtp_2)
+     2    0.07    0.34    0.52    1.68 ^ _17794_/Q (sky130_fd_sc_hd__dfxtp_2)
+     1    0.04    0.18    0.30    1.98 ^ _19827_/X (sky130_fd_sc_hd__buf_2)
+                  0.18    0.00    1.98 ^ sdram_a[9] (out)
+                                  1.98   data arrival time
+
+                         10.00   10.00   clock sdram_clk (rise edge)
+                          0.76   10.76   clock network delay (propagated)
+                         -0.25   10.51   clock uncertainty
+                          0.00   10.51   clock reconvergence pessimism
+                         -1.50    9.01   output external delay
+                                  9.01   data required time
+-----------------------------------------------------------------------------
+                                  9.01   data required time
+                                 -1.98   data arrival time
+-----------------------------------------------------------------------------
+                                  7.02   slack (MET)
+
+
+Startpoint: _18385_ (rising edge-triggered flip-flop clocked by mclk)
+Endpoint: sdram_dqm[0] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock mclk (rise edge)
+                          1.16    1.16   clock network delay (propagated)
+                  0.04    0.00    1.16 ^ _18385_/CLK (sky130_fd_sc_hd__dfxtp_4)
+     2    0.09    0.27    0.49    1.65 ^ _18385_/Q (sky130_fd_sc_hd__dfxtp_4)
+     1    0.04    0.18    0.31    1.96 ^ _19816_/X (sky130_fd_sc_hd__buf_2)
+                  0.18    0.00    1.96 ^ sdram_dqm[0] (out)
+                                  1.96   data arrival time
+
+                         10.00   10.00   clock sdram_clk (rise edge)
+                          0.76   10.76   clock network delay (propagated)
+                         -0.25   10.51   clock uncertainty
+                          0.00   10.51   clock reconvergence pessimism
+                         -1.50    9.01   output external delay
+                                  9.01   data required time
+-----------------------------------------------------------------------------
+                                  9.01   data required time
+                                 -1.96   data arrival time
+-----------------------------------------------------------------------------
+                                  7.05   slack (MET)
+
+
+Startpoint: _18078_ (rising edge-triggered flip-flop clocked by mclk)
+Endpoint: sdram_ba[0] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock mclk (rise edge)
+                          1.16    1.16   clock network delay (propagated)
+                  0.04    0.00    1.16 ^ _18078_/CLK (sky130_fd_sc_hd__dfxtp_2)
+     2    0.02    0.12    0.37    1.53 ^ _18078_/Q (sky130_fd_sc_hd__dfxtp_2)
+     1    0.09    0.45    0.39    1.92 ^ _19831_/X (sky130_fd_sc_hd__buf_2)
+                  0.45    0.03    1.96 ^ sdram_ba[0] (out)
+                                  1.96   data arrival time
+
+                         10.00   10.00   clock sdram_clk (rise edge)
+                          0.76   10.76   clock network delay (propagated)
+                         -0.25   10.51   clock uncertainty
+                          0.00   10.51   clock reconvergence pessimism
+                         -1.50    9.01   output external delay
+                                  9.01   data required time
+-----------------------------------------------------------------------------
+                                  9.01   data required time
+                                 -1.96   data arrival time
+-----------------------------------------------------------------------------
+                                  7.05   slack (MET)
+
+
+Startpoint: _18375_ (rising edge-triggered flip-flop clocked by mclk)
+Endpoint: sdram_dq_out[6] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock mclk (rise edge)
+                          1.17    1.17   clock network delay (propagated)
+                  0.05    0.00    1.17 ^ _18375_/CLK (sky130_fd_sc_hd__dfxtp_2)
+     2    0.06    0.29    0.49    1.66 ^ _18375_/Q (sky130_fd_sc_hd__dfxtp_2)
+     1    0.04    0.18    0.29    1.95 ^ _19806_/X (sky130_fd_sc_hd__buf_2)
+                  0.18    0.00    1.95 ^ sdram_dq_out[6] (out)
+                                  1.95   data arrival time
+
+                         10.00   10.00   clock sdram_clk (rise edge)
+                          0.76   10.76   clock network delay (propagated)
+                         -0.25   10.51   clock uncertainty
+                          0.00   10.51   clock reconvergence pessimism
+                         -1.50    9.01   output external delay
+                                  9.01   data required time
+-----------------------------------------------------------------------------
+                                  9.01   data required time
+                                 -1.95   data arrival time
+-----------------------------------------------------------------------------
+                                  7.06   slack (MET)
+
+
+Startpoint: _18079_ (rising edge-triggered flip-flop clocked by mclk)
+Endpoint: sdram_ba[1] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock mclk (rise edge)
+                          1.17    1.17   clock network delay (propagated)
+                  0.06    0.00    1.17 ^ _18079_/CLK (sky130_fd_sc_hd__dfxtp_2)
+     2    0.01    0.04    0.32    1.49 ^ _18079_/Q (sky130_fd_sc_hd__dfxtp_2)
+     1    0.11    0.51    0.41    1.90 ^ _19832_/X (sky130_fd_sc_hd__buf_2)
+                  0.51    0.04    1.94 ^ sdram_ba[1] (out)
+                                  1.94   data arrival time
+
+                         10.00   10.00   clock sdram_clk (rise edge)
+                          0.76   10.76   clock network delay (propagated)
+                         -0.25   10.51   clock uncertainty
+                          0.00   10.51   clock reconvergence pessimism
+                         -1.50    9.01   output external delay
+                                  9.01   data required time
+-----------------------------------------------------------------------------
+                                  9.01   data required time
+                                 -1.94   data arrival time
+-----------------------------------------------------------------------------
+                                  7.07   slack (MET)
+
+
+Startpoint: _18376_ (rising edge-triggered flip-flop clocked by mclk)
+Endpoint: sdram_dq_out[7] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock mclk (rise edge)
+                          1.17    1.17   clock network delay (propagated)
+                  0.05    0.00    1.17 ^ _18376_/CLK (sky130_fd_sc_hd__dfxtp_2)
+     2    0.00    0.04    0.32    1.49 ^ _18376_/Q (sky130_fd_sc_hd__dfxtp_2)
+     1    0.10    0.50    0.39    1.88 ^ _19807_/X (sky130_fd_sc_hd__buf_2)
+                  0.50    0.04    1.92 ^ sdram_dq_out[7] (out)
+                                  1.92   data arrival time
+
+                         10.00   10.00   clock sdram_clk (rise edge)
+                          0.76   10.76   clock network delay (propagated)
+                         -0.25   10.51   clock uncertainty
+                          0.00   10.51   clock reconvergence pessimism
+                         -1.50    9.01   output external delay
+                                  9.01   data required time
+-----------------------------------------------------------------------------
+                                  9.01   data required time
+                                 -1.92   data arrival time
+-----------------------------------------------------------------------------
+                                  7.09   slack (MET)
+
+
+Startpoint: _17777_ (rising edge-triggered flip-flop clocked by mclk)
+Endpoint: sdram_a[12] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                          0.00    0.00   clock mclk (rise edge)
+                          1.16    1.16   clock network delay (propagated)
+                  0.05    0.00    1.16 ^ _17777_/CLK (sky130_fd_sc_hd__dfxtp_2)
+     2    0.01    0.04    0.32    1.48 ^ _17777_/Q (sky130_fd_sc_hd__dfxtp_2)
+     1    0.10    0.47    0.39    1.86 ^ _19830_/X (sky130_fd_sc_hd__buf_2)
+                  0.48    0.04    1.90 ^ sdram_a[12] (out)
+                                  1.90   data arrival time
+
+                         10.00   10.00   clock sdram_clk (rise edge)
+                          0.76   10.76   clock network delay (propagated)
+                         -0.25   10.51   clock uncertainty
+                          0.00   10.51   clock reconvergence pessimism
+                         -1.50    9.01   output external delay
+                                  9.01   data required time
+-----------------------------------------------------------------------------
+                                  9.01   data required time
+                                 -1.90   data arrival time
+-----------------------------------------------------------------------------
+                                  7.11   slack (MET)
+
+
