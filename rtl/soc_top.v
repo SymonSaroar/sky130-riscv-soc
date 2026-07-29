@@ -1,6 +1,6 @@
-// SoC top: RV32I core, boot loader, AXI4-Lite interconnect, 2 KB SRAM, APB peripherals.
+// SoC top: RV32I core, boot loader, AXI4-Lite interconnect, 2 KB SRAM, APB peripherals, SDRAM port.
 // Map: 0x0000_0000 SRAM, 0x1000_0000 UART, 0x1000_1000 GPIO, 0x1000_2000 SPI,
-//      0x1000_3000 TIMER, 0x1000_4000 INTC.
+//      0x1000_3000 TIMER, 0x1000_4000 INTC, 0x8000_0000 SDRAM (32 MB).
 module soc_top (
   input         clk,
   input         rst_n,
@@ -12,11 +12,28 @@ module soc_top (
   output        spi_cs_n,
   output        spi_sclk,
   output        spi_mosi,
-  input         spi_miso
+  input         spi_miso,
+  // SDRAM, memory clock domain
+  input         mclk,
+  output        sdram_clk,
+  output        sdram_cke,
+  output        sdram_cs_n,
+  output        sdram_ras_n,
+  output        sdram_cas_n,
+  output        sdram_we_n,
+  output  [1:0] sdram_ba,
+  output [12:0] sdram_a,
+  output  [1:0] sdram_dqm,
+  output [15:0] sdram_dq_out,
+  output        sdram_dq_oe,
+  input  [15:0] sdram_dq_in
 );
-  reg [1:0] rs;
-  always @(posedge clk) rs <= {rs[0], rst_n};
-  wire rst = !rs[1];
+  reg [1:0] rs, mrs;
+  always @(posedge clk)  rs  <= {rs[0], rst_n};
+  always @(posedge mclk) mrs <= {mrs[0], rst_n};
+  wire rst  = !rs[1];
+  wire mrst = !mrs[1];
+  assign sdram_clk = mclk;
 
   // ---------------- masters ----------------
   wire        boot_done;
@@ -52,9 +69,9 @@ module soc_top (
   // ---------------- interconnect ----------------
   wire [31:0] s_awaddr, s_wdata, s_araddr;
   wire  [3:0] s_wstrb;
-  wire  [1:0] s_awvalid, s_awready, s_wvalid, s_wready, s_bvalid, s_bready;
-  wire  [1:0] s_arvalid, s_arready, s_rvalid, s_rready;
-  wire [31:0] s0_rdata, s1_rdata;
+  wire  [2:0] s_awvalid, s_awready, s_wvalid, s_wready, s_bvalid, s_bready;
+  wire  [2:0] s_arvalid, s_arready, s_rvalid, s_rready;
+  wire [31:0] s0_rdata, s1_rdata, s2_rdata;
 
   axil_ic u_ic (
     .clk(clk), .rst(rst),
@@ -67,7 +84,7 @@ module soc_top (
     .s_wdata(s_wdata), .s_wstrb(s_wstrb), .s_wvalid(s_wvalid), .s_wready(s_wready),
     .s_bvalid(s_bvalid), .s_bready(s_bready),
     .s_araddr(s_araddr), .s_arvalid(s_arvalid), .s_arready(s_arready),
-    .s_rdata({s1_rdata, s0_rdata}), .s_rvalid(s_rvalid), .s_rready(s_rready)
+    .s_rdata({s2_rdata, s1_rdata, s0_rdata}), .s_rvalid(s_rvalid), .s_rready(s_rready)
   );
 
   sram_axil u_sram (
@@ -78,6 +95,19 @@ module soc_top (
     .araddr(s_araddr), .arvalid(s_arvalid[0]), .arready(s_arready[0]),
     .rdata(s0_rdata), .rvalid(s_rvalid[0]), .rready(s_rready[0]),
     .i_addr(i_addr), .i_rdata(i_rdata)
+  );
+
+  sdram u_sdram (
+    .clk(clk), .rst(rst),
+    .awaddr(s_awaddr), .awvalid(s_awvalid[2]), .awready(s_awready[2]),
+    .wdata(s_wdata), .wstrb(s_wstrb), .wvalid(s_wvalid[2]), .wready(s_wready[2]),
+    .bvalid(s_bvalid[2]), .bready(s_bready[2]),
+    .araddr(s_araddr), .arvalid(s_arvalid[2]), .arready(s_arready[2]),
+    .rdata(s2_rdata), .rvalid(s_rvalid[2]), .rready(s_rready[2]),
+    .mclk(mclk), .mrst(mrst),
+    .cke(sdram_cke), .cs_n(sdram_cs_n), .ras_n(sdram_ras_n), .cas_n(sdram_cas_n), .we_n(sdram_we_n),
+    .ba(sdram_ba), .a(sdram_a), .dqm(sdram_dqm),
+    .dq_out(sdram_dq_out), .dq_oe(sdram_dq_oe), .dq_in(sdram_dq_in)
   );
 
   // ---------------- peripherals ----------------
