@@ -22,6 +22,17 @@ foreach {k v} [list wns [sta::worst_slack_cmd max] tns [sta::total_negative_slac
   puts $f [format "%s %.3f" $k [expr {$v * 1e9}]]
 }
 puts $f "viol_endpoints [sta::endpoint_violation_count max]"
-set period [get_property [get_clocks clk] period]
-puts $f [format "fmax_mhz %.1f" [expr {1e3 / ($period - [sta::worst_slack_cmd max] * 1e9)}]]
+puts $f "hold_viol_endpoints [sta::endpoint_violation_count min]"
+# per clock domain; the SDRAM I/O paths count toward mclk
+foreach {name groups} {clk clk mclk {mclk sdram_clk}} {
+  set ws ""
+  foreach g $groups {
+    set p [lindex [find_timing_paths -path_group $g -path_delay max -group_path_count 1] 0]
+    if {$p ne "" && ($ws eq "" || [get_property $p slack] < $ws)} { set ws [get_property $p slack] }
+  }
+  if {$ws eq ""} continue
+  set period [get_property [get_clocks $name] period]
+  puts $f [format "wns_%s %.3f" $name $ws]
+  puts $f [format "fmax%s_mhz %.1f" [expr {$name eq "clk" ? "" : "_$name"}] [expr {1e3 / ($period - $ws)}]]
+}
 close $f

@@ -3,7 +3,7 @@ import csv, fnmatch, os, re, sys
 
 run = sys.argv[1]
 rep, out = f"reports/{run}", f"build/{run}"
-FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "slew_viol", "slew_waived", "cap_viol", "fmax_mhz", "die_um", "util_pct",
+FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "slew_viol", "slew_waived", "cap_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "die_um", "util_pct",
           "power_mw", "grt_congestion", "route_drc", "antenna_nets", "magic_drc", "klayout_drc", "lvs"]
 
 
@@ -17,10 +17,11 @@ def grab(pattern, text, default=""):
 
 
 row = {"run": run}
-row["clock_ns"] = grab(r"-period\s+([\d.]+)", read("constraints/soc.sdc"))
+row["clock_ns"] = "/".join(re.findall(r"-period\s+([\d.]+)", read("constraints/soc.sdc")))
 sta = dict(l.split() for l in read(f"{rep}/sta.summary").splitlines())
 row.update(wns_ns=sta.get("wns", ""), tns_ns=sta.get("tns", ""), whs_ns=sta.get("whs", ""),
-           viol_endpoints=sta.get("viol_endpoints", ""),
+           viol_endpoints=sta.get("viol_endpoints", ""), hold_viol=sta.get("hold_viol_endpoints", ""), wns_mclk_ns=sta.get("wns_mclk", ""),
+           fmax_mclk_mhz=sta.get("fmax_mclk_mhz", ""),
            fmax_mhz=sta.get("fmax_mhz", ""))
 drv = read(f"{rep}/sta.drv.rpt")
 waivers = [l.split()[:2] for l in read("signoff/waivers.txt").splitlines() if l.strip() and not l.startswith("#")]
@@ -56,7 +57,7 @@ with open(path, "w", newline="") as f:
 print(row)
 
 # README results table, between the metrics markers
-cols = ["run", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "fmax_mhz", "slew_viol", "slew_waived", "cap_viol",
+cols = ["run", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "slew_viol", "slew_waived", "cap_viol",
         "antenna_nets", "power_mw", "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "lvs"]
 table = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
 table += "".join("| " + " | ".join(r.get(c) or "-" for c in cols) + " |\n" for r in rows)
