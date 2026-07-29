@@ -19,7 +19,7 @@ $(B)/fw/fw.hex: tb/fw/start.S tb/fw/isa.S tb/fw/main.c tb/fw/link.ld
 
 sim: fw
 	iverilog -g2012 -o $(B)/tb_soc \
-	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v $(RTL)
+	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v $(RTL)
 	vvp -n $(B)/tb_soc $(SIMARGS)
 
 lint:
@@ -86,5 +86,5 @@ SC_V := $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog
 .PHONY: gls
 gls: fw
 	iverilog -g2012 -DGLS -DFUNCTIONAL -DUNIT_DELAY=#1 -o $(OUT)/tb_gls \
-	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v $(SC_V)/primitives.v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/soc_top.v
+	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v $(SC_V)/primitives.v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/soc_top.v
 	vvp -n $(OUT)/tb_gls

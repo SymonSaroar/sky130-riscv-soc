@@ -4,6 +4,7 @@
 #define SPI   0x10002000
 #define TIMER 0x10003000
 #define INTC  0x10004000
+#define SDRAM 0x80000000
 
 int isa_test(void);
 extern volatile unsigned char _start[];
@@ -25,6 +26,23 @@ __attribute__((interrupt("machine"))) static void trap(void) {
   } else if (REG(INTC) & 1) {
     rx = REG(UART);
   }
+}
+
+static unsigned pat(unsigned a) { return a ^ (a << 13) ^ (a >> 7) ^ 0xa5a5a5a5; }
+
+// 16 words each in row 0, bank 1, row 16 and the last row, then byte and halfword stores
+static int sdram_test(void) {
+  static const unsigned base[] = {0, 0x400, 0x10000, 0x1fffc00};
+  int err = 0;
+  for (int pass = 0; pass < 2; pass++)
+    for (int b = 0; b < 4; b++)
+      for (unsigned a = SDRAM + base[b]; a < SDRAM + base[b] + 64; a += 4)
+        if (pass == 0) REG(a) = pat(a);
+        else if (REG(a) != pat(a)) err++;
+  *(volatile unsigned char *)(SDRAM + 1) = 0x5a;
+  *(volatile unsigned short *)(SDRAM + 2) = 0x1234;
+  if (REG(SDRAM) != (0x12345a00 | (pat(SDRAM) & 0xff))) err++;
+  return err;
 }
 
 static void done(int ok) { REG(GPIO) = 0xa500 | ok; for (;;); }
@@ -59,6 +77,9 @@ int main(void) {
   REG(SPI) = 1;
   if (b != _start[0]) { puts("spi fail\n"); done(0); }
   puts("spi ok\n");
+
+  if (sdram_test()) { puts("sdram fail\n"); done(0); }
+  puts("sdram ok\n");
 
   puts("PASS\n");
   done(1);

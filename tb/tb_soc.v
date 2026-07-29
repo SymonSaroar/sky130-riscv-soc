@@ -2,15 +2,30 @@
 module tb_soc;
   localparam BIT = 434 * 20;
 
-  reg  clk = 0, rst_n = 0, uart_rx = 1;
+  reg  clk = 0, mclk = 0, rst_n = 0, uart_rx = 1;
   wire uart_tx, spi_cs_n, spi_sclk, spi_mosi, spi_miso;
   wire [15:0] gpio_out, gpio_oe;
   always #10 clk = !clk;
+  always #5 mclk = !mclk;
+
+  wire        sdram_clk, sdram_cke, sdram_cs_n, sdram_ras_n, sdram_cas_n, sdram_we_n, sdram_dq_oe;
+  wire  [1:0] sdram_ba, sdram_dqm;
+  wire [12:0] sdram_a;
+  wire [15:0] sdram_dq_out;
+  wire [15:0] dq = sdram_dq_oe ? sdram_dq_out : 16'bz;
 
   soc_top dut (
     .clk(clk), .rst_n(rst_n), .uart_tx(uart_tx), .uart_rx(uart_rx),
     .gpio_in(16'h0), .gpio_out(gpio_out), .gpio_oe(gpio_oe),
-    .spi_cs_n(spi_cs_n), .spi_sclk(spi_sclk), .spi_mosi(spi_mosi), .spi_miso(spi_miso)
+    .spi_cs_n(spi_cs_n), .spi_sclk(spi_sclk), .spi_mosi(spi_mosi), .spi_miso(spi_miso),
+    .mclk(mclk), .sdram_clk(sdram_clk), .sdram_cke(sdram_cke), .sdram_cs_n(sdram_cs_n),
+    .sdram_ras_n(sdram_ras_n), .sdram_cas_n(sdram_cas_n), .sdram_we_n(sdram_we_n),
+    .sdram_ba(sdram_ba), .sdram_a(sdram_a), .sdram_dqm(sdram_dqm),
+    .sdram_dq_out(sdram_dq_out), .sdram_dq_oe(sdram_dq_oe), .sdram_dq_in(dq)
+  );
+  sdram_model sdram (
+    .clk(sdram_clk), .cke(sdram_cke), .cs_n(sdram_cs_n), .ras_n(sdram_ras_n), .cas_n(sdram_cas_n),
+    .we_n(sdram_we_n), .ba(sdram_ba), .a(sdram_a), .dqm(sdram_dqm), .dq(dq)
   );
   spi_flash flash (.cs_n(spi_cs_n), .sclk(spi_sclk), .mosi(spi_mosi), .miso(spi_miso));
 
@@ -44,7 +59,8 @@ module tb_soc;
   end
 
   always @(gpio_out) if (gpio_out[15:8] == 8'ha5) begin
-    $display("\n%s at %0t ns", gpio_out[0] ? "TEST PASSED" : "TEST FAILED", $time);
+    $display("\n%s at %0t ns (SDRAM protocol errors: %0d)",
+             gpio_out[0] && sdram.errors == 0 ? "TEST PASSED" : "TEST FAILED", $time, sdram.errors);
     $finish;
   end
 endmodule
