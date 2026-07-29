@@ -11,37 +11,38 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
             +----------+                         +-------------------+
                  | AXI4-Lite                              ^ port 0
                  v                                        |
-  +--------+   +------------------------------------------+
-  |  boot  |-->|        AXI4-Lite interconnect             |
-  | loader |   +------------------------------------------+
-  +--------+                          |
-      |                               v
-   SPI flash                    AXI4-Lite to APB
-                                      |
-               +--------+------+------+------+-------+
-               |  UART  | GPIO | SPI  | timer| INTC  |
-               +--------+------+------+------+-------+
+  +--------+   +------------------------------------------+-----------+
+  |  boot  |-->|              AXI4-Lite interconnect                  |
+  | loader |   +------------------------------------------------------+
+  +--------+                  |                              |
+      |                       v                              v
+   SPI flash            AXI4-Lite to APB          async FIFOs (clk -> mclk)
+                              |                              |
+       +--------+------+------+------+-------+     SDRAM controller (100 MHz)
+       |  UART  | GPIO | SPI  | timer| INTC  |               |
+       +--------+------+------+------+-------+       32 MB SDR SDRAM
 ```
 
-Details are in [docs/spec_v1.md](docs/spec_v1.md).
+Details are in [docs/spec_v2.md](docs/spec_v2.md).
 
 ## Results
 
 All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics, clock 20 ns.
 
 <!-- metrics -->
-| run | wns_ns | tns_ns | whs_ns | viol_endpoints | fmax_mhz | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 01-baseline | -10.063 | -9075.234 | 0.076 | 1210 | 33.3 | 3384 | 22 | 156 | 65 | 8.98 | 0 | 0 | 1943 | 0 | mismatch |
-| 02-sram-corner | - | - | - | - | - | - | - | - | - | - | 4290 | - | - | - | - |
-| 03-sram-channels | -8.855 | -8749.597 | 0.084 | 1218 | 34.7 | 3941 | 22 | 190 | 48 | 9.10 | 0 | 0 | 0 | 0 | mismatch |
-| 04-cts-setup-repair | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
-| 05-placement-padding | -3.677 | -3405.824 | 0.077 | 1209 | 42.2 | 1834 | 22 | 145 | 102 | 9.53 | 0 | 0 | 0 | 0 | clean |
-| 06-instruction-register | -4.744 | -4707.600 | 0.083 | 1275 | 40.4 | 2388 | 22 | 147 | 78 | 9.72 | 0 | 0 | 0 | 0 | clean |
-| 07-load-use-stall | -0.226 | -2.867 | 0.083 | 19 | 49.4 | 2763 | 22 | 203 | 62 | 9.92 | 0 | 0 | 0 | 0 | clean |
-| 08-wire-rc-calibration | 2.777 | 0.000 | 0.084 | 0 | 58.1 | 207 | 22 | 37 | 84 | 9.90 | 0 | 0 | 0 | 0 | clean |
-| 09-sram-input-buffers | 4.237 | 0.000 | 0.083 | 0 | 63.4 | 150 | 22 | 22 | 84 | 9.98 | 0 | 0 | 0 | 0 | clean |
-| 10-grt-repair | 5.691 | 0.000 | 0.079 | 0 | 69.9 | 0 | 22 | 0 | 64 | 11.50 | 0 | 0 | 0 | 0 | clean |
+| run | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 01-baseline | -10.063 | -9075.234 | 0.076 | 1210 | - | 33.3 | - | - | 3384 | 22 | 156 | 65 | 8.98 | 0 | 0 | 1943 | 0 | mismatch |
+| 02-sram-corner | - | - | - | - | - | - | - | - | - | - | - | - | - | 4290 | - | - | - | - |
+| 03-sram-channels | -8.855 | -8749.597 | 0.084 | 1218 | - | 34.7 | - | - | 3941 | 22 | 190 | 48 | 9.10 | 0 | 0 | 0 | 0 | mismatch |
+| 04-cts-setup-repair | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
+| 05-placement-padding | -3.677 | -3405.824 | 0.077 | 1209 | - | 42.2 | - | - | 1834 | 22 | 145 | 102 | 9.53 | 0 | 0 | 0 | 0 | clean |
+| 06-instruction-register | -4.744 | -4707.600 | 0.083 | 1275 | - | 40.4 | - | - | 2388 | 22 | 147 | 78 | 9.72 | 0 | 0 | 0 | 0 | clean |
+| 07-load-use-stall | -0.226 | -2.867 | 0.083 | 19 | - | 49.4 | - | - | 2763 | 22 | 203 | 62 | 9.92 | 0 | 0 | 0 | 0 | clean |
+| 08-wire-rc-calibration | 2.777 | 0.000 | 0.084 | 0 | - | 58.1 | - | - | 207 | 22 | 37 | 84 | 9.90 | 0 | 0 | 0 | 0 | clean |
+| 09-sram-input-buffers | 4.237 | 0.000 | 0.083 | 0 | - | 63.4 | - | - | 150 | 22 | 22 | 84 | 9.98 | 0 | 0 | 0 | 0 | clean |
+| 10-grt-repair | 5.691 | 0.000 | 0.079 | 0 | - | 69.9 | - | - | 0 | 22 | 0 | 64 | 11.50 | 0 | 0 | 0 | 0 | clean |
+| 11-sdram-port | 3.394 | 0.000 | -0.256 | 0 | 32 | 68.4 | 3.394 | 151.4 | 0 | 22 | 0 | 58 | 16.20 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
