@@ -20,17 +20,17 @@ module sdram (
   // memory clock domain
   input         mclk,
   input         mrst,
-  output        cke,
-  output        cs_n,
-  output        ras_n,
-  output        cas_n,
-  output        we_n,
-  output  [1:0] ba,
-  output [12:0] a,
-  output  [1:0] dqm,
-  output [15:0] dq_out,
-  output        dq_oe,
-  input  [15:0] dq_in
+  output reg        cke,
+  output reg        cs_n,
+  output reg        ras_n,
+  output reg        cas_n,
+  output reg        we_n,
+  output reg  [1:0] ba,
+  output reg [12:0] a,
+  output reg  [1:0] dqm,
+  output reg [15:0] dq_out,
+  output reg        dq_oe,
+  input      [15:0] dq_in
 );
   // one transaction in flight
   reg  busy, pend_wr;
@@ -63,11 +63,21 @@ module sdram (
     .rclk(clk), .rrst(rst), .rinc(resp_ok), .rdata(rdata), .rempty(rempty)
   );
 
+  wire        p_cke, p_cs_n, p_ras_n, p_cas_n, p_we_n, p_dq_oe;
+  wire  [1:0] p_ba, p_dqm;
+  wire [12:0] p_a;
+  wire [15:0] p_dq_out;
+
   sdram_ctrl u_ctrl (
     .clk(mclk), .rst(mrst),
     .c_valid(!c_empty), .c_data(c_data), .c_pop(c_pop),
     .r_push(r_push), .r_data(r_data),
-    .cke(cke), .cs_n(cs_n), .ras_n(ras_n), .cas_n(cas_n), .we_n(we_n),
-    .ba(ba), .a(a), .dqm(dqm), .dq_out(dq_out), .dq_oe(dq_oe), .dq_in(dq_in)
+    .cke(p_cke), .cs_n(p_cs_n), .ras_n(p_ras_n), .cas_n(p_cas_n), .we_n(p_we_n),
+    .ba(p_ba), .a(p_a), .dqm(p_dqm), .dq_out(p_dq_out), .dq_oe(p_dq_oe), .dq_in(dq_in)
   );
+
+  // pins change on the falling edge of mclk; the SDRAM samples on the next rising edge
+  always @(negedge mclk)
+    {cke, cs_n, ras_n, cas_n, we_n, ba, a, dqm, dq_out, dq_oe} <=
+      {p_cke, p_cs_n, p_ras_n, p_cas_n, p_we_n, p_ba, p_a, p_dqm, p_dq_out, p_dq_oe};
 endmodule
