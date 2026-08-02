@@ -16,7 +16,7 @@ report_stage grt
 repair_antennas sky130_fd_sc_hd__diode_2
 detailed_route -output_drc $rep/route_drc.rpt -droute_end_iter 64 -verbose 1
 # antenna repair on the detailed routes; only changed nets are rerouted
-for {set i 0} {$i < 6 && [check_antennas] > 0} {incr i} {
+for {set i 0} {$i < 12 && [check_antennas] > 0} {incr i} {
   repair_antennas sky130_fd_sc_hd__diode_2
   detailed_route -output_drc $rep/route_drc.rpt -droute_end_iter 64 -verbose 1
 }
