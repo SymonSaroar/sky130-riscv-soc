@@ -6,7 +6,8 @@ Starting point: the external memory design. Timing and hold close, DRC and LVS a
 |---|---|---|---|---|---|
 | Antenna repair after detailed routing | 923 x 923 | 0 | +4.51 / +2.14 | +0.074 | clean |
 | Core utilization 50% to 60% | 844 x 844 | 2 | +4.69 / +1.97 | +0.069 | clean |
-| Up to 12 antenna passes | | | | | |
+| Up to 12 antenna passes | 844 x 844 | 0 | +4.69 / +1.97 | +0.069 | clean |
+| Power pins and IR drop | | | | | |
 
 ## Antenna repair after detailed routing
 
@@ -44,4 +45,12 @@ The antenna loop stops at its limit of six passes with 2 nets left (86, 13, 7, 4
 Decision: allow up to 12 passes.
 
 ## Longer antenna loop
+
+The loop reaches 0 on its eleventh pass: 86, 13, 7, 4, 4, 3, 2, 2, 2, 2, 2, 0. Timing, power, DRC and LVS match the 60% layout.
+
+The macro has no power pins. VPWR and VGND exist only as internal met4 and met5 stripes, so nothing outside the block can connect to them, and the IR drop has never been measured.
+
+Decision: promote the met5 stripes to VPWR and VGND pins that reach the die edge, and add a static IR drop step fed from those pins.
+
+## Power pins and IR drop
 
