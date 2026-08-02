@@ -12,7 +12,8 @@ The SDRAM pins are timed against the forwarded clock `sdram_clk` with MT48LC16M1
 |---|---|---|---|---|
 | SDRAM port | +5.38 / +3.39 | -0.256 | 32 | clean |
 | Hold repair | +5.38 / +3.39 | -0.222 | 32 | clean |
-| SDRAM pins launched on the falling edge | | | | |
+| SDRAM pins launched on the falling edge | +4.50 / +2.14 | +0.074 | 0 | clean |
+| Bounded clock-crossing constraints | | | | |
 
 ## SDRAM port
 
@@ -37,4 +38,19 @@ A trial on the same database repaired hold after detailed routing with OpenRCX p
 Decision: register the SDRAM pins on the falling edge of `mclk`.
 
 ## Falling-edge SDRAM pins
+
+A stage of 39 flops on the falling edge of `mclk` sits between the controller and the SDRAM pins. The SDRAM still samples each command on the same rising edge, so the controller sequencing does not change. Yosys maps these flops to `dfxtp_2` behind a clock inverter. RTL and gate-level simulation pass with 0 protocol errors.
+
+| `sdram_cas_n` | Rising edge | Falling edge |
+|---|---|---|
+| Hold slack (ns) | -0.24 | +4.60 |
+| Setup slack (ns) | about +7 | +2.50 |
+
+Hold has no failing endpoints. The `mclk` domain WNS of +2.14 ns is now the output setup on `sdram_a[11]`. `clk` closes at 64.5 MHz and `mclk` at 127 MHz. DRC and LVS are clean, with 74 antenna nets.
+
+The two clock domains are still declared asynchronous, so no path between them is timed.
+
+Decision: replace the asynchronous clock groups with a 10 ns `set_max_delay -ignore_clock_latency` in both directions and a false path for hold.
+
+## Bounded clock crossings
 
