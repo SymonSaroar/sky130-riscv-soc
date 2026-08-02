@@ -15,6 +15,10 @@ report_checks -path_delay max -group_path_count 10 -fields {slew cap fanout} > $
 report_checks -path_delay min -group_path_count 10 > $rep/sta.hold.rpt
 report_check_types -max_slew -max_capacitance -max_fanout -violators > $rep/sta.drv.rpt
 report_power > $rep/power.rpt
+if {[llength [all_clocks]] > 1} {
+  report_checks -path_delay max -from [get_clocks clk] -to [get_clocks mclk] -group_path_count 5 > $rep/cdc.rpt
+  report_checks -path_delay max -from [get_clocks mclk] -to [get_clocks clk] -group_path_count 5 >> $rep/cdc.rpt
+}
 
 set f [open $rep/sta.summary w]
 foreach {k v} [list wns [sta::worst_slack_cmd max] tns [sta::total_negative_slack_cmd max] \

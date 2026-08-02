@@ -2,7 +2,12 @@ create_clock -name clk  -period 20 [get_ports clk]
 create_clock -name mclk -period 10 [get_ports mclk]
 create_generated_clock -name sdram_clk -source [get_ports mclk] -divide_by 1 [get_ports sdram_clk]
 set_clock_uncertainty 0.25 [all_clocks]
-set_clock_groups -asynchronous -group {clk} -group {mclk sdram_clk}
+
+# clock domain crossings: bounded delay, no phase relationship
+set_max_delay 10 -ignore_clock_latency -from [get_clocks clk] -to [get_clocks mclk]
+set_max_delay 10 -ignore_clock_latency -from [get_clocks mclk] -to [get_clocks clk]
+set_false_path -hold -from [get_clocks clk] -to [get_clocks {mclk sdram_clk}]
+set_false_path -hold -from [get_clocks {mclk sdram_clk}] -to [get_clocks clk]
 
 set_driving_cell -lib_cell sky130_fd_sc_hd__inv_2 -pin Y [all_inputs]
 set_load 0.033 [all_outputs]
