@@ -47,6 +47,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 13-sdram-falling-edge | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | 0 | 22 | 0 | 74 | 16.90 | 1 | 0 | 0 | 0 | clean |
 | 14-cdc-constraints | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | 0 | 22 | 0 | 74 | 16.90 | 1 | 0 | 0 | 0 | clean |
 | 15-antenna-repair | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | 0 | 22 | 0 | 0 | 16.90 | 1 | 0 | 0 | 0 | clean |
+| 16-util-60 | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | 0 | 22 | 0 | 2 | 16.70 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
