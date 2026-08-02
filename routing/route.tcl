@@ -15,6 +15,11 @@ estimate_parasitics -global_routing
 report_stage grt
 repair_antennas sky130_fd_sc_hd__diode_2
 detailed_route -output_drc $rep/route_drc.rpt -droute_end_iter 64 -verbose 1
+# antenna repair on the detailed routes; only changed nets are rerouted
+for {set i 0} {$i < 6 && [check_antennas] > 0} {incr i} {
+  repair_antennas sky130_fd_sc_hd__diode_2
+  detailed_route -output_drc $rep/route_drc.rpt -droute_end_iter 64 -verbose 1
+}
 filler_placement {sky130_fd_sc_hd__decap_12 sky130_fd_sc_hd__decap_8 sky130_fd_sc_hd__decap_6 \
                   sky130_fd_sc_hd__decap_4 sky130_fd_sc_hd__decap_3 sky130_fd_sc_hd__fill_2 sky130_fd_sc_hd__fill_1}
 global_connect
