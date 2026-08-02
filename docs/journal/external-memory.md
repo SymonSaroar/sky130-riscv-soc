@@ -13,7 +13,7 @@ The SDRAM pins are timed against the forwarded clock `sdram_clk` with MT48LC16M1
 | SDRAM port | +5.38 / +3.39 | -0.256 | 32 | clean |
 | Hold repair | +5.38 / +3.39 | -0.222 | 32 | clean |
 | SDRAM pins launched on the falling edge | +4.50 / +2.14 | +0.074 | 0 | clean |
-| Bounded clock-crossing constraints | | | | |
+| Bounded clock-crossing constraints | +4.50 / +2.14 | +0.074 | 0 | clean |
 
 ## SDRAM port
 
@@ -53,4 +53,25 @@ The two clock domains are still declared asynchronous, so no path between them i
 Decision: replace the asynchronous clock groups with a 10 ns `set_max_delay -ignore_clock_latency` in both directions and a false path for hold.
 
 ## Bounded clock crossings
+
+Both directions are now timed. Signoff writes the worst crossing paths to `cdc.rpt`.
+
+| Crossing | Endpoints | Worst slack (ns) |
+|---|---|---|
+| `clk` to `mclk` | 66 | +8.42 |
+| `mclk` to `clk` | 998 | +5.45 |
+
+The 998 endpoints on the `mclk` to `clk` side are response FIFO data passing through the CPU load path into the 992 register file bits.
+
+Every crossing starts at a FIFO memory flop or a pointer flop. Each synchronizer input is one source flop ANDed with the destination domain's synchronized reset, so no synchronizer samples logic built from more than one asynchronous bit. The Gray-code MSB flop is merged with the binary MSB flop, which has the same D input.
+
+The implementation does not change: timing, power and area match the falling-edge layout.
+
+![layout](../../reports/14-cdc-constraints/layout.png)
+
+## Status
+
+The SDRAM port works in RTL and gate-level simulation. Setup closes at 64.5 MHz on `clk` and 127 MHz on `mclk`, hold has no failures, and the clock crossings are constrained and met. DRC and LVS are clean.
+
+Open: 74 antenna nets. Global routing reports one tile over capacity by one track at (745, 462) µm, which detailed routing clears. The die is 923 x 923 µm.
 

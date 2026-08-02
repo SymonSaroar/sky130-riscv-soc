@@ -27,7 +27,7 @@ Details are in [docs/spec_v2.md](docs/spec_v2.md).
 
 ## Results
 
-All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics, clock 20 ns.
+All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns; from row 11 on, `mclk` is 10 ns.
 
 <!-- metrics -->
 | run | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
@@ -45,12 +45,14 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 11-sdram-port | 3.394 | 0.000 | -0.256 | 0 | 32 | 68.4 | 3.394 | 151.4 | 0 | 22 | 0 | 58 | 16.20 | 0 | 0 | 0 | 0 | clean |
 | 12-hold-repair | 3.385 | 0.000 | -0.222 | 0 | 32 | 68.4 | 3.385 | 151.2 | 0 | 22 | 0 | 48 | 16.20 | 0 | 0 | 0 | 0 | clean |
 | 13-sdram-falling-edge | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | 0 | 22 | 0 | 74 | 16.90 | 1 | 0 | 0 | 0 | clean |
+| 14-cdc-constraints | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | 0 | 22 | 0 | 74 | 16.90 | 1 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
 
 - [Boot and peripherals](docs/journal/boot-and-peripherals.md)
 - [Timing closure](docs/journal/timing-closure.md)
+- [External memory](docs/journal/external-memory.md)
 
 ## Layout of the repo
 
