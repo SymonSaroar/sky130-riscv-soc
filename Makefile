@@ -56,11 +56,14 @@ route:
 
 MAGIC := magic -dnull -noconsole -rcfile $(PDK_ROOT)/sky130A/libs.tech/magic/sky130A.magicrc
 
-.PHONY: rcx sta gds render magic klayout_drc lvs signoff
+.PHONY: rcx sta ir gds render magic klayout_drc lvs signoff
 rcx:
 	openroad -no_init -exit -log $(OUT)/rcx.log extraction/rcx.tcl > /dev/null
 sta:
 	sta -no_init -exit sta/sta.tcl > $(OUT)/sta.log
+ir:
+	openroad -no_init -threads max -exit -log $(OUT)/ir.log power/ir.tcl > /dev/null
+	grep -A6 'Supply voltage' $(OUT)/ir.log > $(REP)/ir.rpt
 gds:
 	klayout -b -r signoff/def2gds.py > $(OUT)/gds.log
 render:
@@ -75,7 +78,7 @@ lvs: magic
 	netgen -batch source signoff/lvs.tcl > $(OUT)/lvs.log
 	{ sed -n "$$(grep -n 'Subcircuit summary' $(REP)/lvs.rpt | tail -1 | cut -d: -f1),\$$p" $(REP)/lvs.rpt | head -80; \
 	  grep -A1 '^Final result' $(REP)/lvs.rpt; } > $(REP)/lvs.summary
-signoff: rcx sta gds render lvs klayout_drc
+signoff: rcx sta ir gds render lvs klayout_drc
 
 .PHONY: metrics all
 metrics:
