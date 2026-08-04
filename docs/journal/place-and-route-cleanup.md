@@ -7,7 +7,8 @@ Starting point: the external memory design. Timing and hold close, DRC and LVS a
 | Antenna repair after detailed routing | 923 x 923 | 0 | +4.51 / +2.14 | +0.074 | clean |
 | Core utilization 50% to 60% | 844 x 844 | 2 | +4.69 / +1.97 | +0.069 | clean |
 | Up to 12 antenna passes | 844 x 844 | 0 | +4.69 / +1.97 | +0.069 | clean |
-| Power pins and IR drop | | | | | |
+| Power pins and IR drop | 844 x 844 | 1 | +4.80 / +1.96 | +0.070 | clean |
+| Buffer in front of gates the diodes cannot fix | | | | | |
 
 ## Antenna repair after detailed routing
 
@@ -53,4 +54,19 @@ The macro has no power pins. VPWR and VGND exist only as internal met4 and met5 
 Decision: promote the met5 stripes to VPWR and VGND pins that reach the die edge, and add a static IR drop step fed from those pins.
 
 ## Power pins and IR drop
+
+The met5 stripes extend to the die edge as pins: 16 shapes on VPWR and 18 on VGND. LVS stays clean with the new ports. `power/ir.tcl` runs static IR analysis on both supplies with sources at those pins.
+
+| Supply | Worst IR drop | Average |
+|---|---|---|
+| VPWR | 1.60 mV (0.09%) | 0.45 mV |
+| VGND | 1.53 mV (0.08%) | 0.31 mV |
+
+Timing, DRC and LVS are unchanged.
+
+One antenna net is left after twelve passes (80, 7, 3, 3, 2, 2, then 1 for seven passes). Net `_07795_` drives seven gates across 180 µm. It has collected 12 diodes, and its met1 segment into `_12206_/A0` is still at 850 against 400. The checker's required ratio does not move, so the diodes are not on the met1 segment that reaches that gate. On that database, a buffer in front of `_12206_/A0` clears it in one pass.
+
+Decision: four diode passes, then a buffer in front of every gate that still violates.
+
+## Antenna buffers
 
