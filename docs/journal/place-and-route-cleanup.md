@@ -8,7 +8,7 @@ Starting point: the external memory design. Timing and hold close, DRC and LVS a
 | Core utilization 50% to 60% | 844 x 844 | 2 | +4.69 / +1.97 | +0.069 | clean |
 | Up to 12 antenna passes | 844 x 844 | 0 | +4.69 / +1.97 | +0.069 | clean |
 | Power pins and IR drop | 844 x 844 | 1 | +4.80 / +1.96 | +0.070 | clean |
-| Buffer in front of gates the diodes cannot fix | | | | | |
+| Buffer in front of gates the diodes cannot fix | 844 x 844 | 0 | +4.78 / +1.96 | +0.070 | clean |
 
 ## Antenna repair after detailed routing
 
@@ -69,4 +69,23 @@ One antenna net is left after twelve passes (80, 7, 3, 3, 2, 2, then 1 for seven
 Decision: four diode passes, then a buffer in front of every gate that still violates.
 
 ## Antenna buffers
+
+Inside the routing process, the buffer insertion failed twice. First `insert_buffer` stopped with EST-0104 (inconsistent parasitics state). After a reset to placement parasitics, detailed routing stopped with DRT-0218 on nets of cells that legalization had moved. The same steps work in a new OpenROAD process started from the saved database. Routing is now two processes: `route.tcl` ends after the diode passes and writes `droute.odb`, and `finish.tcl` loads it, buffers the remaining gates, places fillers and writes the outputs.
+
+With the finish step the diode passes go 80, 7, 3, 3, and 2 nets are left. Two buffers clear them. The netlist has 197 antenna diodes and 2 antenna buffers.
+
+| Check | Result |
+|---|---|
+| Antenna nets | 0 |
+| Setup | `clk` +4.78 ns (65.7 MHz), `mclk` +1.96 ns (124.4 MHz) |
+| Hold | +0.070 ns |
+| IR drop | 1.60 mV |
+| Global route congestion | 0 |
+| DRC / LVS | clean |
+
+![layout](../../reports/19-antenna-buffers/layout.png)
+
+## Status
+
+The die is 844 x 844 µm, 16% smaller than before. There are no antenna violations, the macro has VPWR and VGND pins, and static IR drop is 1.6 mV. Timing, DRC and LVS stay clean.
 

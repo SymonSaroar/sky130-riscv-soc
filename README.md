@@ -50,6 +50,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 16-util-60 | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | 0 | 22 | 0 | 2 | 16.70 | - | 0 | 0 | 0 | 0 | clean |
 | 17-antenna-passes | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | 0 | 22 | 0 | 0 | 16.70 | - | 0 | 0 | 0 | 0 | clean |
 | 18-power-pins-ir | 1.963 | 0.000 | 0.070 | 0 | 0 | 65.8 | 1.963 | 124.4 | 0 | 22 | 0 | 1 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | clean |
+| 19-antenna-buffers | 1.964 | 0.000 | 0.070 | 0 | 0 | 65.7 | 1.964 | 124.4 | 0 | 22 | 0 | 0 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
@@ -57,6 +58,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 - [Boot and peripherals](docs/journal/boot-and-peripherals.md)
 - [Timing closure](docs/journal/timing-closure.md)
 - [External memory](docs/journal/external-memory.md)
+- [Place and route cleanup](docs/journal/place-and-route-cleanup.md)
 
 ## Layout of the repo
 
@@ -67,6 +69,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | `constraints/` | SDC |
 | `synthesis/` | Yosys script |
 | `floorplan/`, `placement/`, `cts/`, `routing/` | OpenROAD stage scripts |
+| `power/` | Static IR drop |
 | `extraction/` | OpenRCX |
 | `sta/` | OpenSTA signoff timing and power |
 | `signoff/` | KLayout stream-out, Magic DRC and extraction, Netgen LVS |
