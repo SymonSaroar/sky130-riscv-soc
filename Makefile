@@ -53,6 +53,7 @@ cts:
 .PHONY: route
 route:
 	openroad -no_init -threads max -exit -log $(OUT)/route.log routing/route.tcl > /dev/null
+	openroad -no_init -threads max -exit -log $(OUT)/finish.log routing/finish.tcl > /dev/null
 
 MAGIC := magic -dnull -noconsole -rcfile $(PDK_ROOT)/sky130A/libs.tech/magic/sky130A.magicrc
 
