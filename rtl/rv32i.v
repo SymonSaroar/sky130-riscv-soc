@@ -1,4 +1,4 @@
-// RV32I + Zicsr core. Stages: IF (SRAM read port), ID (instruction register), EX, WB (bus response).
+// RV32IM + Zicsr core. Stages: IF (SRAM read port), ID (instruction register), EX, WB (bus response).
 // Instruction fetch reads the SRAM read port directly; data goes over AXI4-Lite.
 module rv32i (
   input             clk,
@@ -117,6 +117,25 @@ module rv32i (
     default: br = 1'b0;
   endcase
 
+  // ---------------- M extension ----------------
+  wire        is_m   = is_op && ins[25];
+  wire        is_div = is_m && f3[2];
+  // multiply: rs1 signed for MUL/MULH/MULHSU, rs2 signed for MUL/MULH
+  wire signed [32:0] ma = {f3[1:0] != 2'b11 && x1[31], x1};
+  wire signed [32:0] mb = {!f3[1] && x2[31], x2};
+  wire signed [65:0] mp = ma * mb;
+  // divide: 32 iterations of restoring division on magnitudes
+  wire        d_s   = !f3[0];
+  wire        neg_a = d_s && x1[31];
+  wire        neg_b = d_s && x2[31];
+  reg  [31:0] dq, dr, dd;
+  reg   [5:0] dcnt;
+  reg         d_busy, d_done;
+  wire [32:0] dt    = {dr, dq[31]} - {1'b0, dd};
+  wire [31:0] quo   = neg_a != neg_b && x2 != 0 ? -dq : dq;
+  wire [31:0] rem   = neg_a ? -dr : dr;
+  wire [31:0] m_res = is_div ? (f3[1] ? rem : quo) : f3[1:0] == 2'b00 ? mp[31:0] : mp[63:32];
+
   // ---------------- CSRs ----------------
   reg        mie_g, mpie;          // mstatus.MIE, mstatus.MPIE
   reg        mtie, meie;           // mie.MTIE, mie.MEIE
@@ -143,9 +162,9 @@ module rv32i (
   // ---------------- memory requests ----------------
   wire        mem   = is_load || is_store;
   wire [31:0] maddr = x1 + (is_store ? imm_s : imm_i);
-  // interrupts are taken on a non-memory instruction once WB is free
+  // interrupts are taken on a non-memory, non-divide instruction once WB is free
   wire        irq   = mie_g && ((irq_timer && mtie) || (irq_ext && meie)) &&
-                      (!w_busy || (w_done && !ld_use)) && !mem;
+                      (!w_busy || (w_done && !ld_use)) && !mem && !is_div;
   wire        go    = e_valid && !irq;          // EX instruction executes
   wire        req   = go && mem && !w_busy;
   wire        req_ok = is_load ? m_arready : m_awready && m_wready;
@@ -161,7 +180,7 @@ module rv32i (
   assign m_rready  = 1'b1;
   assign m_bready  = 1'b1;
 
-  wire stall = e_valid && ((w_busy && !w_done) || ld_use || (mem && !(req && req_ok)));
+  wire stall = e_valid && ((w_busy && !w_done) || ld_use || (mem && !(req && req_ok)) || (is_div && !d_done));
   wire adv   = go && !stall;                    // EX instruction retires
 
   // ---------------- next PC ----------------
@@ -179,7 +198,8 @@ module rv32i (
   wire [31:0] e_wd = is_lui            ? imm_u :
                      is_auipc          ? pc + imm_u :
                      is_jal || is_jalr ? pc4 :
-                     is_csr            ? csr_r : alu;
+                     is_csr            ? csr_r :
+                     is_m              ? m_res : alu;
 
   integer i;
   always @(posedge clk) begin
@@ -194,6 +214,8 @@ module rv32i (
       f_valid <= 1'b0;
       e_valid <= 1'b0;
       w_busy  <= 1'b0;
+      d_busy  <= 1'b0;
+      d_done  <= 1'b0;
       mie_g   <= 1'b0;
       mpie    <= 1'b0;
       mtie    <= 1'b0;
@@ -209,6 +231,19 @@ module rv32i (
         pc      <= f_pc;
         e_valid <= f_valid && !redirect;
       end
+
+      if (e_valid && is_div && !d_busy && !d_done) begin
+        dq <= neg_a ? -x1 : x1;
+        dd <= neg_b ? -x2 : x2;
+        dr <= 32'b0;
+        dcnt <= 6'd32;
+        d_busy <= 1'b1;
+      end else if (d_busy) begin
+        dr <= dt[32] ? {dr[30:0], dq[31]} : dt[31:0];
+        dq <= {dq[30:0], !dt[32]};
+        dcnt <= dcnt - 1;
+        if (dcnt == 1) begin d_busy <= 1'b0; d_done <= 1'b1; end
+      end else if (adv) d_done <= 1'b0;
 
       if (w_done) w_busy <= 1'b0;
       if (adv && mem) begin
