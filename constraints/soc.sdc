@@ -1,4 +1,4 @@
-create_clock -name clk  -period 20 [get_ports clk]
+create_clock -name clk  -period 15 [get_ports clk]
 create_clock -name mclk -period 10 [get_ports mclk]
 create_generated_clock -name sdram_clk -source [get_ports mclk] -divide_by 1 [get_ports sdram_clk]
 set_clock_uncertainty 0.25 [all_clocks]

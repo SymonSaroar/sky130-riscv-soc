@@ -5,6 +5,7 @@
 #define TIMER 0x10003000
 #define INTC  0x10004000
 #define SDRAM 0x80000000
+#define CLK_HZ 66666667
 
 int isa_test(void);
 extern volatile unsigned char _start[];
@@ -48,6 +49,7 @@ static int sdram_test(void) {
 static void done(int ok) { REG(GPIO) = 0xa500 | ok; for (;;); }
 
 int main(void) {
+  REG(UART + 8) = CLK_HZ / 115200;
   int e = isa_test();
   puts("boot\n");
   if (e) { puts("isa fail "); puthex(e); putc('\n'); done(0); }
