@@ -6,6 +6,7 @@ module rv32i (
   // instruction port: synchronous SRAM, data returns the cycle after i_addr
   output     [31:0] i_addr,
   input      [31:0] i_rdata,
+  input             i_valid,      // i_rdata holds the word at the previous i_addr
   // AXI4-Lite master (one transaction in flight)
   output     [31:0] m_awaddr,
   output            m_awvalid,
@@ -191,7 +192,7 @@ module rv32i (
   wire redirect = e_valid && (irq || (!stall && (is_mret || taken)));
   assign i_addr = !f_valid ? RESET_PC :
                   redirect ? (irq ? mtvec : is_mret ? mepc : target) :
-                  stall    ? f_pc : f_pc + 4;
+                  stall || !i_valid ? f_pc : f_pc + 4;
 
   // ---------------- writeback from EX ----------------
   wire        e_we = adv && rd != 0 && (is_lui || is_auipc || is_jal || is_jalr || is_opimm || is_op || is_csr);
@@ -229,7 +230,7 @@ module rv32i (
       if (!stall) begin
         ins     <= i_rdata;
         pc      <= f_pc;
-        e_valid <= f_valid && !redirect;
+        e_valid <= f_valid && !redirect && i_valid;
       end
 
       if (e_valid && is_div && !d_busy && !d_done) begin

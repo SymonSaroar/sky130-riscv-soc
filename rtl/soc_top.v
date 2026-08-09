@@ -1,4 +1,4 @@
-// SoC top: RV32I core, boot loader, AXI4-Lite interconnect, 2 KB SRAM, APB peripherals, SDRAM port.
+// SoC top: RV32IM core, instruction cache, boot loader, AXI4-Lite interconnect, 2 KB SRAM, APB peripherals, SDRAM port.
 // Map: 0x0000_0000 SRAM, 0x1000_0000 UART, 0x1000_1000 GPIO, 0x1000_2000 SPI,
 //      0x1000_3000 TIMER, 0x1000_4000 INTC, 0x8000_0000 SDRAM (32 MB).
 module soc_top (
@@ -37,7 +37,13 @@ module soc_top (
 
   // ---------------- masters ----------------
   wire        boot_done;
-  wire [31:0] i_addr, i_rdata;
+  wire [31:0] i_addr, i_rdata, s_irdata, c_irdata;
+  wire        c_hit;
+  wire [31:0] ic_araddr;
+  wire        ic_arvalid, ic_rready;
+  reg         f_sdram;                      // the fetch in flight is from SDRAM
+  always @(posedge clk) f_sdram <= i_addr[31];
+  assign i_rdata = f_sdram ? c_irdata : s_irdata;
 
   wire [31:0] c_awaddr, c_wdata, c_araddr, b_awaddr, b_wdata;
   wire  [3:0] c_wstrb;
@@ -48,7 +54,7 @@ module soc_top (
 
   rv32i u_cpu (
     .clk(clk), .rst(rst || !boot_done),
-    .i_addr(i_addr), .i_rdata(i_rdata),
+    .i_addr(i_addr), .i_rdata(i_rdata), .i_valid(!f_sdram || c_hit),
     .m_awaddr(c_awaddr), .m_awvalid(c_awvalid), .m_awready(m_awready[0]),
     .m_wdata(c_wdata), .m_wstrb(c_wstrb), .m_wvalid(c_wvalid), .m_wready(m_wready[0]),
     .m_bvalid(m_bvalid[0]), .m_bready(c_bready),
@@ -78,8 +84,8 @@ module soc_top (
     .m_awaddr({b_awaddr, c_awaddr}), .m_awvalid({b_awvalid, c_awvalid}), .m_awready(m_awready),
     .m_wdata({b_wdata, c_wdata}), .m_wstrb({4'hf, c_wstrb}), .m_wvalid({b_wvalid, c_wvalid}),
     .m_wready(m_wready), .m_bvalid(m_bvalid), .m_bready({b_bready, c_bready}),
-    .m_araddr({32'b0, c_araddr}), .m_arvalid({1'b0, c_arvalid}), .m_arready(m_arready),
-    .m_rdata(m_rdata), .m_rvalid(m_rvalid), .m_rready({1'b1, c_rready}),
+    .m_araddr({ic_araddr, c_araddr}), .m_arvalid({ic_arvalid, c_arvalid}), .m_arready(m_arready),
+    .m_rdata(m_rdata), .m_rvalid(m_rvalid), .m_rready({ic_rready, c_rready}),
     .s_awaddr(s_awaddr), .s_awvalid(s_awvalid), .s_awready(s_awready),
     .s_wdata(s_wdata), .s_wstrb(s_wstrb), .s_wvalid(s_wvalid), .s_wready(s_wready),
     .s_bvalid(s_bvalid), .s_bready(s_bready),
@@ -94,7 +100,14 @@ module soc_top (
     .bvalid(s_bvalid[0]), .bready(s_bready[0]),
     .araddr(s_araddr), .arvalid(s_arvalid[0]), .arready(s_arready[0]),
     .rdata(s0_rdata), .rvalid(s_rvalid[0]), .rready(s_rready[0]),
-    .i_addr(i_addr), .i_rdata(i_rdata)
+    .i_addr(i_addr), .i_rdata(s_irdata)
+  );
+
+  // master 1 is shared: the boot loader only writes, the cache only reads after boot
+  icache u_icache (
+    .clk(clk), .rst(rst || !boot_done), .addr(i_addr), .rdata(c_irdata), .hit(c_hit),
+    .araddr(ic_araddr), .arvalid(ic_arvalid), .arready(m_arready[1]),
+    .rdata_m(m_rdata), .rvalid(m_rvalid[1]), .rready(ic_rready)
   );
 
   sdram u_sdram (
