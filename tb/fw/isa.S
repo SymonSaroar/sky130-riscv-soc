@@ -118,6 +118,47 @@ isa_test:
   bne   t3, t6, fail
   addi  sp, sp, 16
 
+  # M extension
+  li    t0, 7
+  li    t2, -3
+  mul   t1, t0, t2
+  CHECK 37, t1, -21
+  li    t0, 0x80000000
+  mulh  t1, t0, t0
+  CHECK 38, t1, 0x40000000
+  li    t0, -1
+  mulhsu t1, t0, t0
+  CHECK 39, t1, -1
+  mulhu t1, t0, t0
+  CHECK 40, t1, 0xfffffffe
+  li    t0, -20
+  li    t2, 6
+  div   t1, t0, t2
+  CHECK 41, t1, -3
+  rem   t1, t0, t2
+  CHECK 42, t1, -2
+  li    t0, 20
+  divu  t1, t0, t2
+  CHECK 43, t1, 3
+  remu  t1, t0, t2
+  CHECK 44, t1, 2
+  div   t1, t0, zero
+  CHECK 45, t1, -1
+  rem   t1, t0, zero
+  CHECK 46, t1, 20
+  divu  t1, t0, zero
+  CHECK 47, t1, 0xffffffff
+  li    t0, 0x80000000
+  li    t2, -1
+  div   t1, t0, t2
+  CHECK 48, t1, 0x80000000
+  rem   t1, t0, t2
+  CHECK 49, t1, 0
+  li    t0, 9
+  div   t1, t0, t0
+  addi  t1, t1, 1
+  CHECK 50, t1, 2
+
   # CSRs
   la    t1, isa_test
   csrw  mepc, t1
