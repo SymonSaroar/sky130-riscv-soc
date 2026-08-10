@@ -23,7 +23,7 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
        +--------+------+------+------+-------+       32 MB SDR SDRAM
 ```
 
-Details are in [docs/spec_v2.md](docs/spec_v2.md).
+Details are in [docs/spec_v3.md](docs/spec_v3.md).
 
 ## Results
 
@@ -51,6 +51,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 17-antenna-passes | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | 0 | 22 | 0 | 0 | 16.70 | - | 0 | 0 | 0 | 0 | clean |
 | 18-power-pins-ir | 1.963 | 0.000 | 0.070 | 0 | 0 | 65.8 | 1.963 | 124.4 | 0 | 22 | 0 | 1 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | clean |
 | 19-antenna-buffers | 1.964 | 0.000 | 0.070 | 0 | 0 | 65.7 | 1.964 | 124.4 | 0 | 22 | 0 | 0 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | clean |
+| 20-rv32m-icache | -3.079 | -1062.946 | 0.076 | 928 | 0 | 55.3 | 1.808 | 122.1 | 0 | 44 | 0 | 0 | 31.70 | 2.89 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
