@@ -10,7 +10,7 @@ The benchmark takes 10,937 cycles cold and 10,347 warm.
 |---|---|---|---|---|
 | M extension, instruction cache, 15 ns clock | -3.08 / +1.81 | 928 | +0.076 | clean |
 | Two-cycle multiplier | routing stopped | | | |
-| No buffering in the timing repair after global routing | | | | |
+| No buffering in the timing repair after global routing | routing stopped | | | |
 
 ## Spec v3
 
@@ -60,4 +60,17 @@ The estimate after global routing has been pessimistic every time since it was i
 Decision: keep `repair_design` after global routing, and run `repair_timing` there without buffer insertion.
 
 ## Resize-only timing repair after global routing
+
+After global routing, `repair_timing` now upsizes 986 cells and clones 118, with no buffers. Detailed routing starts at 59,240 violations and stalls: 44,433, 41,608, 22,011, 18,630, 17,852, 17,538, 17,414. Routing was stopped after eight passes.
+
+Global routing reports no overflow, so the problem is local. Standard-cell density after CTS, in 50 µm bins:
+
+| Bins at or above 50% | Densest bin |
+|---|---|
+| 7 | 56% |
+| 27 | 64% |
+
+The densest bins sit in the band between the two SRAMs and in the upper right. Global placement targets 60%, then `repair_design` and the CTS repair add about 1500 buffers into the regions that are already full.
+
+Two candidates ran in parallel copies of the flow: placement density 0.5, and routability-driven plus timing-driven global placement.
 
