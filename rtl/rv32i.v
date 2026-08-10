@@ -121,6 +121,7 @@ module rv32i (
   // ---------------- M extension ----------------
   wire        is_m   = is_op && ins[25];
   wire        is_div = is_m && f3[2];
+  wire        hold   = (w_busy && !w_done) || ld_use;   // operands not ready
   // multiply: rs1 signed for MUL/MULH/MULHSU, rs2 signed for MUL/MULH
   wire signed [32:0] ma = {f3[1:0] != 2'b11 && x1[31], x1};
   wire signed [32:0] mb = {!f3[1] && x2[31], x2};
@@ -233,7 +234,7 @@ module rv32i (
         e_valid <= f_valid && !redirect && i_valid;
       end
 
-      if (e_valid && is_div && !d_busy && !d_done) begin
+      if (e_valid && is_div && !d_busy && !d_done && !hold) begin
         dq <= neg_a ? -x1 : x1;
         dd <= neg_b ? -x2 : x2;
         dr <= 32'b0;

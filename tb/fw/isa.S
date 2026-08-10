@@ -116,6 +116,15 @@ isa_test:
   li    t6, 0x12345510
   lw    t3, 0(sp)
   bne   t3, t6, fail
+  li    t1, 0x100
+  sw    t1, 4(sp)
+  li    t2, 16
+  lw    t3, 4(sp)
+  div   t1, t3, t2
+  CHECK 51, t1, 16
+  lw    t3, 4(sp)
+  mul   t1, t3, t2
+  CHECK 52, t1, 0x1000
   addi  sp, sp, 16
 
   # M extension
