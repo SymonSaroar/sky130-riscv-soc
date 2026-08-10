@@ -31,18 +31,18 @@ __attribute__((interrupt("machine"))) static void trap(void) {
 
 static unsigned pat(unsigned a) { return a ^ (a << 13) ^ (a >> 7) ^ 0xa5a5a5a5; }
 
-// 16 words each in row 0, bank 1, row 16 and the last row, then byte and halfword stores
+// 16 words each in row 16 of banks 0 and 1, row 256 and the last row, then byte and halfword stores
 static int sdram_test(void) {
-  static const unsigned base[] = {0, 0x400, 0x10000, 0x1fffc00};
+  static const unsigned base[] = {0x10000, 0x10400, 0x100000, 0x1fffc00};
   int err = 0;
   for (int pass = 0; pass < 2; pass++)
     for (int b = 0; b < 4; b++)
       for (unsigned a = SDRAM + base[b]; a < SDRAM + base[b] + 64; a += 4)
         if (pass == 0) REG(a) = pat(a);
         else if (REG(a) != pat(a)) err++;
-  *(volatile unsigned char *)(SDRAM + 1) = 0x5a;
-  *(volatile unsigned short *)(SDRAM + 2) = 0x1234;
-  if (REG(SDRAM) != (0x12345a00 | (pat(SDRAM) & 0xff))) err++;
+  *(volatile unsigned char *)(SDRAM + 0x10001) = 0x5a;
+  *(volatile unsigned short *)(SDRAM + 0x10002) = 0x1234;
+  if (REG(SDRAM + 0x10000) != (0x12345a00 | (pat(SDRAM + 0x10000) & 0xff))) err++;
   return err;
 }
 
@@ -74,7 +74,7 @@ int main(void) {
 
   // SPI flash read back of byte 0
   REG(SPI) = 0;
-  spi_xfer(3); spi_xfer(0); spi_xfer(0); spi_xfer(0);
+  spi_xfer(3); spi_xfer(0); spi_xfer(8); spi_xfer(4);
   int b = spi_xfer(0);
   REG(SPI) = 1;
   if (b != _start[0]) { puts("spi fail\n"); done(0); }

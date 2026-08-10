@@ -5,11 +5,11 @@ module spi_flash #(parameter HEX = "build/fw/fw.hex") (
   input      mosi,
   output reg miso
 );
-  reg [7:0] mem [0:4095];
+  reg [7:0] mem [0:65535];
   reg [31:0] cmd;
   integer bits, i;
   initial begin
-    for (i = 0; i < 4096; i = i + 1) mem[i] = 8'hff;
+    for (i = 0; i < 65536; i = i + 1) mem[i] = 8'hff;
     $readmemh(HEX, mem);
   end
 

@@ -9,13 +9,21 @@ B      := build
 # ---------------- firmware and simulation ----------------
 fw: $(B)/fw/fw.hex
 
-$(B)/fw/fw.hex: tb/fw/start.S tb/fw/isa.S tb/fw/main.c tb/fw/link.ld
+FW_CC := $(CROSS)gcc -march=rv32im_zicsr -mabi=ilp32 -Os -nostdlib -ffreestanding -Wl,--no-warn-rwx-segments
+
+# flash image: stage 1 loader in the first 2 KB, then the program length and the program
+$(B)/fw/fw.hex: $(wildcard tb/fw/*.S tb/fw/*.c tb/fw/*.ld)
 	@mkdir -p $(@D)
-	$(CROSS)gcc -march=rv32i_zicsr -mabi=ilp32 -Os -nostdlib -ffreestanding -Wl,--no-warn-rwx-segments -T tb/fw/link.ld \
-	  -o $(B)/fw/fw.elf tb/fw/start.S tb/fw/isa.S tb/fw/main.c
+	$(FW_CC) -T tb/fw/link_sram.ld -o $(B)/fw/loader.elf tb/fw/start.S tb/fw/loader.c
+	$(FW_CC) -T tb/fw/link_sdram.ld -o $(B)/fw/fw.elf tb/fw/start.S tb/fw/isa.S tb/fw/main.c
 	$(CROSS)objdump -d $(B)/fw/fw.elf > $(B)/fw/fw.lst
-	$(CROSS)size $(B)/fw/fw.elf
-	$(CROSS)objcopy -O verilog $(B)/fw/fw.elf $@
+	$(CROSS)size $(B)/fw/loader.elf $(B)/fw/fw.elf
+	$(CROSS)objcopy -O binary $(B)/fw/loader.elf $(B)/fw/loader.bin
+	$(CROSS)objcopy -O binary -j .text -j .data $(B)/fw/fw.elf $(B)/fw/fw.bin
+	python3 -c "import struct, sys; a = open(sys.argv[1], 'rb').read().ljust(2048, b'\xff'); \
+	  b = open(sys.argv[2], 'rb').read(); b += bytes(-len(b) % 4); \
+	  open(sys.argv[3], 'w').write('\n'.join('%02x' % x for x in a + struct.pack('<I', len(b)) + b))" \
+	  $(B)/fw/loader.bin $(B)/fw/fw.bin $@
 
 sim: fw
 	iverilog -g2012 -o $(B)/tb_soc \
