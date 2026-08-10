@@ -46,6 +46,31 @@ static int sdram_test(void) {
   return err;
 }
 
+static short ma[8][8], mb[8][8];
+static int mc[8][8];
+
+static unsigned smul(unsigned a, unsigned b) { unsigned r = 0; for (; b; b >>= 1, a <<= 1) if (b & 1) r += a; return r; }
+
+// 8x8 matrix multiply with divides; cycles, or 0 if a product differs from shift-and-add
+static unsigned bench(void) {
+  unsigned t = REG(TIMER), sum = 0;
+  for (int i = 0; i < 8; i++)
+    for (int j = 0; j < 8; j++) {
+      int c = 0;
+      for (int k = 0; k < 8; k++) c += ma[i][k] * mb[k][j];
+      mc[i][j] = c;
+      sum += c / (j + 1) + c % (i + 3);
+    }
+  t = REG(TIMER) - t;
+  for (int i = 0; i < 8; i++)
+    for (int j = 0; j < 8; j++) {
+      unsigned c = 0;
+      for (int k = 0; k < 8; k++) c += smul(ma[i][k], mb[k][j]);
+      if (c != (unsigned)mc[i][j]) return 0;
+    }
+  return sum ? t : 0;
+}
+
 static void done(int ok) { REG(GPIO) = 0xa500 | ok; for (;;); }
 
 int main(void) {
@@ -82,6 +107,14 @@ int main(void) {
 
   if (sdram_test()) { puts("sdram fail\n"); done(0); }
   puts("sdram ok\n");
+
+  for (int i = 0; i < 64; i++) {
+    ma[i / 8][i % 8] = (short)(pat(i) & 0x7fff) - 0x4000;
+    mb[i / 8][i % 8] = (short)(pat(i + 64) & 0x7fff) - 0x4000;
+  }
+  unsigned cold = bench(), warm = bench();
+  if (!cold || !warm) { puts("bench fail\n"); done(0); }
+  puts("bench cycles "); puthex(cold); putc(' '); puthex(warm); putc('\n');
 
   puts("PASS\n");
   done(1);
