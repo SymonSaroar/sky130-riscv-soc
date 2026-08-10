@@ -121,11 +121,17 @@ module rv32i (
   // ---------------- M extension ----------------
   wire        is_m   = is_op && ins[25];
   wire        is_div = is_m && f3[2];
+  wire        is_mul = is_m && !f3[2];
   wire        hold   = (w_busy && !w_done) || ld_use;   // operands not ready
-  // multiply: rs1 signed for MUL/MULH/MULHSU, rs2 signed for MUL/MULH
+  // multiply over two cycles: four 17x17 partial products, then their sum.
+  // rs1 signed for MUL/MULH/MULHSU, rs2 signed for MUL/MULH
   wire signed [32:0] ma = {f3[1:0] != 2'b11 && x1[31], x1};
   wire signed [32:0] mb = {!f3[1] && x2[31], x2};
-  wire signed [65:0] mp = ma * mb;
+  wire signed [16:0] al = {1'b0, ma[15:0]}, bl = {1'b0, mb[15:0]};
+  wire signed [16:0] ah = ma[32:16], bh = mb[32:16];
+  reg  signed [33:0] p_ll, p_lh, p_hl, p_hh;
+  reg                m_ph;              // partial products are registered
+  wire signed [65:0] mp = p_ll + (p_lh <<< 16) + (p_hl <<< 16) + (p_hh <<< 32);
   // divide: 32 iterations of restoring division on magnitudes
   wire        d_s   = !f3[0];
   wire        neg_a = d_s && x1[31];
@@ -164,9 +170,9 @@ module rv32i (
   // ---------------- memory requests ----------------
   wire        mem   = is_load || is_store;
   wire [31:0] maddr = x1 + (is_store ? imm_s : imm_i);
-  // interrupts are taken on a non-memory, non-divide instruction once WB is free
+  // interrupts are taken on a non-memory, non-M instruction once WB is free
   wire        irq   = mie_g && ((irq_timer && mtie) || (irq_ext && meie)) &&
-                      (!w_busy || (w_done && !ld_use)) && !mem && !is_div;
+                      (!w_busy || (w_done && !ld_use)) && !mem && !is_m;
   wire        go    = e_valid && !irq;          // EX instruction executes
   wire        req   = go && mem && !w_busy;
   wire        req_ok = is_load ? m_arready : m_awready && m_wready;
@@ -182,7 +188,7 @@ module rv32i (
   assign m_rready  = 1'b1;
   assign m_bready  = 1'b1;
 
-  wire stall = e_valid && ((w_busy && !w_done) || ld_use || (mem && !(req && req_ok)) || (is_div && !d_done));
+  wire stall = e_valid && ((w_busy && !w_done) || ld_use || (mem && !(req && req_ok)) || (is_div && !d_done) || (is_mul && !m_ph));
   wire adv   = go && !stall;                    // EX instruction retires
 
   // ---------------- next PC ----------------
@@ -218,6 +224,7 @@ module rv32i (
       w_busy  <= 1'b0;
       d_busy  <= 1'b0;
       d_done  <= 1'b0;
+      m_ph    <= 1'b0;
       mie_g   <= 1'b0;
       mpie    <= 1'b0;
       mtie    <= 1'b0;
@@ -233,6 +240,14 @@ module rv32i (
         pc      <= f_pc;
         e_valid <= f_valid && !redirect && i_valid;
       end
+
+      if (e_valid && is_mul && !m_ph && !hold) begin
+        p_ll <= al * bl;
+        p_lh <= al * bh;
+        p_hl <= ah * bl;
+        p_hh <= ah * bh;
+        m_ph <= 1'b1;
+      end else if (adv) m_ph <= 1'b0;
 
       if (e_valid && is_div && !d_busy && !d_done && !hold) begin
         dq <= neg_a ? -x1 : x1;
