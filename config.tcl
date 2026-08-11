@@ -8,7 +8,7 @@ set out      $::env(OUT)
 set rep      $::env(REP)
 
 # floorplan
-set core_util   60
+set core_util   52
 set core_aspect 1
 set core_space  10
 set macro_channel 40
