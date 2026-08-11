@@ -3,7 +3,7 @@ import csv, fnmatch, os, re, sys
 
 run = sys.argv[1]
 rep, out = f"reports/{run}", f"build/{run}"
-FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "slew_viol", "slew_waived", "cap_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "die_um", "util_pct",
+FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "slew_viol", "slew_waived", "cap_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "die_um", "util_pct", "place_density",
           "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "antenna_nets", "magic_drc", "klayout_drc", "lvs"]
 
 
@@ -35,6 +35,7 @@ for key, sec, check in (("slew_viol", "max slew", "max_slew"), ("cap_viol", "max
         row["slew_waived"] = str(len(waived)) if drv else ""
 die = grab(r"DIEAREA \( 0 0 \) \( (\d+) (\d+) \)", read(f"{out}/soc_top.def"), ())
 row["die_um"] = f"{int(die[0]) / 1000:.0f}x{int(die[1]) / 1000:.0f}" if die else ""
+row["place_density"] = grab(r"Placement target density:\s+([\d.]+)", read(f"{out}/place.log"))
 row["util_pct"] = grab(r"Design area \d+ um\^2 (\d+)% utilization", read(f"{out}/cts.log"))
 total = re.findall(r"^Total\s+\S+\s+\S+\s+\S+\s+(\S+)", read(f"{rep}/power.rpt"), re.M)
 row["power_mw"] = f"{float(total[0]) * 1e3:.2f}" if total else ""
@@ -51,7 +52,7 @@ row["lvs"] = "" if not lvs else "clean" if "Circuits match uniquely" in lvs else
 
 path = "reports/metrics.csv"
 rows = list(csv.DictReader(open(path))) if os.path.exists(path) else []
-rows = [r for r in rows if r["run"] != run] + [row]
+rows = sorted([r for r in rows if r["run"] != run] + [row], key=lambda r: r["run"])
 with open(path, "w", newline="") as f:
     w = csv.DictWriter(f, FIELDS)
     w.writeheader()
@@ -59,7 +60,7 @@ with open(path, "w", newline="") as f:
 print(row)
 
 # README results table, between the metrics markers
-cols = ["run", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "slew_viol", "slew_waived", "cap_viol",
+cols = ["run", "place_density", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "slew_viol", "slew_waived", "cap_viol",
         "antenna_nets", "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "lvs"]
 table = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
 table += "".join("| " + " | ".join(r.get(c) or "-" for c in cols) + " |\n" for r in rows)
