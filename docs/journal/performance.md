@@ -12,7 +12,8 @@ The benchmark takes 10,937 cycles cold and 10,347 warm.
 | Two-cycle multiplier | routing stopped | | | |
 | No buffering in the timing repair after global routing | routing stopped | | | |
 | Core utilization 60% to 52% | routing stopped | | | |
-| Core utilization 45%, placement density 0.5 | | | | |
+| Core utilization 45%, placement density 0.5 | +2.31 / +2.08 | 0 | +0.080 | clean |
+| Buffer at every SRAM output | | | | |
 
 ## Spec v3
 
@@ -106,4 +107,16 @@ Placement at density 0.5 needs a lower core utilization. Through CTS:
 Decision: 45% core utilization, placement density 0.5.
 
 ## 45% core utilization, density 0.5
+
+The die is 1361 x 1361 µm and placement uses 0.50. Detailed routing converges in seven passes (37,281, 23,970, 22,405, 2,495, 333, 80, 0), and the antenna loop clears every net.
+
+Setup closes at 15 ns: `clk` +2.31 ns (78.8 MHz), `mclk` +2.08 ns (126 MHz). Hold is +0.080 ns. DRC and LVS are clean. Power is 33.9 mW and IR drop 3.09 mV. The estimate after global routing said -4.0 ns.
+
+![layout](../../reports/24-util-45/layout.png)
+
+One capacitance violation is left: SRAM output `dout1[10]` drives 0.08 pF against the macro's 0.0276 pF limit, the edge of its characterized load range.
+
+Decision: a buffer at every SRAM output pin as well, with only the pin-to-buffer net kept out of repair.
+
+## SRAM output buffers
 
