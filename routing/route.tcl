@@ -13,6 +13,8 @@ detailed_placement
 global_route -end_incremental -congestion_report_file $rep/congestion.rpt
 estimate_parasitics -global_routing
 report_stage grt
+# antenna repair may add diodes on the SRAM pin nets
+unset_dont_touch [get_nets net_u_*_mem_*]
 repair_antennas sky130_fd_sc_hd__diode_2
 detailed_route -output_drc $rep/route_drc.rpt -droute_end_iter 64 -verbose 1
 # antenna repair on the detailed routes; only changed nets are rerouted
