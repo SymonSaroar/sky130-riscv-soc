@@ -11,6 +11,8 @@ The benchmark takes 10,937 cycles cold and 10,347 warm.
 | M extension, instruction cache, 15 ns clock | -3.08 / +1.81 | 928 | +0.076 | clean |
 | Two-cycle multiplier | routing stopped | | | |
 | No buffering in the timing repair after global routing | routing stopped | | | |
+| Core utilization 60% to 52% | routing stopped | | | |
+| Core utilization 45%, placement density 0.5 | | | | |
 
 ## Spec v3
 
@@ -73,4 +75,35 @@ Global routing reports no overflow, so the problem is local. Standard-cell densi
 The densest bins sit in the band between the two SRAMs and in the upper right. Global placement targets 60%, then `repair_design` and the CTS repair add about 1500 buffers into the regions that are already full.
 
 Two candidates ran in parallel copies of the flow: placement density 0.5, and routability-driven plus timing-driven global placement.
+
+Both candidates exposed something else. Global placement had been ignoring the 0.6 target since the 60% die:
+
+| Placement density used |
+|---|
+| 0.60 |
+| 0.73 to 0.74 |
+
+Since the 60% die, the log warns that "target density 0.6000 is too low for the available free area" and places at 0.74. That die left too little free area once padding is counted. It still routed before the M extension; with twice the standard-cell area, the design needed 27 detailed routing passes. The 0.5 candidate was raised to 0.74 the same way, and the routability-driven candidate failed: timing-driven placement repairs design rules before the SRAM input buffers exist and hits RSZ-0090. The metrics table now has the density placement actually used.
+
+Placement keeps 0.60 at 52% core utilization (die 1267 x 1267 µm) and is raised to 0.63 at 55%.
+
+Decision: 52%.
+
+## 52% core utilization
+
+Placement uses 0.60. The post-CTS estimate is -0.69 ns. Detailed routing starts at 49,166 violations and stalls again: 36,742, 33,685, 15,658, 12,420, 11,864, 11,737, 11,341, 11,150, 10,661. Routing was stopped after ten passes.
+
+A copy of the same database, routed for six passes with the DRC report written out, puts every one of its 11,657 violations within about 300 x 300 µm around (450, 550) µm, between the two SRAMs. 10,000 are shorts, 6931 of them on met1. That region holds register file flops, about 200 `buf_12` cells from `repair_design`, and about 430 of the 681 buffers that `repair_timing` inserts after CTS. In 25 µm bins, cell area reaches 71% there, before padding.
+
+Placement at density 0.5 needs a lower core utilization. Through CTS:
+
+| Core utilization | Die (µm) | Density used | 25 µm bins at or above 60% | Densest |
+|---|---|---|---|---|
+| 52% | 1267 | 0.60 | 16 | 71% |
+| 45% | 1361 | 0.50 | 7 | 63% |
+| 42% | 1408 | 0.50 | 5 | 72% |
+
+Decision: 45% core utilization, placement density 0.5.
+
+## 45% core utilization, density 0.5
 
