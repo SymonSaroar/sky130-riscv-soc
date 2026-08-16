@@ -27,7 +27,7 @@ Details are in [docs/spec_v3.md](docs/spec_v3.md).
 
 ## Results
 
-All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns; from row 11 on, `mclk` is 10 ns.
+All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19 and 15 ns from row 20; `mclk` is 10 ns from row 11.
 
 <!-- metrics -->
 | run | place_density | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | ir_drop_mv | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
@@ -56,6 +56,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 22-resize-only-repair | 0.7400 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
 | 23-util-52 | 0.6000 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 1 | - | - | - | - |
 | 24-util-45 | 0.5000 | 2.078 | 0.000 | 0.080 | 0 | 0 | 78.8 | 2.078 | 126.2 | 0 | 44 | 1 | 0 | 33.90 | 3.09 | 0 | 0 | 0 | 0 | clean |
+| 25-sram-output-buffers | 0.5000 | 2.036 | 0.000 | 0.080 | 0 | 0 | 77.6 | 2.036 | 125.6 | 0 | 44 | 1 | 0 | 33.90 | 3.08 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
@@ -64,6 +65,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 - [Timing closure](docs/journal/timing-closure.md)
 - [External memory](docs/journal/external-memory.md)
 - [Place and route cleanup](docs/journal/place-and-route-cleanup.md)
+- [Performance push](docs/journal/performance.md)
 
 ## Layout of the repo
 

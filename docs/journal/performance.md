@@ -13,7 +13,7 @@ The benchmark takes 10,937 cycles cold and 10,347 warm.
 | No buffering in the timing repair after global routing | routing stopped | | | |
 | Core utilization 60% to 52% | routing stopped | | | |
 | Core utilization 45%, placement density 0.5 | +2.31 / +2.08 | 0 | +0.080 | clean |
-| Buffer at every SRAM output | | | | |
+| Buffer at every SRAM output | +2.12 / +2.04 | 0 | +0.080 | clean |
 
 ## Spec v3
 
@@ -119,4 +119,25 @@ One capacitance violation is left: SRAM output `dout1[10]` drives 0.08 pF agains
 Decision: a buffer at every SRAM output pin as well, with only the pin-to-buffer net kept out of repair.
 
 ## SRAM output buffers
+
+Every connected SRAM signal pin now has a `buf_4` next to it: 121 on the program SRAM (57 inputs, 64 outputs) and 89 on the cache SRAM (57 inputs, 32 outputs). Buffer names no longer contain `/`. The first attempt stopped in antenna repair (ODB-0373) because a diode could not join a dont_touch pin net, so the pin nets are released just before antenna repair.
+
+Setup closes: `clk` +2.12 ns (77.6 MHz), `mclk` +2.04 ns (126 MHz). Hold is +0.080 ns. DRC, LVS and antennas are clean.
+
+`dout1[10]` still sees 0.084 pF. Its buffer sits 12 µm from the pin, and the capacitance comes from the route and its coupling in the crowded pin row: 0.035 pF to ground and 0.049 pF to neighboring nets, 0.021 pF of it to one net.
+
+![layout](../../reports/25-sram-output-buffers/layout.png)
+
+## Status
+
+The SoC runs RV32IM code from SDRAM through a 2 KB instruction cache. The system clock target is 66.7 MHz and closes with 2.12 ns to spare. The benchmark runs in 11,350 cycles cold and 10,859 warm.
+
+| | Before | After |
+|---|---|---|
+| Die (µm) | 844 x 844 | 1361 x 1361 |
+| Standard-cell area (µm²) | about 121k | about 235k |
+| Power (mW) | 16.7 | 33.9 |
+| `clk` | 50 MHz target, 65.7 MHz max | 66.7 MHz target, 77.6 MHz max |
+
+Open: one SRAM output pin, `u_sram.mem/dout1[10]`, at 0.084 pF against 0.0276 pF.
 
