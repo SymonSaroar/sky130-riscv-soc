@@ -8,7 +8,7 @@ set out      $::env(OUT)
 set rep      $::env(REP)
 
 # floorplan
-set core_util   52
+set core_util   45
 set core_aspect 1
 set core_space  10
 set macro_channel 40
@@ -18,7 +18,7 @@ set place_cap_scale 2.40
 set grt_cap_scale   1.91
 
 # placement
-set place_density 0.6
+set place_density 0.5
 set gpl_pad 4
 set dpl_pad 2
 
