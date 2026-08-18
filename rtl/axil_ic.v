@@ -1,5 +1,6 @@
-// AXI4-Lite interconnect: 2 masters, 3 slaves, one transaction at a time.
-// Fixed priority (M0 first). Slave select: addr[31] -> 2 (SDRAM), addr[28] -> 1 (peripherals), else 0 (SRAM).
+// AXI4-Lite interconnect: 2 masters, 4 slaves, one transaction at a time.
+// Fixed priority (M0 first). Slave select: addr[31] -> 2 (SDRAM), addr[30] -> 3 (PCIe),
+// addr[28] -> 1 (peripherals), else 0 (SRAM).
 // Masters assert AW and W together; slaves accept them together.
 module axil_ic (
   input         clk,
@@ -20,22 +21,22 @@ module axil_ic (
   output [31:0] m_rdata,
   output  [1:0] m_rvalid,
   input   [1:0] m_rready,
-  // slaves, packed {s2, s1, s0}
+  // slaves, packed {s3, s2, s1, s0}
   output [31:0] s_awaddr,
-  output  [2:0] s_awvalid,
-  input   [2:0] s_awready,
+  output  [3:0] s_awvalid,
+  input   [3:0] s_awready,
   output [31:0] s_wdata,
   output  [3:0] s_wstrb,
-  output  [2:0] s_wvalid,
-  input   [2:0] s_wready,
-  input   [2:0] s_bvalid,
-  output  [2:0] s_bready,
+  output  [3:0] s_wvalid,
+  input   [3:0] s_wready,
+  input   [3:0] s_bvalid,
+  output  [3:0] s_bready,
   output [31:0] s_araddr,
-  output  [2:0] s_arvalid,
-  input   [2:0] s_arready,
-  input  [95:0] s_rdata,
-  input   [2:0] s_rvalid,
-  output  [2:0] s_rready
+  output  [3:0] s_arvalid,
+  input   [3:0] s_arready,
+  input [127:0] s_rdata,
+  input   [3:0] s_rvalid,
+  output  [3:0] s_rready
 );
   reg       busy, gq;
   reg [1:0] sq;
@@ -48,13 +49,13 @@ module axil_ic (
   assign s_wdata  = m_wdata[g*32 +: 32];
   assign s_wstrb  = m_wstrb[g*4 +: 4];
   wire [31:0] addr = wr ? s_awaddr : s_araddr;
-  wire  [1:0] s    = addr[31] ? 2'd2 : addr[28] ? 2'd1 : 2'd0;
-  wire  [2:0] sel  = 3'b1 << s;
+  wire  [1:0] s    = addr[31] ? 2'd2 : addr[30] ? 2'd3 : addr[28] ? 2'd1 : 2'd0;
+  wire  [3:0] sel  = 4'b1 << s;
 
   wire av = !busy && m_arvalid[g];
   wire wv = !busy && m_awvalid[g] && m_wvalid[g];
-  assign s_arvalid = av ? sel : 3'b0;
-  assign s_awvalid = wv ? sel : 3'b0;
+  assign s_arvalid = av ? sel : 4'b0;
+  assign s_awvalid = wv ? sel : 4'b0;
   assign s_wvalid  = s_awvalid;
 
   wire ar_ok = av && s_arready[s];
@@ -67,8 +68,8 @@ module axil_ic (
   assign m_rdata  = s_rdata[sq*32 +: 32];
   assign m_rvalid = busy && s_rvalid[sq] ? 2'b1 << gq : 2'b0;
   assign m_bvalid = busy && s_bvalid[sq] ? 2'b1 << gq : 2'b0;
-  assign s_rready = busy && m_rready[gq] ? 3'b1 << sq : 3'b0;
-  assign s_bready = busy && m_bready[gq] ? 3'b1 << sq : 3'b0;
+  assign s_rready = busy && m_rready[gq] ? 4'b1 << sq : 4'b0;
+  assign s_bready = busy && m_bready[gq] ? 4'b1 << sq : 4'b0;
 
   always @(posedge clk)
     if (rst) busy <= 1'b0;

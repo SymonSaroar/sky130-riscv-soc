@@ -1,6 +1,7 @@
-// SoC top: RV32IM core, instruction cache, boot loader, AXI4-Lite interconnect, 2 KB SRAM, APB peripherals, SDRAM port.
+// SoC top: RV32IM core, instruction cache, boot loader, AXI4-Lite interconnect, 2 KB SRAM, APB peripherals, SDRAM port, PCIe port.
 // Map: 0x0000_0000 SRAM, 0x1000_0000 UART, 0x1000_1000 GPIO, 0x1000_2000 SPI,
-//      0x1000_3000 TIMER, 0x1000_4000 INTC, 0x8000_0000 SDRAM (32 MB).
+//      0x1000_3000 TIMER, 0x1000_4000 INTC, 0x1000_5000 PCIe status,
+//      0x4000_0000 PCIe memory (256 MB), 0x8000_0000 SDRAM (32 MB).
 module soc_top (
   input         clk,
   input         rst_n,
@@ -26,13 +27,29 @@ module soc_top (
   output  [1:0] sdram_dqm,
   output [15:0] sdram_dq_out,
   output        sdram_dq_oe,
-  input  [15:0] sdram_dq_in
+  input  [15:0] sdram_dq_in,
+  // PCIe PIPE, x4 at 32 bits per lane, pclk domain
+  input          pclk,
+  output [127:0] pipe_tx_data,
+  output  [15:0] pipe_tx_datak,
+  output         pipe_tx_elecidle,
+  output         pipe_tx_detect_rx,
+  output   [1:0] pipe_power_down,
+  output         pipe_reset_n,
+  input  [127:0] pipe_rx_data,
+  input   [15:0] pipe_rx_datak,
+  input    [3:0] pipe_rx_elecidle,
+  input   [11:0] pipe_rx_status,
+  input          pipe_phy_status
 );
-  reg [1:0] rs, mrs;
+  reg [1:0] rs, mrs, prs;
   always @(posedge clk)  rs  <= {rs[0], rst_n};
   always @(posedge mclk) mrs <= {mrs[0], rst_n};
+  always @(posedge pclk) prs <= {prs[0], rst_n};
   wire rst  = !rs[1];
   wire mrst = !mrs[1];
+  wire prst = !prs[1];
+  assign pipe_reset_n = rst_n;
   assign sdram_clk = mclk;
 
   // ---------------- masters ----------------
@@ -75,9 +92,9 @@ module soc_top (
   // ---------------- interconnect ----------------
   wire [31:0] s_awaddr, s_wdata, s_araddr;
   wire  [3:0] s_wstrb;
-  wire  [2:0] s_awvalid, s_awready, s_wvalid, s_wready, s_bvalid, s_bready;
-  wire  [2:0] s_arvalid, s_arready, s_rvalid, s_rready;
-  wire [31:0] s0_rdata, s1_rdata, s2_rdata;
+  wire  [3:0] s_awvalid, s_awready, s_wvalid, s_wready, s_bvalid, s_bready;
+  wire  [3:0] s_arvalid, s_arready, s_rvalid, s_rready;
+  wire [31:0] s0_rdata, s1_rdata, s2_rdata, s3_rdata;
 
   axil_ic u_ic (
     .clk(clk), .rst(rst),
@@ -90,7 +107,7 @@ module soc_top (
     .s_wdata(s_wdata), .s_wstrb(s_wstrb), .s_wvalid(s_wvalid), .s_wready(s_wready),
     .s_bvalid(s_bvalid), .s_bready(s_bready),
     .s_araddr(s_araddr), .s_arvalid(s_arvalid), .s_arready(s_arready),
-    .s_rdata({s2_rdata, s1_rdata, s0_rdata}), .s_rvalid(s_rvalid), .s_rready(s_rready)
+    .s_rdata({s3_rdata, s2_rdata, s1_rdata, s0_rdata}), .s_rvalid(s_rvalid), .s_rready(s_rready)
   );
 
   sram_axil u_sram (
@@ -123,10 +140,26 @@ module soc_top (
     .dq_out(sdram_dq_out), .dq_oe(sdram_dq_oe), .dq_in(sdram_dq_in)
   );
 
+  wire [31:0] rd_pcie;
+  pcie u_pcie (
+    .clk(clk), .rst(rst),
+    .awaddr(s_awaddr), .awvalid(s_awvalid[3]), .awready(s_awready[3]),
+    .wdata(s_wdata), .wstrb(s_wstrb), .wvalid(s_wvalid[3]), .wready(s_wready[3]),
+    .bvalid(s_bvalid[3]), .bready(s_bready[3]),
+    .araddr(s_araddr), .arvalid(s_arvalid[3]), .arready(s_arready[3]),
+    .rdata(s3_rdata), .rvalid(s_rvalid[3]), .rready(s_rready[3]),
+    .prdata(rd_pcie),
+    .pclk(pclk), .prst(prst),
+    .tx_data(pipe_tx_data), .tx_datak(pipe_tx_datak), .tx_elecidle(pipe_tx_elecidle),
+    .tx_detect_rx(pipe_tx_detect_rx), .power_down(pipe_power_down),
+    .rx_data(pipe_rx_data), .rx_datak(pipe_rx_datak), .rx_elecidle(pipe_rx_elecidle),
+    .rx_status(pipe_rx_status), .phy_status(pipe_phy_status)
+  );
+
   // ---------------- peripherals ----------------
   wire [31:0] paddr, pwdata;
   wire        pwrite, penable;
-  wire  [4:0] psel;
+  wire  [5:0] psel;
   wire [31:0] rd_uart, rd_gpio, rd_spi, rd_timer, rd_intc;
 
   axil2apb u_apb (
@@ -137,7 +170,7 @@ module soc_top (
     .araddr(s_araddr), .arvalid(s_arvalid[1]), .arready(s_arready[1]),
     .rdata(s1_rdata), .rvalid(s_rvalid[1]), .rready(s_rready[1]),
     .paddr(paddr), .pwrite(pwrite), .pwdata(pwdata), .psel(psel), .penable(penable),
-    .prdata({rd_intc, rd_timer, rd_spi, rd_gpio, rd_uart})
+    .prdata({rd_pcie, rd_intc, rd_timer, rd_spi, rd_gpio, rd_uart})
   );
 
   wire irq_uart, irq_spi;
