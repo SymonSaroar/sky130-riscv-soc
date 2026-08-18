@@ -3,7 +3,7 @@ import csv, fnmatch, os, re, sys
 
 run = sys.argv[1]
 rep, out = f"reports/{run}", f"build/{run}"
-FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "slew_viol", "slew_waived", "cap_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "die_um", "util_pct", "place_density",
+FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "slew_viol", "slew_waived", "cap_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "wns_pclk_ns", "fmax_pclk_mhz", "die_um", "util_pct", "place_density",
           "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "antenna_nets", "magic_drc", "klayout_drc", "lvs"]
 
 
@@ -21,7 +21,8 @@ row["clock_ns"] = "/".join(re.findall(r"-period\s+([\d.]+)", read("constraints/s
 sta = dict(l.split() for l in read(f"{rep}/sta.summary").splitlines())
 row.update(wns_ns=sta.get("wns", ""), tns_ns=sta.get("tns", ""), whs_ns=sta.get("whs", ""),
            viol_endpoints=sta.get("viol_endpoints", ""), hold_viol=sta.get("hold_viol_endpoints", ""), wns_mclk_ns=sta.get("wns_mclk", ""),
-           fmax_mclk_mhz=sta.get("fmax_mclk_mhz", ""),
+           fmax_mclk_mhz=sta.get("fmax_mclk_mhz", ""), wns_pclk_ns=sta.get("wns_pclk", ""),
+           fmax_pclk_mhz=sta.get("fmax_pclk_mhz", ""),
            fmax_mhz=sta.get("fmax_mhz", ""))
 drv = read(f"{rep}/sta.drv.rpt")
 waivers = [l.split()[:2] for l in read("signoff/waivers.txt").splitlines() if l.strip() and not l.startswith("#")]
@@ -60,7 +61,7 @@ with open(path, "w", newline="") as f:
 print(row)
 
 # README results table, between the metrics markers
-cols = ["run", "place_density", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "slew_viol", "slew_waived", "cap_viol",
+cols = ["run", "place_density", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "wns_pclk_ns", "fmax_pclk_mhz", "slew_viol", "slew_waived", "cap_viol",
         "antenna_nets", "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "lvs"]
 table = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
 table += "".join("| " + " | ".join(r.get(c) or "-" for c in cols) + " |\n" for r in rows)

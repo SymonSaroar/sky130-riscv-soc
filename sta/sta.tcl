@@ -18,6 +18,8 @@ report_power > $rep/power.rpt
 if {[llength [all_clocks]] > 1} {
   report_checks -path_delay max -from [get_clocks clk] -to [get_clocks mclk] -group_path_count 5 > $rep/cdc.rpt
   report_checks -path_delay max -from [get_clocks mclk] -to [get_clocks clk] -group_path_count 5 >> $rep/cdc.rpt
+  report_checks -path_delay max -from [get_clocks clk] -to [get_clocks pclk] -group_path_count 5 >> $rep/cdc.rpt
+  report_checks -path_delay max -from [get_clocks pclk] -to [get_clocks clk] -group_path_count 5 >> $rep/cdc.rpt
 }
 
 set f [open $rep/sta.summary w]
@@ -28,7 +30,7 @@ foreach {k v} [list wns [sta::worst_slack_cmd max] tns [sta::total_negative_slac
 puts $f "viol_endpoints [sta::endpoint_violation_count max]"
 puts $f "hold_viol_endpoints [sta::endpoint_violation_count min]"
 # per clock domain; the SDRAM I/O paths count toward mclk
-foreach {name groups} {clk clk mclk {mclk sdram_clk}} {
+foreach {name groups} {clk clk mclk {mclk sdram_clk} pclk pclk} {
   set ws ""
   foreach g $groups {
     set p [lindex [find_timing_paths -path_group $g -path_delay max -group_path_count 1] 0]
