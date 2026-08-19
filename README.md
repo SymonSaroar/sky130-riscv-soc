@@ -5,58 +5,61 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
 ## The SoC
 
 ```
-            +----------+   fetch (SRAM port 1)   +-------------------+
-            |  RV32I   |------------------------>|   2 KB SRAM       |
-            |  core    |                         |   (OpenRAM macro) |
-            +----------+                         +-------------------+
-                 | AXI4-Lite                              ^ port 0
-                 v                                        |
-  +--------+   +------------------------------------------+-----------+
-  |  boot  |-->|              AXI4-Lite interconnect                  |
-  | loader |   +------------------------------------------------------+
-  +--------+                  |                              |
-      |                       v                              v
-   SPI flash            AXI4-Lite to APB          async FIFOs (clk -> mclk)
-                              |                              |
-       +--------+------+------+------+-------+     SDRAM controller (100 MHz)
-       |  UART  | GPIO | SPI  | timer| INTC  |               |
-       +--------+------+------+------+-------+       32 MB SDR SDRAM
+                fetch below 0x8000_0000     +----------------+
+   +----------+---------------------------->| 2 KB SRAM      |---+ port 0
+   | RV32IM   |                             +----------------+   |
+   | core     |---------------------------->| 2 KB I-cache   |---+ refill
+   +----------+ fetch from 0x8000_0000      +----------------+   |
+        | AXI4-Lite                                              |
+        v                                                        v
+  +--------------------------------------------------------------------------+
+  |                        AXI4-Lite interconnect                            |
+  +--------------------------------------------------------------------------+
+     ^ boot loader           |                    |                    |
+     |                       v                    v                    v
+  SPI flash         AXI4-Lite to APB     async FIFOs (clk/mclk)  async FIFOs (clk/pclk)
+                             |                    |                    |
+       +------+------+-----+-------+------+  SDRAM controller     PCIe Gen1 x4 link
+       | UART | GPIO | SPI | timer | INTC |   (100 MHz)            (62.5 MHz, PIPE)
+       +------+------+-----+-------+------+       |                    |
+                                           32 MB SDR SDRAM      external PCIe PHY
 ```
 
-Details are in [docs/spec_v3.md](docs/spec_v3.md).
+Details are in [docs/spec_v4.md](docs/spec_v4.md).
 
 ## Results
 
-All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19 and 15 ns from row 20; `mclk` is 10 ns from row 11.
+All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19 and 15 ns from row 20; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26.
 
 <!-- metrics -->
-| run | place_density | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | ir_drop_mv | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 01-baseline | 0.6000 | -10.063 | -9075.234 | 0.076 | 1210 | - | 33.3 | - | - | 3384 | 22 | 156 | 65 | 8.98 | - | 0 | 0 | 1943 | 0 | mismatch |
-| 02-sram-corner | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 4290 | - | - | - | - |
-| 03-sram-channels | 0.6000 | -8.855 | -8749.597 | 0.084 | 1218 | - | 34.7 | - | - | 3941 | 22 | 190 | 48 | 9.10 | - | 0 | 0 | 0 | 0 | mismatch |
-| 04-cts-setup-repair | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
-| 05-placement-padding | 0.6000 | -3.677 | -3405.824 | 0.077 | 1209 | - | 42.2 | - | - | 1834 | 22 | 145 | 102 | 9.53 | - | 0 | 0 | 0 | 0 | clean |
-| 06-instruction-register | 0.6000 | -4.744 | -4707.600 | 0.083 | 1275 | - | 40.4 | - | - | 2388 | 22 | 147 | 78 | 9.72 | - | 0 | 0 | 0 | 0 | clean |
-| 07-load-use-stall | 0.6000 | -0.226 | -2.867 | 0.083 | 19 | - | 49.4 | - | - | 2763 | 22 | 203 | 62 | 9.92 | - | 0 | 0 | 0 | 0 | clean |
-| 08-wire-rc-calibration | 0.6000 | 2.777 | 0.000 | 0.084 | 0 | - | 58.1 | - | - | 207 | 22 | 37 | 84 | 9.90 | - | 0 | 0 | 0 | 0 | clean |
-| 09-sram-input-buffers | 0.6000 | 4.237 | 0.000 | 0.083 | 0 | - | 63.4 | - | - | 150 | 22 | 22 | 84 | 9.98 | - | 0 | 0 | 0 | 0 | clean |
-| 10-grt-repair | 0.6000 | 5.691 | 0.000 | 0.079 | 0 | - | 69.9 | - | - | 0 | 22 | 0 | 64 | 11.50 | - | 0 | 0 | 0 | 0 | clean |
-| 11-sdram-port | 0.6000 | 3.394 | 0.000 | -0.256 | 0 | 32 | 68.4 | 3.394 | 151.4 | 0 | 22 | 0 | 58 | 16.20 | - | 0 | 0 | 0 | 0 | clean |
-| 12-hold-repair | 0.6000 | 3.385 | 0.000 | -0.222 | 0 | 32 | 68.4 | 3.385 | 151.2 | 0 | 22 | 0 | 48 | 16.20 | - | 0 | 0 | 0 | 0 | clean |
-| 13-sdram-falling-edge | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | 0 | 22 | 0 | 74 | 16.90 | - | 1 | 0 | 0 | 0 | clean |
-| 14-cdc-constraints | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | 0 | 22 | 0 | 74 | 16.90 | - | 1 | 0 | 0 | 0 | clean |
-| 15-antenna-repair | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | 0 | 22 | 0 | 0 | 16.90 | - | 1 | 0 | 0 | 0 | clean |
-| 16-util-60 | 0.7400 | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | 0 | 22 | 0 | 2 | 16.70 | - | 0 | 0 | 0 | 0 | clean |
-| 17-antenna-passes | 0.7400 | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | 0 | 22 | 0 | 0 | 16.70 | - | 0 | 0 | 0 | 0 | clean |
-| 18-power-pins-ir | 0.7400 | 1.963 | 0.000 | 0.070 | 0 | 0 | 65.8 | 1.963 | 124.4 | 0 | 22 | 0 | 1 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | clean |
-| 19-antenna-buffers | 0.7400 | 1.964 | 0.000 | 0.070 | 0 | 0 | 65.7 | 1.964 | 124.4 | 0 | 22 | 0 | 0 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | clean |
-| 20-rv32m-icache | 0.7300 | -3.079 | -1062.946 | 0.076 | 928 | 0 | 55.3 | 1.808 | 122.1 | 0 | 44 | 0 | 0 | 31.70 | 2.89 | 0 | 0 | 0 | 0 | clean |
-| 21-two-cycle-mul | 0.7400 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
-| 22-resize-only-repair | 0.7400 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
-| 23-util-52 | 0.6000 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 1 | - | - | - | - |
-| 24-util-45 | 0.5000 | 2.078 | 0.000 | 0.080 | 0 | 0 | 78.8 | 2.078 | 126.2 | 0 | 44 | 1 | 0 | 33.90 | 3.09 | 0 | 0 | 0 | 0 | clean |
-| 25-sram-output-buffers | 0.5000 | 2.036 | 0.000 | 0.080 | 0 | 0 | 77.6 | 2.036 | 125.6 | 0 | 44 | 1 | 0 | 33.90 | 3.08 | 0 | 0 | 0 | 0 | clean |
+| run | place_density | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | wns_pclk_ns | fmax_pclk_mhz | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | ir_drop_mv | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 01-baseline | 0.6000 | -10.063 | -9075.234 | 0.076 | 1210 | - | 33.3 | - | - | - | - | 3384 | 22 | 156 | 65 | 8.98 | - | 0 | 0 | 1943 | 0 | mismatch |
+| 02-sram-corner | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 4290 | - | - | - | - |
+| 03-sram-channels | 0.6000 | -8.855 | -8749.597 | 0.084 | 1218 | - | 34.7 | - | - | - | - | 3941 | 22 | 190 | 48 | 9.10 | - | 0 | 0 | 0 | 0 | mismatch |
+| 04-cts-setup-repair | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
+| 05-placement-padding | 0.6000 | -3.677 | -3405.824 | 0.077 | 1209 | - | 42.2 | - | - | - | - | 1834 | 22 | 145 | 102 | 9.53 | - | 0 | 0 | 0 | 0 | clean |
+| 06-instruction-register | 0.6000 | -4.744 | -4707.600 | 0.083 | 1275 | - | 40.4 | - | - | - | - | 2388 | 22 | 147 | 78 | 9.72 | - | 0 | 0 | 0 | 0 | clean |
+| 07-load-use-stall | 0.6000 | -0.226 | -2.867 | 0.083 | 19 | - | 49.4 | - | - | - | - | 2763 | 22 | 203 | 62 | 9.92 | - | 0 | 0 | 0 | 0 | clean |
+| 08-wire-rc-calibration | 0.6000 | 2.777 | 0.000 | 0.084 | 0 | - | 58.1 | - | - | - | - | 207 | 22 | 37 | 84 | 9.90 | - | 0 | 0 | 0 | 0 | clean |
+| 09-sram-input-buffers | 0.6000 | 4.237 | 0.000 | 0.083 | 0 | - | 63.4 | - | - | - | - | 150 | 22 | 22 | 84 | 9.98 | - | 0 | 0 | 0 | 0 | clean |
+| 10-grt-repair | 0.6000 | 5.691 | 0.000 | 0.079 | 0 | - | 69.9 | - | - | - | - | 0 | 22 | 0 | 64 | 11.50 | - | 0 | 0 | 0 | 0 | clean |
+| 11-sdram-port | 0.6000 | 3.394 | 0.000 | -0.256 | 0 | 32 | 68.4 | 3.394 | 151.4 | - | - | 0 | 22 | 0 | 58 | 16.20 | - | 0 | 0 | 0 | 0 | clean |
+| 12-hold-repair | 0.6000 | 3.385 | 0.000 | -0.222 | 0 | 32 | 68.4 | 3.385 | 151.2 | - | - | 0 | 22 | 0 | 48 | 16.20 | - | 0 | 0 | 0 | 0 | clean |
+| 13-sdram-falling-edge | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | - | - | 0 | 22 | 0 | 74 | 16.90 | - | 1 | 0 | 0 | 0 | clean |
+| 14-cdc-constraints | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | - | - | 0 | 22 | 0 | 74 | 16.90 | - | 1 | 0 | 0 | 0 | clean |
+| 15-antenna-repair | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | - | - | 0 | 22 | 0 | 0 | 16.90 | - | 1 | 0 | 0 | 0 | clean |
+| 16-util-60 | 0.7400 | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | - | - | 0 | 22 | 0 | 2 | 16.70 | - | 0 | 0 | 0 | 0 | clean |
+| 17-antenna-passes | 0.7400 | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | - | - | 0 | 22 | 0 | 0 | 16.70 | - | 0 | 0 | 0 | 0 | clean |
+| 18-power-pins-ir | 0.7400 | 1.963 | 0.000 | 0.070 | 0 | 0 | 65.8 | 1.963 | 124.4 | - | - | 0 | 22 | 0 | 1 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | clean |
+| 19-antenna-buffers | 0.7400 | 1.964 | 0.000 | 0.070 | 0 | 0 | 65.7 | 1.964 | 124.4 | - | - | 0 | 22 | 0 | 0 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | clean |
+| 20-rv32m-icache | 0.7300 | -3.079 | -1062.946 | 0.076 | 928 | 0 | 55.3 | 1.808 | 122.1 | - | - | 0 | 44 | 0 | 0 | 31.70 | 2.89 | 0 | 0 | 0 | 0 | clean |
+| 21-two-cycle-mul | 0.7400 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
+| 22-resize-only-repair | 0.7400 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
+| 23-util-52 | 0.6000 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 1 | - | - | - | - |
+| 24-util-45 | 0.5000 | 2.078 | 0.000 | 0.080 | 0 | 0 | 78.8 | 2.078 | 126.2 | - | - | 0 | 44 | 1 | 0 | 33.90 | 3.09 | 0 | 0 | 0 | 0 | clean |
+| 25-sram-output-buffers | 0.5000 | 2.036 | 0.000 | 0.080 | 0 | 0 | 77.6 | 2.036 | 125.6 | - | - | 0 | 44 | 1 | 0 | 33.90 | 3.08 | 0 | 0 | 0 | 0 | clean |
+| 26-pcie-x4 | 0.5000 | 1.429 | 0.000 | 0.078 | 0 | 0 | 73.7 | 2.391 | 131.4 | 4.543 | 87.3 | 0 | 44 | 0 | 0 | 45.70 | 5.02 | 0 | 1 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
@@ -66,6 +69,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 - [External memory](docs/journal/external-memory.md)
 - [Place and route cleanup](docs/journal/place-and-route-cleanup.md)
 - [Performance push](docs/journal/performance.md)
+- [PCIe adapter](docs/journal/pcie.md)
 
 ## Layout of the repo
 
