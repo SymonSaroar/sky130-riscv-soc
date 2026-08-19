@@ -40,7 +40,7 @@ module pcie_mac #(parameter ROOT = 1) (
   function [31:0] crc32_byte(input [31:0] c, input [7:0] d);   // reflected CRC-32, poly 04C11DB7
     integer n; reg [31:0] x;
     begin
-      x = c ^ d;
+      x = c ^ {24'b0, d};
       for (n = 0; n < 8; n = n + 1) x = x[0] ? (x >> 1) ^ 32'hEDB88320 : x >> 1;
       crc32_byte = x;
     end
@@ -55,13 +55,23 @@ module pcie_mac #(parameter ROOT = 1) (
     end
   endfunction
 
+  // PIPE receive inputs: captured on the falling edge, then on the rising edge
+  reg  [160:0] rx_n, rx_r;
+  always @(negedge clk) rx_n <= {rx_data, rx_datak, rx_elecidle, rx_status, phy_status};
+  always @(posedge clk) rx_r <= rx_n;
+  wire [127:0] rxd    = rx_r[160:33];
+  wire  [15:0] rxk    = rx_r[32:17];
+  wire   [3:0] rx_ei  = rx_r[16:13];
+  wire  [11:0] rx_st  = rx_r[12:1];
+  wire         phy_st = rx_r[0];
+
   // receive block as a stream of 16 symbols: symbol k on lane k%4, slot k/4
   reg [7:0] rs [0:15];
   reg       rk [0:15];
   integer   k;
   always @* for (k = 0; k < 16; k = k + 1) begin
-    rs[k] = rx_data[(k % 4) * 32 + (k / 4) * 8 +: 8];
-    rk[k] = rx_datak[(k % 4) * 4 + k / 4];
+    rs[k] = rxd[(k % 4) * 32 + (k / 4) * 8 +: 8];
+    rk[k] = rxk[(k % 4) * 4 + k / 4];
   end
 
   // ---------------- state ----------------
@@ -120,8 +130,8 @@ module pcie_mac #(parameter ROOT = 1) (
   always @* begin
     lanes_ok = 1'b1; lanes_pad = 1'b1;
     for (la = 0; la < 4; la = la + 1) begin
-      lanes_ok  = lanes_ok  && !rx_datak[la * 4 + 2] && rx_data[la * 32 + 16 +: 8] == la;
-      lanes_pad = lanes_pad &&  rx_datak[la * 4 + 2] && rx_data[la * 32 + 16 +: 8] == PAD;
+      lanes_ok  = lanes_ok  && !rxk[la * 4 + 2] && rxd[la * 32 + 16 +: 8] == la[7:0];
+      lanes_pad = lanes_pad &&  rxk[la * 4 + 2] && rxd[la * 32 + 16 +: 8] == PAD;
     end
   end
 
@@ -151,7 +161,7 @@ module pcie_mac #(parameter ROOT = 1) (
         for (tl = 0; tl < 4; tl = tl + 1) begin
           tj = os_q * 4 + ts;
           nd[tl * 32 + ts * 8 +: 8] = tj == 0 ? COM : tj == 1 ? (numbered ? 8'd0 : PAD) :
-                                      tj == 2 ? (numbered ? tl : PAD) : tj == 3 ? 8'h10 :
+                                      tj == 2 ? (numbered ? tl[7:0] : PAD) : tj == 3 ? 8'h10 :
                                       tj == 4 ? 8'h02 : tj == 5 ? 8'h08 : want_ts2 ? TS2 : TS1;
           nk[tl * 4 + ts] = tj == 0 || (tj <= 2 && !numbered);
         end
@@ -230,14 +240,14 @@ module pcie_mac #(parameter ROOT = 1) (
       case (ltssm)
         S_DQ: begin
           tx_elecidle <= 1'b1;
-          if (!phy_status) timer <= timer + 1;
+          if (!phy_st) timer <= timer + 1;
           if (&timer) begin ltssm <= S_DA; tx_detect_rx <= 1'b1; end
         end
-        S_DA: if (phy_status) begin
+        S_DA: if (phy_st) begin
           tx_detect_rx <= 1'b0;
           timer <= 0;
-          ltssm <= rx_status == DETECTED ? S_PA : S_DQ;
-          tx_elecidle <= rx_status != DETECTED;
+          ltssm <= rx_st == DETECTED ? S_PA : S_DQ;
+          tx_elecidle <= rx_st != DETECTED;
           {ts_tx, ts_rx, rx_ok, ts_after, seen, numbered, os_q} <= 0;
         end
         S_PA: if (rx_ok && ts_tx >= 11'd1024 && os_end) begin
@@ -250,7 +260,7 @@ module pcie_mac #(parameter ROOT = 1) (
           ltssm <= S_CC; {ts_rx, rx_ok, ts_after, seen} <= 0;
         end
         S_CC: if (rx_ok && ts_after >= 5'd16 && os_end) ltssm <= S_L0;
-        default: if (&rx_elecidle) ltssm <= S_DQ;
+        default: if (&rx_ei) ltssm <= S_DQ;
       endcase
 
       // transmit bookkeeping
