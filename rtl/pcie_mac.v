@@ -112,11 +112,11 @@ module pcie_mac #(parameter ROOT = 1) (
   reg [255:0] rp_d;
   reg  [31:0] rp_k;
   reg   [1:0] rp_st;        // 0 idle, 1 second block, 2 checking
-  reg   [4:0] rp_n, rp_len;
+  reg   [4:0] rp_n;
+  reg         rp_l16;       // 16-byte TLP
   reg  [31:0] rp_crc;
-  wire [31:0] rp_final = ~crc32_byte(rp_crc, rp_d[rp_n * 8 +: 8]);
-  wire        rp_good = rp_final == rp_d[(rp_len + 3) * 8 +: 32] &&
-                        rp_k[rp_len + 7] && rp_d[(rp_len + 7) * 8 +: 8] == END;
+  wire        rp_good = rp_l16 ? ~rp_crc == rp_d[19 * 8 +: 32] && rp_k[23] && rp_d[23 * 8 +: 8] == END
+                               : ~rp_crc == rp_d[15 * 8 +: 32] && rp_k[19] && rp_d[19 * 8 +: 8] == END;
 
   reg         tx_tlp2;      // the second block of a TLP is next
   reg   [8:0] skp_t;
@@ -343,12 +343,12 @@ module pcie_mac #(parameter ROOT = 1) (
             rp_st  <= 2'd2;
             rp_n   <= 5'd1;
             rp_crc <= 32'hFFFFFFFF;
-            rp_len <= rk[7] && rs[7] == END ? 5'd16 : 5'd12;     // END at symbol 23 or 19
+            rp_l16 <= rk[7] && rs[7] == END;     // END at symbol 23
           end
           default: begin
             rp_crc <= crc32_byte(rp_crc, rp_d[rp_n * 8 +: 8]);
             rp_n   <= rp_n + 1;
-            if (rp_n == rp_len + 2) begin
+            if (rp_n == (rp_l16 ? 5'd19 : 5'd15)) begin
               rp_st <= 2'd0;
               if (rp_good) begin
                 if ({rp_d[11:8], rp_d[23:16]} == rx_seq) begin
