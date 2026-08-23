@@ -2,6 +2,8 @@ source config.tcl
 load floorplan
 
 global_placement -density $place_density -pad_left $gpl_pad -pad_right $gpl_pad
+# a buffer next to every input pin
+buffer_ports -inputs
 # A buffer next to every SRAM signal pin. The SRAM liberty limits input slew to 40 ps and
 # output load to 0.0276 pF; the short pin-to-buffer nets stay out of repair.
 foreach sram [[ord::get_db_block] getInsts] {
