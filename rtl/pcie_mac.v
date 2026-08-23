@@ -203,7 +203,7 @@ module pcie_mac #(parameter ROOT = 1) (
       fc <= FC1; fc1_seen <= 0; fc_idx <= 0; fc2_sent <= 0; fc2_rx <= 1'b0;
       rb_valid <= 1'b0; rb_send <= 1'b0; building <= 1'b0; tx_tlp2 <= 1'b0;
       ack_pend <= 1'b0; nak_pend <= 1'b0; rp_st <= 0;
-      tx_seq <= 0; rx_seq <= 0; replays <= 0; skp_t <= 0;
+      tx_seq <= 0; rx_seq <= 0; replays <= 0; replay_t <= 0; skp_t <= 0;
     end else begin
       tx_data <= nd; tx_datak <= nk;
 
