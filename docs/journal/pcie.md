@@ -10,6 +10,7 @@ Three mutations check that the test can fail. A flipped LCRC bit hangs the firmw
 |---|---|---|---|---|
 | PCIe port, `pclk` at 16 ns | +1.43 / +2.39 / +4.54 | +0.078 | hangs | clean |
 | Falling-edge PIPE inputs, registered LCRC compare, replay timer reset | +0.88 / +2.28 / +5.55 | +0.067 | hangs | clean |
+| Reset on every link counter and flag, input pin buffers | +0.93 / +2.26 / +5.31 | +0.078 | passes | clean |
 
 ## Spec v4
 
@@ -46,3 +47,17 @@ Gate-level simulation hangs again, at the first PCIe read. The receive byte coun
 Yosys also reports latches on two loop variables of the transmit block. None reach the netlist.
 
 Decision: a reset on every counter and flag in the link layer, a buffer next to every input pin, and the loop variables cleared.
+
+## Link resets and input pin buffers
+
+Every counter and flag in the link layer now has a reset. Data registers do not. A `buf_1` sits next to each of the 188 input pins. Synthesis gives 28,098 cells and no latches.
+
+Gate-level simulation passes, with the same cycle counts as RTL.
+
+The first detailed routing converges in ten passes, and the antenna passes go 233, 18, 3, 1. Setup closes: `clk` +0.93 ns (71.1 MHz), `mclk` +2.26 ns (129 MHz), `pclk` +5.31 ns (93.6 MHz). Hold is +0.078 ns. Power is 47.5 mW and IR drop 4.08 mV. DRC and LVS are clean.
+
+![layout](../../reports/28-link-resets/layout.png)
+
+Three antenna nets are left, all from the finish step. It put a buffer in front of the last violating gate and rerouted. Afterwards one violation sits on the new buffer's own input, and two on nets the reroute changed: `u_sdram.p_we_n` on met3 and an SRAM address buffer input on met2. The step checks antennas after the reroute and repairs nothing.
+
+Decision: run the diode passes again after the finish step reroutes.
