@@ -11,6 +11,7 @@ Three mutations check that the test can fail. A flipped LCRC bit hangs the firmw
 | PCIe port, `pclk` at 16 ns | +1.43 / +2.39 / +4.54 | +0.078 | hangs | clean |
 | Falling-edge PIPE inputs, registered LCRC compare, replay timer reset | +0.88 / +2.28 / +5.55 | +0.067 | hangs | clean |
 | Reset on every link counter and flag, input pin buffers | +0.93 / +2.26 / +5.31 | +0.078 | passes | clean |
+| Diode passes after the finish step reroutes | +0.93 / +2.26 / +5.31 | +0.078 | passes | clean |
 
 ## Spec v4
 
@@ -50,7 +51,7 @@ Decision: a reset on every counter and flag in the link layer, a buffer next to 
 
 ## Link resets and input pin buffers
 
-Every counter and flag in the link layer now has a reset. Data registers do not. A `buf_1` sits next to each of the 188 input pins. Synthesis gives 28,098 cells and no latches.
+Every counter and flag in the link layer now has a reset. Data registers do not. A `buf_1` sits next to each of the 188 input pins that drive logic. Synthesis gives 28,098 cells and no latches.
 
 Gate-level simulation passes, with the same cycle counts as RTL.
 
@@ -61,3 +62,24 @@ The first detailed routing converges in ten passes, and the antenna passes go 23
 Three antenna nets are left, all from the finish step. It put a buffer in front of the last violating gate and rerouted. Afterwards one violation sits on the new buffer's own input, and two on nets the reroute changed: `u_sdram.p_we_n` on met3 and an SRAM address buffer input on met2. The step checks antennas after the reroute and repairs nothing.
 
 Decision: run the diode passes again after the finish step reroutes.
+
+## Diodes after the finish reroute
+
+This starts from the previous detailed routes. The finish step buffers the last violating gate and reroutes, which leaves the same three violations as before, then runs the diode passes. One pass inserts six diodes and clears them.
+
+Timing does not change. Antennas and router DRC are at 0, and Magic DRC, KLayout DRC and LVS are clean.
+
+![layout](../../reports/29-finish-diodes/layout.png)
+
+## Status
+
+The SoC has a PCIe Gen1 x4 root port over PIPE, and CPU loads and stores reach a memory behind the link. RTL and gate-level simulation pass. All three clocks close, `pclk` with 5.31 ns to spare. The benchmark runs in 11,353 cycles cold and 10,859 warm.
+
+| | Before | After |
+|---|---|---|
+| Die (µm) | 1361 x 1361 | 1419 x 1419 |
+| Standard-cell area (µm²) | about 240k | about 312k |
+| Pins | 113 | 424 |
+| Power (mW) | 33.9 | 47.5 |
+| `clk` | 66.7 MHz target, 77.6 MHz max | 66.7 MHz target, 71.1 MHz max |
+| `pclk` | | 62.5 MHz target, 93.6 MHz max |
