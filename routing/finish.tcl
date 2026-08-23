@@ -23,6 +23,11 @@ if {[check_antennas -report_file $rep/antenna.rpt] > 0} {
   detailed_placement
   global_route -end_incremental
   detailed_route -output_drc $rep/route_drc.rpt -droute_end_iter 64 -verbose 1
+  # diodes on the nets the reroute changed
+  for {set i 0} {$i < 4 && [check_antennas] > 0} {incr i} {
+    repair_antennas sky130_fd_sc_hd__diode_2
+    detailed_route -output_drc $rep/route_drc.rpt -droute_end_iter 64 -verbose 1
+  }
 }
 filler_placement {sky130_fd_sc_hd__decap_12 sky130_fd_sc_hd__decap_8 sky130_fd_sc_hd__decap_6 \
                   sky130_fd_sc_hd__decap_4 sky130_fd_sc_hd__decap_3 sky130_fd_sc_hd__fill_2 sky130_fd_sc_hd__fill_1}
