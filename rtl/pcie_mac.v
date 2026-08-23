@@ -154,7 +154,7 @@ module pcie_mac #(parameter ROOT = 1) (
   integer ts, tl, tj;
 
   always @* begin
-    nd = 128'b0; nk = 16'b0; tj = 0;
+    nd = 128'b0; nk = 16'b0; ts = 0; tl = 0; tj = 0;
     sent_tlp = 1'b0; sent_skp = 1'b0; sent_dllp = 1'b0;
     if (ltssm >= S_PA && ltssm <= S_CC) begin
       for (ts = 0; ts < 4; ts = ts + 1)
@@ -204,6 +204,7 @@ module pcie_mac #(parameter ROOT = 1) (
       rb_valid <= 1'b0; rb_send <= 1'b0; building <= 1'b0; tx_tlp2 <= 1'b0;
       ack_pend <= 1'b0; nak_pend <= 1'b0; rp_st <= 0;
       tx_seq <= 0; rx_seq <= 0; replays <= 0; replay_t <= 0; skp_t <= 0;
+      {ts_tx, ts_rx, rx_ok, ts_after, seen, numbered} <= 0; crc_n <= 0; rp_n <= 0;
     end else begin
       tx_data <= nd; tx_datak <= nk;
 
