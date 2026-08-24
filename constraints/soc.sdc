@@ -1,4 +1,4 @@
-create_clock -name clk  -period 15 [get_ports clk]
+create_clock -name clk  -period 10 [get_ports clk]
 create_clock -name mclk -period 10 [get_ports mclk]
 create_generated_clock -name sdram_clk -source [get_ports mclk] -divide_by 1 [get_ports sdram_clk]
 create_clock -name pclk -period 16 [get_ports pclk]
@@ -9,8 +9,8 @@ set_max_delay 10 -ignore_clock_latency -from [get_clocks clk] -to [get_clocks mc
 set_max_delay 10 -ignore_clock_latency -from [get_clocks mclk] -to [get_clocks clk]
 set_false_path -hold -from [get_clocks clk] -to [get_clocks {mclk sdram_clk}]
 set_false_path -hold -from [get_clocks {mclk sdram_clk}] -to [get_clocks clk]
-set_max_delay 15 -ignore_clock_latency -from [get_clocks clk] -to [get_clocks pclk]
-set_max_delay 15 -ignore_clock_latency -from [get_clocks pclk] -to [get_clocks clk]
+set_max_delay 10 -ignore_clock_latency -from [get_clocks clk] -to [get_clocks pclk]
+set_max_delay 10 -ignore_clock_latency -from [get_clocks pclk] -to [get_clocks clk]
 set_false_path -hold -from [get_clocks clk] -to [get_clocks pclk]
 set_false_path -hold -from [get_clocks pclk] -to [get_clocks clk]
 

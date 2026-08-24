@@ -7,7 +7,7 @@
 #define SDRAM 0x80000000
 #define PCIE  0x40000000
 #define PCIE_ST 0x10005000
-#define CLK_HZ 66666667
+#define CLK_HZ 100000000
 
 int isa_test(void);
 extern volatile unsigned char _start[];

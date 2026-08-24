@@ -1,11 +1,11 @@
 `timescale 1ns/1ps
 module tb_soc;
-  localparam BIT = 578 * 15;
+  localparam BIT = 868 * 10;
 
   reg  clk = 0, mclk = 0, rst_n = 0, uart_rx = 1;
   wire uart_tx, spi_cs_n, spi_sclk, spi_mosi, spi_miso;
   wire [15:0] gpio_out, gpio_oe;
-  always #7.5 clk = !clk;
+  always #5 clk = !clk;
   always #5 mclk = !mclk;
 
   wire        sdram_clk, sdram_cke, sdram_cs_n, sdram_ras_n, sdram_cas_n, sdram_we_n, sdram_dq_oe;
