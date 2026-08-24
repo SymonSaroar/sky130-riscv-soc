@@ -25,11 +25,11 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
                                            32 MB SDR SDRAM      external PCIe PHY
 ```
 
-Details are in [docs/spec_v4.md](docs/spec_v4.md).
+Details are in [docs/spec_v5.md](docs/spec_v5.md).
 
 ## Results
 
-All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19 and 15 ns from row 20; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26.
+All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26.
 
 <!-- metrics -->
 | run | place_density | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | wns_pclk_ns | fmax_pclk_mhz | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | ir_drop_mv | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
@@ -63,6 +63,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 27-pipe-falling-edge | 0.5100 | 0.880 | 0.000 | 0.067 | 0 | 0 | 70.8 | 2.277 | 129.5 | 5.551 | 95.7 | 0 | 44 | 0 | 1 | 47.30 | 2.45 | 0 | 0 | 0 | 0 | clean |
 | 28-link-resets | 0.5100 | 0.927 | 0.000 | 0.078 | 0 | 0 | 71.1 | 2.259 | 129.2 | 5.313 | 93.6 | 0 | 44 | 0 | 3 | 47.50 | 4.08 | 0 | 0 | 0 | 0 | clean |
 | 29-finish-diodes | 0.5100 | 0.928 | 0.000 | 0.078 | 0 | 0 | 71.1 | 2.259 | 129.2 | 5.313 | 93.6 | 0 | 44 | 0 | 0 | 47.50 | 4.08 | 0 | 0 | 0 | 0 | clean |
+| 30-clk-100mhz | 0.5100 | -4.111 | -5623.679 | 0.075 | 1904 | 0 | 70.9 | 2.276 | 129.5 | 5.301 | 93.5 | 0 | 44 | 0 | 0 | 63.30 | 4.17 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
@@ -73,6 +74,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 - [Place and route cleanup](docs/journal/place-and-route-cleanup.md)
 - [Performance push](docs/journal/performance.md)
 - [PCIe adapter](docs/journal/pcie.md)
+- [Timing optimization](docs/journal/timing-optimization.md)
 
 ## Layout of the repo
 
