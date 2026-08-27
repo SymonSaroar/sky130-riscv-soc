@@ -1,5 +1,6 @@
-// RV32IM + Zicsr core. Stages: IF (SRAM read port), ID (instruction register), EX, WB (bus response).
-// Instruction fetch reads the SRAM read port directly; data goes over AXI4-Lite.
+// RV32IM + Zicsr core. Stages: IF (SRAM read port), ID (instruction register), RR (register read),
+// EX, WB (bus request and response). Instruction fetch reads the SRAM read port directly; data goes
+// over AXI4-Lite.
 module rv32i (
   input             clk,
   input             rst,
@@ -33,10 +34,17 @@ module rv32i (
   reg         f_valid;
   reg  [31:0] f_pc;
 
+  // ---------------- RR: instruction register, register read ----------------
+  reg         r_valid;
+  reg  [31:0] r_pc, r_ins;
+  wire  [4:0] r_rs1 = r_ins[19:15];
+  wire  [4:0] r_rs2 = r_ins[24:20];
+
   // ---------------- EX stage ----------------
   reg         e_valid;
   reg  [31:0] pc;
   reg  [31:0] ins;
+  reg  [31:0] x1, x2;         // operands, read in RR
 
   wire [6:0] op     = ins[6:0];
   wire [4:0] rd     = ins[11:7];
@@ -67,11 +75,13 @@ module rv32i (
   // ---------------- register file ----------------
   reg  [31:0] rf [0:31];      // entry 0 is never written
 
-  // WB stage: waits for the bus response of a load or store
-  reg         w_busy, w_load;
+  // WB stage: drives the bus request from registers, then waits for the response
+  reg         w_busy, w_req, w_load;
   reg   [4:0] w_rd;
   reg   [2:0] w_f3;
-  reg   [1:0] w_off;
+  reg  [31:0] w_addr, w_wdata;
+  reg   [3:0] w_wstrb;
+  wire  [1:0] w_off  = w_addr[1:0];
   wire        w_done = w_busy && (w_load ? m_rvalid : m_bvalid);
 
   wire [31:0] ld_sh = m_rdata >> {w_off, 3'b0};
@@ -82,10 +92,12 @@ module rv32i (
       w_f3 == 3'b101 ? {16'b0, ld_sh[15:0]}           : ld_sh;
   wire        ld_we = w_done && w_load && w_rd != 0;
 
-  wire [31:0] x1 = rs1 == 0 ? 32'b0 : rf[rs1];
-  wire [31:0] x2 = rs2 == 0 ? 32'b0 : rf[rs2];
-  // EX waits one cycle for a register that a load in WB is writing
-  wire        ld_use = w_busy && w_load && w_rd != 0 && (w_rd == rs1 || w_rd == rs2);
+  wire [31:0] r1 = r_rs1 == 0 ? 32'b0 : rf[r_rs1];
+  wire [31:0] r2 = r_rs2 == 0 ? 32'b0 : rf[r_rs2];
+  // RR waits for a register that a load in EX or WB is writing, until the cycle after the response
+  wire        r_ld = r_valid &&
+                     ((w_busy && w_load && w_rd != 0 && (w_rd == r_rs1 || w_rd == r_rs2)) ||
+                      (e_valid && is_load && rd != 0 && (rd == r_rs1 || rd == r_rs2)));
 
   // ---------------- ALU ----------------
   wire [31:0] b    = is_op ? x2 : imm_i;
@@ -122,15 +134,15 @@ module rv32i (
   wire        is_m   = is_op && ins[25];
   wire        is_div = is_m && f3[2];
   wire        is_mul = is_m && !f3[2];
-  wire        hold   = (w_busy && !w_done) || ld_use;   // operands not ready
-  // multiply over two cycles: four 17x17 partial products, then their sum.
+  // multiply over three cycles: four 17x17 partial products, their sum, then writeback.
   // rs1 signed for MUL/MULH/MULHSU, rs2 signed for MUL/MULH
   wire signed [32:0] ma = {f3[1:0] != 2'b11 && x1[31], x1};
   wire signed [32:0] mb = {!f3[1] && x2[31], x2};
   wire signed [16:0] al = {1'b0, ma[15:0]}, bl = {1'b0, mb[15:0]};
   wire signed [16:0] ah = ma[32:16], bh = mb[32:16];
   reg  signed [33:0] p_ll, p_lh, p_hl, p_hh;
-  reg                m_ph;              // partial products are registered
+  reg         [63:0] m_p;
+  reg          [1:0] m_ph;              // 1: partial products registered, 2: sum registered
   wire signed [65:0] mp = p_ll + (p_lh <<< 16) + (p_hl <<< 16) + (p_hh <<< 32);
   // divide: 32 iterations of restoring division on magnitudes
   wire        d_s   = !f3[0];
@@ -142,7 +154,7 @@ module rv32i (
   wire [32:0] dt    = {dr, dq[31]} - {1'b0, dd};
   wire [31:0] quo   = neg_a != neg_b && x2 != 0 ? -dq : dq;
   wire [31:0] rem   = neg_a ? -dr : dr;
-  wire [31:0] m_res = is_div ? (f3[1] ? rem : quo) : f3[1:0] == 2'b00 ? mp[31:0] : mp[63:32];
+  wire [31:0] m_res = is_div ? (f3[1] ? rem : quo) : f3[1:0] == 2'b00 ? m_p[31:0] : m_p[63:32];
 
   // ---------------- CSRs ----------------
   reg        mie_g, mpie;          // mstatus.MIE, mstatus.MPIE
@@ -172,24 +184,22 @@ module rv32i (
   wire [31:0] maddr = x1 + (is_store ? imm_s : imm_i);
   // interrupts are taken on a non-memory, non-M instruction once WB is free
   wire        irq   = mie_g && ((irq_timer && mtie) || (irq_ext && meie)) &&
-                      (!w_busy || (w_done && !ld_use)) && !mem && !is_m;
+                      (!w_busy || w_done) && !mem && !is_m;
   wire        go    = e_valid && !irq;          // EX instruction executes
-  wire        req   = go && mem && !w_busy;
-  wire        req_ok = is_load ? m_arready : m_awready && m_wready;
 
-  assign m_araddr  = maddr;
-  assign m_arvalid = req && is_load;
-  assign m_awaddr  = maddr;
-  assign m_awvalid = req && is_store;
-  assign m_wvalid  = req && is_store;
-  assign m_wdata   = x2 << {maddr[1:0], 3'b0};
-  assign m_wstrb   = (f3[1:0] == 2'b00 ? 4'b0001 :
-                      f3[1:0] == 2'b01 ? 4'b0011 : 4'b1111) << maddr[1:0];
+  assign m_araddr  = w_addr;
+  assign m_arvalid = w_req && w_load;
+  assign m_awaddr  = w_addr;
+  assign m_awvalid = w_req && !w_load;
+  assign m_wvalid  = w_req && !w_load;
+  assign m_wdata   = w_wdata;
+  assign m_wstrb   = w_wstrb;
   assign m_rready  = 1'b1;
   assign m_bready  = 1'b1;
 
-  wire stall = e_valid && ((w_busy && !w_done) || ld_use || (mem && !(req && req_ok)) || (is_div && !d_done) || (is_mul && !m_ph));
-  wire adv   = go && !stall;                    // EX instruction retires
+  wire stall   = e_valid && ((w_busy && !w_done) || (is_div && !d_done) || (is_mul && m_ph != 2'd2));
+  wire adv     = go && !stall;                  // EX instruction retires
+  wire r_stall = stall || r_ld;                 // RR keeps its instruction
 
   // ---------------- next PC ----------------
   wire        taken  = is_jal || is_jalr || (is_branch && br);
@@ -199,10 +209,11 @@ module rv32i (
   wire redirect = e_valid && (irq || (!stall && (is_mret || taken)));
   assign i_addr = !f_valid ? RESET_PC :
                   redirect ? (irq ? mtvec : is_mret ? mepc : target) :
-                  stall || !i_valid ? f_pc : f_pc + 4;
+                  r_stall || !i_valid ? f_pc : f_pc + 4;
 
   // ---------------- writeback from EX ----------------
-  wire        e_we = adv && rd != 0 && (is_lui || is_auipc || is_jal || is_jalr || is_opimm || is_op || is_csr);
+  wire        e_wr = rd != 0 && (is_lui || is_auipc || is_jal || is_jalr || is_opimm || is_op || is_csr);
+  wire        e_we = adv && e_wr;
   wire [31:0] e_wd = is_lui            ? imm_u :
                      is_auipc          ? pc + imm_u :
                      is_jal || is_jalr ? pc4 :
@@ -220,11 +231,13 @@ module rv32i (
   always @(posedge clk) begin
     if (rst) begin
       f_valid <= 1'b0;
+      r_valid <= 1'b0;
       e_valid <= 1'b0;
       w_busy  <= 1'b0;
+      w_req   <= 1'b0;
       d_busy  <= 1'b0;
       d_done  <= 1'b0;
-      m_ph    <= 1'b0;
+      m_ph    <= 2'd0;
       mie_g   <= 1'b0;
       mpie    <= 1'b0;
       mtie    <= 1'b0;
@@ -235,21 +248,33 @@ module rv32i (
     end else begin
       f_valid <= 1'b1;
       f_pc    <= i_addr;
+      if (redirect) r_valid <= 1'b0;
+      else if (!r_stall) begin
+        r_ins   <= i_rdata;
+        r_pc    <= f_pc;
+        r_valid <= f_valid && i_valid;
+      end
+      // operands from the register file, or from the EX result
       if (!stall) begin
-        ins     <= i_rdata;
-        pc      <= f_pc;
-        e_valid <= f_valid && !redirect && i_valid;
+        ins     <= r_ins;
+        pc      <= r_pc;
+        x1      <= e_valid && e_wr && rd == r_rs1 ? e_wd : r1;
+        x2      <= e_valid && e_wr && rd == r_rs2 ? e_wd : r2;
+        e_valid <= r_valid && !r_ld && !redirect;
       end
 
-      if (e_valid && is_mul && !m_ph && !hold) begin
+      if (e_valid && is_mul && m_ph == 2'd0) begin
         p_ll <= al * bl;
         p_lh <= al * bh;
         p_hl <= ah * bl;
         p_hh <= ah * bh;
-        m_ph <= 1'b1;
-      end else if (adv) m_ph <= 1'b0;
+        m_ph <= 2'd1;
+      end else if (m_ph == 2'd1) begin
+        m_p  <= mp[63:0];
+        m_ph <= 2'd2;
+      end else if (adv) m_ph <= 2'd0;
 
-      if (e_valid && is_div && !d_busy && !d_done && !hold) begin
+      if (e_valid && is_div && !d_busy && !d_done) begin
         dq <= neg_a ? -x1 : x1;
         dd <= neg_b ? -x2 : x2;
         dr <= 32'b0;
@@ -262,13 +287,17 @@ module rv32i (
         if (dcnt == 1) begin d_busy <= 1'b0; d_done <= 1'b1; end
       end else if (adv) d_done <= 1'b0;
 
+      if (w_req && (w_load ? m_arready : m_awready && m_wready)) w_req <= 1'b0;
       if (w_done) w_busy <= 1'b0;
       if (adv && mem) begin
-        w_busy <= 1'b1;
-        w_load <= is_load;
-        w_rd   <= rd;
-        w_f3   <= f3;
-        w_off  <= maddr[1:0];
+        w_busy  <= 1'b1;
+        w_req   <= 1'b1;
+        w_load  <= is_load;
+        w_rd    <= rd;
+        w_f3    <= f3;
+        w_addr  <= maddr;
+        w_wdata <= x2 << {maddr[1:0], 3'b0};
+        w_wstrb <= (f3[1:0] == 2'b00 ? 4'b0001 : f3[1:0] == 2'b01 ? 4'b0011 : 4'b1111) << maddr[1:0];
       end
 
       if (e_valid && irq) begin
