@@ -5,6 +5,7 @@ Spec: [spec_v5.md](../spec_v5.md). The system clock target moves from 66.7 to 10
 | Change | Setup WNS clk / mclk / pclk (ns) | Failing endpoints | Hold WNS (ns) | DRC / LVS |
 |---|---|---|---|---|
 | `clk` at 10 ns | -4.11 / +2.28 / +5.30 | 1904 | +0.075 | clean |
+| Register-read stage, bus request from WB registers, three-cycle multiply | -0.39 / +2.18 / +5.47 | 10 | +0.079 | clean |
 
 ## 10 ns
 
@@ -17,3 +18,27 @@ The worst paths also carry delay chains. Timing repair after CTS builds chains o
 A candidate with a register-read stage and the bus request driven from registers ran through CTS at -3.68 ns, against -7.17 ns without it. Its worst path ran from the multiplier's partial products through their 66-bit sum, the new forwarding mux and into an operand register.
 
 Decision: a register-read stage between ID and EX with forwarding from EX, the bus request driven from WB registers, and the multiply sum registered before writeback.
+
+## Register-read stage
+
+RR sits between ID and EX. It reads the register file and registers both operands, taking the EX result instead when EX writes the register being read. An instruction that reads a register still being loaded waits in RR until the cycle after the response. WB drives the bus from registers, so EX only waits for WB to be free. A multiply takes a cycle for the partial products, one for their sum and one to write back. A taken branch or jump now costs two cycles.
+
+The benchmark takes 13,192 cycles cold and 12,484 warm, 15% more than without the stage. Five mutations each hang the firmware: no forwarding to either operand, no wait for a load in EX or in WB, and no flush of RR on a taken branch. Gate-level simulation passes.
+
+Synthesis gives 28,610 cells (889k µm²) and 5,587 flops.
+
+`clk` misses by 0.39 ns (96.2 MHz) on 10 endpoints, TNS -2.1 ns. `mclk`, `pclk` and hold close. DRC and LVS are clean. The die is 1426 x 1426 µm and power 66.7 mW.
+
+![layout](../../reports/31-register-read-stage/layout.png)
+
+The failing endpoints:
+
+| Path | Worst slack (ns) | Endpoints |
+|---|---|---|
+| EX instruction register to the fetch address, through the branch target adder | -0.39 | 5 |
+| Partial products to the multiply sum | -0.38 | 2 |
+| Operand to the partial products | -0.21 | 3 |
+
+The worst path is 46 cells. After decode and the immediate select, the target adder `pc + imm` is a chain of about 30 cells, 7.6 ns. Yosys builds the carry as a Brent-Kung tree, and ABC maps it into that chain. Delay chains are shorter here: the longest is 21, and the failing paths carry at most 10.
+
+Decision: Kogge-Stone carry for adders and comparators in synthesis.

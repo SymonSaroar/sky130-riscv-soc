@@ -14,7 +14,7 @@
 
 | Block | RTL | Notes |
 |---|---|---|
-| CPU | `rv32i.v` | RV32IM + Zicsr, 4 stages (IF, ID, EX, WB), machine mode only |
+| CPU | `rv32i.v` | RV32IM + Zicsr, 5 stages (IF, ID, RR, EX, WB), machine mode only |
 | Instruction cache | `icache.v` | SDRAM code. Direct-mapped, 64 lines of 32 bytes, data in a second `sky130_sram_2kbyte_1rw1r_32x512_8` |
 | Boot loader | `boot.v` | Copies 2 KB from SPI flash to SRAM, then releases the CPU |
 | Interconnect | `axil_ic.v` | AXI4-Lite, 2 masters, 4 slaves, one transaction at a time. Master 1 is the boot loader (writes) and the instruction cache (reads) |
@@ -60,9 +60,9 @@
 ## CPU
 
 - Reset vector `0x0`.
-- Fetch reads SRAM port 1 for addresses below `0x8000_0000` and the instruction cache above it, into an instruction register. Branches and jumps resolve in EX. A taken branch or jump costs one cycle.
-- MUL, MULH, MULHSU and MULHU complete in EX. DIV, DIVU, REM and REMU take 32 extra cycles.
-- One load or store in flight. An instruction that reads a register still being loaded waits one cycle.
+- Fetch reads SRAM port 1 for addresses below `0x8000_0000` and the instruction cache above it, into an instruction register. RR reads the register file, with forwarding from EX. Branches and jumps resolve in EX. A taken branch or jump costs two cycles.
+- MUL, MULH, MULHSU and MULHU take 2 extra cycles. DIV, DIVU, REM and REMU take 32 extra cycles.
+- One load or store in flight, driven on the bus from WB registers. An instruction that reads a register still being loaded waits in RR until the cycle after the response.
 - CSRs: `mstatus`, `mie`, `mip`, `mtvec`, `mepc`, `mcause`. `mret` supported.
 - Interrupts: machine timer and machine external. No synchronous exceptions.
 - `fence`, `ecall`, `ebreak` and `wfi` execute as no-ops.
