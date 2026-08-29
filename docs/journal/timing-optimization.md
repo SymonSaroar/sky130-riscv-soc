@@ -7,6 +7,7 @@ Spec: [spec_v5.md](../spec_v5.md). The system clock target moves from 66.7 to 10
 | `clk` at 10 ns | -4.11 / +2.28 / +5.30 | 1904 | +0.075 | clean |
 | Register-read stage, bus request from WB registers, three-cycle multiply | -0.39 / +2.18 / +5.47 | 10 | +0.079 | clean |
 | Kogge-Stone carry | -0.40 / +2.21 / +5.43 | 5 | +0.077 | clean |
+| Booth-encoded multipliers | -1.02 / +2.19 / +5.41 | 34 | +0.077 | clean |
 
 ## 10 ns
 
@@ -55,3 +56,23 @@ The fetch address and the multiply sum now close. `clk` still misses by 0.40 ns 
 A candidate with Booth-encoded multipliers ran through CTS. No partial-product register was among its 400 worst endpoints; 21 were with Kogge-Stone carry alone.
 
 Decision: Booth-encoded multipliers.
+
+## Booth multipliers
+
+Synthesis builds the multipliers with Booth encoding: 27,766 cells and 882k µm², 9k µm² less than before.
+
+`clk` gets worse: -1.02 ns (90.7 MHz) on 34 endpoints. `mclk`, `pclk` and hold close, DRC and LVS are clean, and one antenna net is left. Power drops to 66.8 mW.
+
+![layout](../../reports/33-booth/layout.png)
+
+| Path | Worst slack (ns) | Rebuffers on the worst path |
+|---|---|---|
+| Operand to a partial-product register | -1.02 | 47, 5.9 ns |
+| Instruction cache hit to the fetch address | -0.94 | 4, 0.65 ns |
+| SRAM load data to the register file | -0.11 | 0 |
+
+The multiplier logic on the worst path takes 5.7 ns, then 37 rebuffers in a row, all within 15 µm of each other, add 4.3 ns. The Kogge-Stone layout's failing paths carried 1.1 to 1.2 ns of rebuffers as well. Setup repair after CTS works from the placement estimate, which starts at -11.74 ns here; signoff ends at -1.02 ns. The repair after global routing has skipped buffer insertion for the same kind of gap since it went resize-only.
+
+Gate-level simulation hangs at the first PCIe read. The receive CRC `rp_crc` has no reset and is loaded with all ones when the check of a TLP starts. In this netlist the load leaves it X, and the X reaches the transaction FSM through the LCRC compare. The Kogge-Stone netlist, from the same RTL, passes.
+
+Decision: setup repair after CTS without buffer insertion.
