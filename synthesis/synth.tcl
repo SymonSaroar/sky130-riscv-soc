@@ -15,8 +15,8 @@ foreach c [split [string trim [read_file $pdk/libs.tech/openlane/sky130_fd_sc_hd
 read_liberty -lib $lib
 read_liberty -lib $sram
 read_verilog {*}[glob rtl/*.v]
-# Kogge-Stone carry for adders and comparators
-synth -top soc_top -flatten -run :fine
+# Booth multipliers, Kogge-Stone carry for adders and comparators
+synth -top soc_top -flatten -booth -run :fine
 techmap -map +/techmap.v -map +/choices/kogge-stone.v
 synth -top soc_top -flatten -run fine:
 dfflibmap -liberty $lib {*}$dont_use
