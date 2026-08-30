@@ -135,9 +135,8 @@ module rv32i (
   wire        is_div = is_m && f3[2];
   wire        is_mul = is_m && !f3[2];
   // multiply over three cycles: four 17x17 partial products, their sum, then writeback.
-  // rs1 signed for MUL/MULH/MULHSU, rs2 signed for MUL/MULH
-  wire signed [32:0] ma = {f3[1:0] != 2'b11 && x1[31], x1};
-  wire signed [32:0] mb = {!f3[1] && x2[31], x2};
+  // Operands come from their own registers, loaded in RR for a multiply only.
+  reg  signed [32:0] ma, mb;
   wire signed [16:0] al = {1'b0, ma[15:0]}, bl = {1'b0, mb[15:0]};
   wire signed [16:0] ah = ma[32:16], bh = mb[32:16];
   reg  signed [33:0] p_ll, p_lh, p_hl, p_hh;
@@ -220,6 +219,12 @@ module rv32i (
                      is_csr            ? csr_r :
                      is_m              ? m_res : alu;
 
+  // operands from the register file, or from the EX result
+  wire [31:0] r1f = e_valid && e_wr && rd == r_rs1 ? e_wd : r1;
+  wire [31:0] r2f = e_valid && e_wr && rd == r_rs2 ? e_wd : r2;
+  // rs1 signed for MUL/MULH/MULHSU, rs2 signed for MUL/MULH
+  wire        r_mul = r_ins[6:0] == 7'b0110011 && r_ins[25] && !r_ins[14];
+
   integer i;
   always @(posedge clk) begin
     for (i = 1; i < 32; i = i + 1) begin
@@ -254,13 +259,16 @@ module rv32i (
         r_pc    <= f_pc;
         r_valid <= f_valid && i_valid;
       end
-      // operands from the register file, or from the EX result
       if (!stall) begin
         ins     <= r_ins;
         pc      <= r_pc;
-        x1      <= e_valid && e_wr && rd == r_rs1 ? e_wd : r1;
-        x2      <= e_valid && e_wr && rd == r_rs2 ? e_wd : r2;
+        x1      <= r1f;
+        x2      <= r2f;
         e_valid <= r_valid && !r_ld && !redirect;
+      end
+      if (!stall && r_mul) begin
+        ma <= {r_ins[13:12] != 2'b11 && r1f[31], r1f};
+        mb <= {!r_ins[13] && r2f[31], r2f};
       end
 
       if (e_valid && is_mul && m_ph == 2'd0) begin
