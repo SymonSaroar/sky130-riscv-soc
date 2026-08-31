@@ -33,6 +33,9 @@ module rv32i (
   // ---------------- fetch: the SRAM returns the word at f_pc this cycle ----------------
   reg         f_valid;
   reg  [31:0] f_pc;
+  // fetch runs ahead without waiting for a cache hit; after a miss it goes back to f_back
+  reg         f_miss;
+  reg  [31:0] f_back;
 
   // ---------------- RR: instruction register, register read ----------------
   reg         r_valid;
@@ -208,7 +211,7 @@ module rv32i (
   wire redirect = e_valid && (irq || (!stall && (is_mret || taken)));
   assign i_addr = !f_valid ? RESET_PC :
                   redirect ? (irq ? mtvec : is_mret ? mepc : target) :
-                  r_stall || !i_valid ? f_pc : f_pc + 4;
+                  f_miss ? f_back : r_stall ? f_pc : f_pc + 4;
 
   // ---------------- writeback from EX ----------------
   wire        e_wr = rd != 0 && (is_lui || is_auipc || is_jal || is_jalr || is_opimm || is_op || is_csr);
@@ -236,6 +239,7 @@ module rv32i (
   always @(posedge clk) begin
     if (rst) begin
       f_valid <= 1'b0;
+      f_miss  <= 1'b0;
       r_valid <= 1'b0;
       e_valid <= 1'b0;
       w_busy  <= 1'b0;
@@ -255,11 +259,13 @@ module rv32i (
     end else begin
       f_valid <= 1'b1;
       f_pc    <= i_addr;
+      f_back  <= f_pc;
+      f_miss  <= f_valid && !i_valid && !r_stall && !redirect && !f_miss;
       if (redirect) r_valid <= 1'b0;
       else if (!r_stall) begin
         r_ins   <= i_rdata;
         r_pc    <= f_pc;
-        r_valid <= f_valid && i_valid;
+        r_valid <= f_valid && i_valid && !f_miss;
       end
       if (!stall) begin
         ins     <= r_ins;
