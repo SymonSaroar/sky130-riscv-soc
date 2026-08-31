@@ -11,6 +11,7 @@ Spec: [spec_v5.md](../spec_v5.md). The system clock target moves from 66.7 to 10
 | Setup repair after CTS without buffer insertion | -1.85 / +2.19 / +5.44 | 37 | +0.077 | clean |
 | Buffer insertion after CTS, multiplier operand registers, resets on constant-loaded registers | -0.54 / +1.93 / +5.39 | 11 | +0.075 | clean |
 | Fetch ahead of the cache hit | +0.01 / +2.02 / +5.38 | 0 | +0.029 | clean |
+| Resets on the remaining control registers | +0.24 / +1.99 / +5.36 | 0 | +0.066 | clean |
 
 ## 10 ns
 
@@ -122,3 +123,35 @@ The worst paths now load from SRAM: the macro's read data arrives 7.8 ns into th
 Gate-level simulation prints nothing. The first status read of the UART returns X in the busy bit, which turns the polling branch and then the fetch address into X. The UART's bit counter `tbits` has a reset, but it counts down when `tcnt` reaches 0, and the baud counter `tcnt` has none; in this netlist that X reaches `tbits` while the UART is idle. The other control registers without a reset: the receive baud counter, the interconnect's response selects, the write flags of the SDRAM and PCIe ports, and the CPU's load flag.
 
 Decision: a reset on each of them.
+
+## Control resets
+
+The UART baud counters, the interconnect's response selects, the write flags of the SDRAM and PCIe ports and the CPU's load flag now have a reset. Synthesis gives 27,890 cells and 5,691 flops.
+
+Timing closes with more room: `clk` +0.24 ns (102.4 MHz), `mclk` +1.99 ns, `pclk` +5.36 ns, hold +0.066 ns. The closest paths are the multiplier's partial products (+0.24 ns) and loads from SRAM (+0.35 ns). DRC and LVS are clean, antennas are at 0, and power is 67.9 mW. One net, `_06097_`, a `nor2_2` with 12 loads, is 4% over its slew limit and 7% over its load limit.
+
+![layout](../../reports/37-control-resets/layout.png)
+
+Gate-level simulation still hangs, this time one cycle after reset: the interconnect's busy flag turns X. Nothing requests the bus, but the slave decode reads the cache's refill address, which has no reset, and this netlist lets the X through. Every netlist since the PCIe port has hung on some register that the RTL masks and that would power up as 0 or 1 in silicon; each mapping exposes a different one.
+
+Decision: gate-level simulation starts every flop at 0, and again at 1, instead of X. The simulation copy of the cell library's flop primitives gets an initial value; the PDK files are unchanged.
+
+On this netlist both simulations pass, with the same cycle counts as RTL.
+
+## Status
+
+The system clock closes at 100 MHz in the typical corner with 0.24 ns to spare. RTL simulation passes, and gate-level simulation passes with flops starting at 0 and at 1.
+
+| | Before | After |
+|---|---|---|
+| CPU stages | IF, ID, EX, WB | IF, ID, RR, EX, WB |
+| `clk` | 66.7 MHz target, 71.1 MHz max | 100 MHz target, 102.4 MHz max |
+| Benchmark, warm | 10,859 cycles, 163 µs | 12,484 cycles, 125 µs |
+| Die (µm) | 1419 x 1419 | 1423 x 1423 |
+| Standard-cell area (µm²) | about 312k | about 317k |
+| Power (mW) | 47.5 | 67.9 |
+
+Open:
+
+- `u_sram.mem/dout1[10]` drives 0.07 pF against 0.03 pF, back since Kogge-Stone carry.
+- `_06097_` is 4% over its slew limit and 7% over its load limit.

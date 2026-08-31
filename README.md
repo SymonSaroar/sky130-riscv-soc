@@ -70,6 +70,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 34-cts-no-buffering | 0.5000 | -1.848 | -29.885 | 0.077 | 37 | 0 | 84.4 | 2.194 | 128.1 | 5.436 | 94.7 | 0 | 44 | 1 | 0 | 66.80 | 2.11 | 0 | 0 | 0 | 0 | clean |
 | 35-mul-operand-regs | 0.5100 | -0.543 | -2.973 | 0.075 | 11 | 0 | 94.8 | 1.930 | 123.9 | 5.386 | 94.2 | 0 | 44 | 1 | 0 | 67.90 | 3.01 | 0 | 0 | 0 | 0 | clean |
 | 36-fetch-ahead | 0.5100 | 0.014 | 0.000 | 0.029 | 0 | 0 | 100.1 | 2.020 | 125.3 | 5.384 | 94.2 | 0 | 44 | 1 | 0 | 67.30 | 3.36 | 0 | 0 | 0 | 0 | clean |
+| 37-control-resets | 0.5100 | 0.238 | 0.000 | 0.066 | 0 | 0 | 102.4 | 1.989 | 124.8 | 5.356 | 94.0 | 13 | 44 | 2 | 0 | 67.90 | 3.73 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
@@ -102,7 +103,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 
 ```
 make sim               # RTL simulation with firmware
-make gls RUN=dev        # gate-level simulation of the synthesized netlist
+make -j2 gls RUN=dev    # gate-level simulation, flops starting at 0 and at 1
 make all RUN=dev        # synthesis through signoff, then metrics
 make <stage> RUN=dev    # synth floorplan place cts route rcx sta gds lvs klayout_drc metrics
 ```

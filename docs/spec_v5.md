@@ -131,4 +131,5 @@ Scope and the reasons for an off-chip PHY are in [pcie_feasibility.md](pcie_feas
 
 - `make sim` boots from a flash model, runs the program from SDRAM through the instruction cache, and checks 52 RV32IM cases, the timer and UART interrupts, a SPI flash read, SDRAM word, halfword and byte accesses in four rows across three banks, the PCIe link up and memory writes and reads through a PCIe endpoint model, and an 8x8 matrix multiply against shift-and-add products.
 - The SDRAM model flags protocol errors: access to a closed bank, tRCD, refresh with an open bank, refresh interval, commands before the mode register is set.
+- `make gls` runs the same test on the synthesized netlist, once with every flop starting at 0 and once at 1.
 - `make lint` runs Verilator lint.
