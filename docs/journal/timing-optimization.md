@@ -9,6 +9,7 @@ Spec: [spec_v5.md](../spec_v5.md). The system clock target moves from 66.7 to 10
 | Kogge-Stone carry | -0.40 / +2.21 / +5.43 | 5 | +0.077 | clean |
 | Booth-encoded multipliers | -1.02 / +2.19 / +5.41 | 34 | +0.077 | clean |
 | Setup repair after CTS without buffer insertion | -1.85 / +2.19 / +5.44 | 37 | +0.077 | clean |
+| Buffer insertion after CTS, multiplier operand registers, resets on constant-loaded registers | -0.54 / +1.93 / +5.39 | 11 | +0.075 | clean |
 
 ## 10 ns
 
@@ -96,3 +97,13 @@ Buffer insertion after CTS does real work, chains included.
 The multiplier operands are `x1` and `x2`, which also feed the ALU, the shifter, the comparators, the address adder and the divider. On the Kogge-Stone layout's worst path the operand bit passed four buffers, 1.2 ns, before the first multiplier gate. The receive CRC is not the only register that is loaded with a constant before first use and has no reset: so are the transmit CRC, the K flags of the retry buffer, the divider's remainder and count, and the cache refill counter.
 
 Decision: buffer insertion after CTS again, multiplier operands in their own registers, loaded in RR for a multiply only, and a reset on every register that is loaded with a constant before first use.
+
+## Multiplier operand registers
+
+RR loads two 33-bit multiplier operand registers, sign-extended, only when the instruction is a multiply. The partial products start from them. Six more registers get a reset. Synthesis gives 28,023 cells and 5,658 flops. Two mutations fail check 38: operands without forwarding, and without sign extension. Gate-level simulation passes, the PCIe test included.
+
+The multiplier closes: its worst path has +0.42 ns. `clk` misses by 0.54 ns (94.8 MHz) on 11 endpoints, all of them on one path: the cache tag lookup and hit compare, then the select of the next fetch address, into `f_pc`, the cache's address register and the fetch source flag. The path is 53 cells with 0.7 ns of rebuffers. `mclk`, `pclk` and hold close. DRC and LVS are clean. Power is 67.9 mW.
+
+![layout](../../reports/35-mul-operand-regs/layout.png)
+
+Decision: fetch runs ahead without waiting for the cache hit; after a miss, the next fetch goes back to the address that missed.
