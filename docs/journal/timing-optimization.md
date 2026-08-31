@@ -10,6 +10,7 @@ Spec: [spec_v5.md](../spec_v5.md). The system clock target moves from 66.7 to 10
 | Booth-encoded multipliers | -1.02 / +2.19 / +5.41 | 34 | +0.077 | clean |
 | Setup repair after CTS without buffer insertion | -1.85 / +2.19 / +5.44 | 37 | +0.077 | clean |
 | Buffer insertion after CTS, multiplier operand registers, resets on constant-loaded registers | -0.54 / +1.93 / +5.39 | 11 | +0.075 | clean |
+| Fetch ahead of the cache hit | +0.01 / +2.02 / +5.38 | 0 | +0.029 | clean |
 
 ## 10 ns
 
@@ -107,3 +108,17 @@ The multiplier closes: its worst path has +0.42 ns. `clk` misses by 0.54 ns (94.
 ![layout](../../reports/35-mul-operand-regs/layout.png)
 
 Decision: fetch runs ahead without waiting for the cache hit; after a miss, the next fetch goes back to the address that missed.
+
+## Fetch ahead of the cache hit
+
+The next fetch address no longer depends on the cache hit. After a miss, a registered flag sends the next fetch back to the address that missed and drops the word already in flight, so a miss costs at most one more cycle. The benchmark cycle counts do not change. Two mutations fail: keeping the word in flight fails check 42, and not going back hangs the firmware.
+
+Timing closes at 10 ns: `clk` +0.01 ns (100.1 MHz), `mclk` +2.02 ns, `pclk` +5.38 ns, hold +0.029 ns. DRC and LVS are clean. Power is 67.3 mW.
+
+![layout](../../reports/36-fetch-ahead/layout.png)
+
+The worst paths now load from SRAM: the macro's read data arrives 7.8 ns into the cycle, and the interconnect read mux, the byte select and the register file write take the remaining 3.9 ns.
+
+Gate-level simulation prints nothing. The first status read of the UART returns X in the busy bit, which turns the polling branch and then the fetch address into X. The UART's bit counter `tbits` has a reset, but it counts down when `tcnt` reaches 0, and the baud counter `tcnt` has none; in this netlist that X reaches `tbits` while the UART is idle. The other control registers without a reset: the receive baud counter, the interconnect's response selects, the write flags of the SDRAM and PCIe ports, and the CPU's load flag.
+
+Decision: a reset on each of them.

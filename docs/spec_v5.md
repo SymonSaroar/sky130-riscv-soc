@@ -60,7 +60,7 @@
 ## CPU
 
 - Reset vector `0x0`.
-- Fetch reads SRAM port 1 for addresses below `0x8000_0000` and the instruction cache above it, into an instruction register. RR reads the register file, with forwarding from EX. Branches and jumps resolve in EX. A taken branch or jump costs two cycles.
+- Fetch reads SRAM port 1 for addresses below `0x8000_0000` and the instruction cache above it, into an instruction register. Fetch does not wait for a cache hit: after a miss, the next fetch goes back to the address that missed. RR reads the register file, with forwarding from EX. Branches and jumps resolve in EX. A taken branch or jump costs two cycles.
 - MUL, MULH, MULHSU and MULHU take 2 extra cycles. DIV, DIVU, REM and REMU take 32 extra cycles.
 - One load or store in flight, driven on the bus from WB registers. An instruction that reads a register still being loaded waits in RR until the cycle after the response.
 - CSRs: `mstatus`, `mie`, `mip`, `mtvec`, `mepc`, `mcause`. `mret` supported.
