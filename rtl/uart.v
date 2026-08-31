@@ -42,6 +42,8 @@ module uart (
     if (rst) begin
       div      <= 16'd434;
       tbits    <= 4'd0;
+      tcnt     <= 16'd0;
+      rcnt     <= 16'd0;
       rbits    <= 4'd0;
       rx_valid <= 1'b0;
       rs       <= 2'b11;

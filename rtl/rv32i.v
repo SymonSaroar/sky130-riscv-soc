@@ -244,6 +244,7 @@ module rv32i (
       e_valid <= 1'b0;
       w_busy  <= 1'b0;
       w_req   <= 1'b0;
+      w_load  <= 1'b0;
       d_busy  <= 1'b0;
       d_done  <= 1'b0;
       m_ph    <= 2'd0;

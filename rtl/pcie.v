@@ -46,7 +46,7 @@ module pcie (
   wire   resp_ok = rvalid && rready || bvalid && bready;
 
   always @(posedge clk)
-    if (rst) busy <= 1'b0;
+    if (rst) begin busy <= 1'b0; pend_wr <= 1'b0; end
     else if (awready || arready) begin busy <= 1'b1; pend_wr <= wr; end
     else if (resp_ok) busy <= 1'b0;
 

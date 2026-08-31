@@ -72,7 +72,7 @@ module axil_ic (
   assign s_bready = busy && m_bready[gq] ? 4'b1 << sq : 4'b0;
 
   always @(posedge clk)
-    if (rst) busy <= 1'b0;
+    if (rst) begin busy <= 1'b0; gq <= 1'b0; sq <= 2'd0; end
     else if (ar_ok || aw_ok) begin busy <= 1'b1; gq <= g; sq <= s; end
     else if (|(m_rvalid & m_rready) || |(m_bvalid & m_bready)) busy <= 1'b0;
 endmodule
