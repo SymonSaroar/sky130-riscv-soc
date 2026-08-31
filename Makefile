@@ -95,8 +95,12 @@ metrics:
 all: synth floorplan place cts route signoff metrics
 
 SC_V := $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog
-.PHONY: gls
-gls: fw
-	iverilog -g2012 -DGLS -DFUNCTIONAL -DUNIT_DELAY=#1 -o $(OUT)/tb_gls \
-	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v tb/pipe_phy.v tb/pcie_ep.v rtl/pcie_mac.v $(SC_V)/primitives.v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/soc_top.v
-	vvp -n $(OUT)/tb_gls
+# every flop starts at 0 (gls0) or at 1 (gls1)
+.PHONY: gls gls0 gls1
+gls: gls0 gls1
+gls0 gls1: fw
+	sed "s/^\( *\)reg Q;/&\n\1initial Q = 1'b$(@:gls%=%);/" $(SC_V)/primitives.v > $(OUT)/primitives_$(@:gls%=%).v
+	iverilog -g2012 -DGLS -DFUNCTIONAL -DUNIT_DELAY=#1 -o $(OUT)/tb_$@ \
+	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v tb/pipe_phy.v tb/pcie_ep.v rtl/pcie_mac.v \
+	  $(OUT)/primitives_$(@:gls%=%).v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/soc_top.v
+	vvp -n $(OUT)/tb_$@ | sed 's/^/$@: /'
