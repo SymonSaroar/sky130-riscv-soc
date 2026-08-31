@@ -243,6 +243,8 @@ module rv32i (
       d_busy  <= 1'b0;
       d_done  <= 1'b0;
       m_ph    <= 2'd0;
+      dr      <= 32'b0;
+      dcnt    <= 6'd0;
       mie_g   <= 1'b0;
       mpie    <= 1'b0;
       mtie    <= 1'b0;

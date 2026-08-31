@@ -34,6 +34,7 @@ module icache (
     q <= addr;
     if (rst) begin
       valid   <= 64'b0;
+      k       <= 3'd0;
       fill    <= 1'b0;
       ar_wait <= 1'b0;
       done    <= 1'b0;

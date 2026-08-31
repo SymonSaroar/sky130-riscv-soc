@@ -205,6 +205,7 @@ module pcie_mac #(parameter ROOT = 1) (
       ack_pend <= 1'b0; nak_pend <= 1'b0; rp_st <= 0;
       tx_seq <= 0; rx_seq <= 0; replays <= 0; replay_t <= 0; skp_t <= 0;
       {ts_tx, ts_rx, rx_ok, ts_after, seen, numbered} <= 0; crc_n <= 0; rp_n <= 0;
+      crc <= 0; rp_crc <= 0; rb_k <= 0;
     end else begin
       tx_data <= nd; tx_datak <= nk;
 
