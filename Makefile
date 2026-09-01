@@ -27,7 +27,7 @@ $(B)/fw/fw.hex: $(wildcard tb/fw/*.S tb/fw/*.c tb/fw/*.ld)
 
 sim: fw
 	iverilog -g2012 -o $(B)/tb_soc \
-	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v tb/pipe_phy.v tb/pcie_ep.v $(RTL)
+	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v $(RTL)
 	vvp -n $(B)/tb_soc $(SIMARGS)
 
 lint:
@@ -101,6 +101,6 @@ gls: gls0 gls1
 gls0 gls1: fw
 	sed "s/^\( *\)reg Q;/&\n\1initial Q = 1'b$(@:gls%=%);/" $(SC_V)/primitives.v > $(OUT)/primitives_$(@:gls%=%).v
 	iverilog -g2012 -DGLS -DFUNCTIONAL -DUNIT_DELAY=#1 -o $(OUT)/tb_$@ \
-	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v tb/pipe_phy.v tb/pcie_ep.v rtl/pcie_mac.v \
+	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v \
 	  $(OUT)/primitives_$(@:gls%=%).v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/soc_top.v
 	vvp -n $(OUT)/tb_$@ | sed 's/^/$@: /'

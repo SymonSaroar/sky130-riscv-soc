@@ -5,8 +5,6 @@
 #define TIMER 0x10003000
 #define INTC  0x10004000
 #define SDRAM 0x80000000
-#define PCIE  0x40000000
-#define PCIE_ST 0x10005000
 #define CLK_HZ 100000000
 
 int isa_test(void);
@@ -45,18 +43,6 @@ static int sdram_test(void) {
   *(volatile unsigned char *)(SDRAM + 0x10001) = 0x5a;
   *(volatile unsigned short *)(SDRAM + 0x10002) = 0x1234;
   if (REG(SDRAM + 0x10000) != (0x12345a00 | (pat(SDRAM + 0x10000) & 0xff))) err++;
-  return err;
-}
-
-// wait for the link, then 8 words and a byte store to the endpoint's memory
-static int pcie_test(void) {
-  for (int t = 0; !(REG(PCIE_ST) & 1); t++) if (t > 100000) return -1;
-  int err = 0;
-  for (int i = 0; i < 8; i++) REG(PCIE + 0x100 + i * 4) = pat(i);
-  for (int i = 0; i < 8; i++) if (REG(PCIE + 0x100 + i * 4) != pat(i)) err++;
-  *(volatile unsigned char *)(PCIE + 0x101) = 0x5a;
-  if (REG(PCIE + 0x100) != ((pat(0) & 0xffff00ff) | 0x5a00)) err++;
-  if (REG(PCIE_ST) & 0xff0) err++;  // replays
   return err;
 }
 
@@ -121,9 +107,6 @@ int main(void) {
 
   if (sdram_test()) { puts("sdram fail\n"); done(0); }
   puts("sdram ok\n");
-
-  if (pcie_test()) { puts("pcie fail\n"); done(0); }
-  puts("pcie ok "); puthex(REG(PCIE_ST)); putc('\n');
 
   for (int i = 0; i < 64; i++) {
     ma[i / 8][i % 8] = (short)(pat(i) & 0x7fff) - 0x4000;
