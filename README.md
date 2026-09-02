@@ -12,24 +12,24 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
    +----------+ fetch from 0x8000_0000      +----------------+   |
         | AXI4-Lite                                              |
         v                                                        v
-  +--------------------------------------------------------------------------+
-  |                        AXI4-Lite interconnect                            |
-  +--------------------------------------------------------------------------+
-     ^ boot loader           |                    |                    |
-     |                       v                    v                    v
-  SPI flash         AXI4-Lite to APB     async FIFOs (clk/mclk)  async FIFOs (clk/pclk)
-                             |                    |                    |
-       +------+------+-----+-------+------+  SDRAM controller     PCIe Gen1 x4 link
-       | UART | GPIO | SPI | timer | INTC |   (100 MHz)            (62.5 MHz, PIPE)
-       +------+------+-----+-------+------+       |                    |
-                                           32 MB SDR SDRAM      external PCIe PHY
+  +-----------------------------------------------------------------+
+  |                    AXI4-Lite interconnect                       |
+  +-----------------------------------------------------------------+
+     ^ boot loader           |                    |
+     |                       v                    v
+  SPI flash         AXI4-Lite to APB     async FIFOs (clk/mclk)
+                             |                    |
+       +------+------+-----+-------+------+  SDRAM controller
+       | UART | GPIO | SPI | timer | INTC |   (100 MHz)
+       +------+------+-----+-------+------+       |
+                                           32 MB SDR SDRAM
 ```
 
-Details are in [docs/spec_v5.md](docs/spec_v5.md).
+Details are in [docs/spec_v6.md](docs/spec_v6.md).
 
 ## Results
 
-All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26.
+All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns in rows 26 to 37.
 
 <!-- metrics -->
 | run | place_density | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | wns_pclk_ns | fmax_pclk_mhz | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | ir_drop_mv | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
@@ -71,6 +71,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 35-mul-operand-regs | 0.5100 | -0.543 | -2.973 | 0.075 | 11 | 0 | 94.8 | 1.930 | 123.9 | 5.386 | 94.2 | 0 | 44 | 1 | 0 | 67.90 | 3.01 | 0 | 0 | 0 | 0 | clean |
 | 36-fetch-ahead | 0.5100 | 0.014 | 0.000 | 0.029 | 0 | 0 | 100.1 | 2.020 | 125.3 | 5.384 | 94.2 | 0 | 44 | 1 | 0 | 67.30 | 3.36 | 0 | 0 | 0 | 0 | clean |
 | 37-control-resets | 0.5100 | 0.238 | 0.000 | 0.066 | 0 | 0 | 102.4 | 1.989 | 124.8 | 5.356 | 94.0 | 13 | 44 | 2 | 0 | 67.90 | 3.73 | 0 | 0 | 0 | 0 | clean |
+| 38-pcie-removed | 0.5000 | 0.435 | 0.000 | 0.066 | 0 | 0 | 104.6 | 1.946 | 124.2 | - | - | 0 | 44 | 0 | 0 | 51.60 | 2.63 | 0 | 0 | 0 | 0 | clean |
 <!-- /metrics -->
 
 ## Journal
@@ -82,6 +83,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 - [Performance push](docs/journal/performance.md)
 - [PCIe adapter](docs/journal/pcie.md)
 - [Timing optimization](docs/journal/timing-optimization.md)
+- [PCIe removed](docs/journal/pcie-removed.md)
 
 ## Layout of the repo
 
