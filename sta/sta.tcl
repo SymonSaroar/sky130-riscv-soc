@@ -5,16 +5,19 @@ set rep $::env(REP)
 
 read_liberty $pdk/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 read_liberty $pdk/libs.ref/sky130_sram_macros/lib/sky130_sram_2kbyte_1rw1r_32x512_8_TT_1p8V_25C.lib
-read_verilog $out/soc_top.final.v
-link_design soc_top
+read_liberty $out/gpiov2_sta.lib
+read_verilog $out/chip_top.final.v
+link_design chip_top
 read_sdc constraints/soc.sdc
 set_propagated_clock [all_clocks]
-read_spef $out/soc_top.spef
+read_spef $out/chip_top.spef
 
 report_checks -path_delay max -group_path_count 10 -fields {slew cap fanout} > $rep/sta.setup.rpt
 report_checks -path_delay min -group_path_count 10 > $rep/sta.hold.rpt
 report_check_types -max_slew -max_capacitance -max_fanout -violators > $rep/sta.drv.rpt
+# pad cell power listed after the design total
 report_power > $rep/power.rpt
+report_power -instances [get_cells -filter "ref_name == sky130_ef_io__gpiov2_pad_wrapped" *] >> $rep/power.rpt
 if {[llength [all_clocks]] > 1} {
   report_checks -path_delay max -from [get_clocks clk] -to [get_clocks mclk] -group_path_count 5 > $rep/cdc.rpt
   report_checks -path_delay max -from [get_clocks mclk] -to [get_clocks clk] -group_path_count 5 >> $rep/cdc.rpt
