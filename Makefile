@@ -1,5 +1,6 @@
 export PDK_ROOT ?= $(HOME)/.volare
 SRAM_V := $(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/verilog/sky130_sram_2kbyte_1rw1r_32x512_8.v
+IO_V   := $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_io/verilog
 RTL    := $(wildcard rtl/*.v)
 CROSS  := riscv64-unknown-elf-
 B      := build
@@ -26,13 +27,13 @@ $(B)/fw/fw.hex: $(wildcard tb/fw/*.S tb/fw/*.c tb/fw/*.ld)
 	  $(B)/fw/loader.bin $(B)/fw/fw.bin $@
 
 sim: fw
-	iverilog -g2012 -o $(B)/tb_soc \
-	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v $(RTL)
+	iverilog -g2012 -s tb_soc -DUSE_POWER_PINS -DFUNCTIONAL -o $(B)/tb_soc \
+	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v $(RTL) $(IO_V)/sky130_ef_io.v $(IO_V)/sky130_fd_io.v
 	vvp -n $(B)/tb_soc $(SIMARGS)
 
 lint:
 	verilator --lint-only -Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-PINCONNECTEMPTY \
-	  --top-module soc_top $(RTL) $(SRAM_V) 2>&1 | grep -v sky130_sram || true
+	  --top-module soc_top $(filter-out rtl/chip_top.v,$(RTL)) $(SRAM_V) 2>&1 | grep -v sky130_sram || true
 
 clean:
 	rm -rf $(B)
@@ -95,12 +96,16 @@ metrics:
 all: synth floorplan place cts route signoff metrics
 
 SC_V := $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog
-# every flop starts at 0 (gls0) or at 1 (gls1)
+# every flop starts at 0 (gls0) or at 1 (gls1); the netlist has no pad supply pins, so the
+# simulation copy of the gpiov2 wrapper leaves them off and the pad model uses its own supplies
 .PHONY: gls gls0 gls1
 gls: gls0 gls1
 gls0 gls1: fw
 	sed "s/^\( *\)reg Q;/&\n\1initial Q = 1'b$(@:gls%=%);/" $(SC_V)/primitives.v > $(OUT)/primitives_$(@:gls%=%).v
-	iverilog -g2012 -DGLS -DFUNCTIONAL -DUNIT_DELAY=#1 -o $(OUT)/tb_$@ \
+	sed -e '/^module sky130_ef_io__gpiov2_pad_wrapped/,/^endmodule/{/^ *\.\(VSSA\|VDDA\|VSWITCH\|VDDIO_Q\|VCCHIB\|VDDIO\|VCCD\|VSSIO\|VSSD\|VSSIO_Q\)(/d' \
+	    -e 's/\.AMUXBUS_B(AMUXBUS_B),/.AMUXBUS_B(AMUXBUS_B)/}' $(IO_V)/sky130_ef_io.v > $(OUT)/sky130_ef_io_gls.v
+	iverilog -g2012 -s tb_soc -DGLS -DFUNCTIONAL -DUNIT_DELAY=#1 -o $(OUT)/tb_$@ \
 	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v \
-	  $(OUT)/primitives_$(@:gls%=%).v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/soc_top.v
+	  $(OUT)/primitives_$(@:gls%=%).v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/chip_top.v \
+	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v
 	vvp -n $(OUT)/tb_$@ | sed 's/^/$@: /'

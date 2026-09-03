@@ -75,6 +75,7 @@ static void done(int ok) { REG(GPIO) = 0xa500 | ok; for (;;); }
 
 int main(void) {
   REG(UART + 8) = CLK_HZ / 115200;
+  REG(GPIO + 8) = 0xffff;
   int e = isa_test();
   puts("boot\n");
   if (e) { puts("isa fail "); puthex(e); putc('\n'); done(0); }
