@@ -25,4 +25,6 @@ set_output_delay -clock sdram_clk -max  1.5 $sdram_out
 set_output_delay -clock sdram_clk -min -0.8 $sdram_out
 set_input_delay  -clock sdram_clk -max  6.4 [get_ports {sdram_dq[*]}]
 set_input_delay  -clock sdram_clk -min  3.7 [get_ports {sdram_dq[*]}]
+# read data is captured on the falling edge of mclk a cycle and a half after the SDRAM clock edge
+set_multicycle_path -setup 2 -from [get_ports {sdram_dq[*]}] -to [get_clocks mclk]
 

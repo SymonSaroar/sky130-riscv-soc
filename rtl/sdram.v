@@ -67,17 +67,21 @@ module sdram (
   wire  [1:0] p_ba, p_dqm;
   wire [12:0] p_a;
   wire [15:0] p_dq_out;
+  reg  [15:0] dq_n;
 
   sdram_ctrl u_ctrl (
     .clk(mclk), .rst(mrst),
     .c_valid(!c_empty), .c_data(c_data), .c_pop(c_pop),
     .r_push(r_push), .r_data(r_data),
     .cke(p_cke), .cs_n(p_cs_n), .ras_n(p_ras_n), .cas_n(p_cas_n), .we_n(p_we_n),
-    .ba(p_ba), .a(p_a), .dqm(p_dqm), .dq_out(p_dq_out), .dq_oe(p_dq_oe), .dq_in(dq_in)
+    .ba(p_ba), .a(p_a), .dqm(p_dqm), .dq_out(p_dq_out), .dq_oe(p_dq_oe), .dq_in(dq_n)
   );
 
-  // pins change on the falling edge of mclk; the SDRAM samples on the next rising edge
-  always @(negedge mclk)
+  // pins change on the falling edge of mclk; the SDRAM samples on the next rising edge.
+  // Read data is captured on the falling edge too, a cycle and a half after the SDRAM clock edge.
+  always @(negedge mclk) begin
     {cke, cs_n, ras_n, cas_n, we_n, ba, a, dqm, dq_out, dq_oe} <=
       {p_cke, p_cs_n, p_ras_n, p_cas_n, p_we_n, p_ba, p_a, p_dqm, p_dq_out, p_dq_oe};
+    dq_n <= dq_in;
+  end
 endmodule
