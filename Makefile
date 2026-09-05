@@ -89,7 +89,7 @@ magic:
 	ulimit -n 1024 && $(MAGIC) signoff/magic.tcl > $(OUT)/magic.log
 klayout_drc:
 	klayout -b -r $(PDK_ROOT)/sky130A/libs.tech/klayout/drc/sky130A_mr.drc \
-	  -rd input=$(CURDIR)/$(OUT)/soc_top.gds -rd top_cell=soc_top -rd report=$(CURDIR)/$(REP)/drc_klayout.xml \
+	  -rd input=$(CURDIR)/$(OUT)/chip_top.gds -rd top_cell=chip_top -rd report=$(CURDIR)/$(REP)/drc_klayout.xml \
 	  -rd feol=true -rd beol=true -rd offgrid=true > $(OUT)/drc_klayout.log
 lvs: magic
 	netgen -batch source signoff/lvs.tcl > $(OUT)/lvs.log

@@ -1,4 +1,4 @@
-# Magic: DRC and LVS extraction. The SRAM is a hard macro, read as its LEF abstract.
+# Magic: DRC and LVS extraction. The SRAM and the pad ring cells are read as their LEF abstracts.
 set pdk  $::env(PDK_ROOT)/sky130A
 set out  $::env(OUT)
 set rep  $::env(REP)
@@ -10,8 +10,9 @@ gds rescale false
 gds read $pdk/libs.ref/sky130_fd_sc_hd/gds/sky130_fd_sc_hd.gds
 lef read $pdk/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom.tlef
 lef read $pdk/libs.ref/sky130_sram_macros/lef/$sram.lef
-def read $out/soc_top.def
-load soc_top
+lef read $pdk/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef
+def read $out/chip_top.def
+load chip_top
 select top cell
 
 drc euclidean on
@@ -34,5 +35,5 @@ extract do local
 extract unique
 extract all
 ext2spice lvs
-ext2spice -o soc_top.lvs.spice soc_top
+ext2spice -o chip_top.lvs.spice chip_top
 quit -noprompt
