@@ -35,7 +35,8 @@ module spi (
   );
 endmodule
 
-// One byte, MSB first. done pulses for one cycle when dout is valid.
+// One byte, MSB first. MISO is sampled on the falling SCLK edge. done pulses for one cycle when dout
+// is valid.
 module spi_byte (
   input            clk,
   input            rst,
@@ -50,7 +51,6 @@ module spi_byte (
 );
   reg [7:0] sh;
   reg [4:0] cnt;
-  reg       b;
   assign busy = cnt != 0;
   assign mosi = sh[7];
   assign dout = sh;
@@ -65,8 +65,7 @@ module spi_byte (
     end else begin
       cnt  <= cnt - 1;
       sclk <= !sclk;
-      if (!sclk) b  <= miso;
-      else       sh <= {sh[6:0], b};
+      if (sclk) sh <= {sh[6:0], miso};
     end
   end
 endmodule
