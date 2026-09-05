@@ -1,10 +1,10 @@
 """Collect one run's numbers into reports/metrics.csv (one row per run)."""
-import csv, fnmatch, os, re, sys
+import collections, csv, fnmatch, os, re, sys
 
 run = sys.argv[1]
 rep, out = f"reports/{run}", f"build/{run}"
 FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "slew_viol", "slew_waived", "cap_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "wns_pclk_ns", "fmax_pclk_mhz", "die_um", "util_pct", "place_density",
-          "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "antenna_nets", "magic_drc", "klayout_drc", "lvs"]
+          "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "antenna_nets", "magic_drc", "klayout_drc", "klayout_drc_waived", "lvs"]
 
 
 def read(path):
@@ -34,12 +34,14 @@ for key, sec, check in (("slew_viol", "max slew", "max_slew"), ("cap_viol", "max
     row[key] = str(len(pins) - len(waived)) if drv else ""
     if key == "slew_viol":
         row["slew_waived"] = str(len(waived)) if drv else ""
-die = grab(r"DIEAREA \( 0 0 \) \( (\d+) (\d+) \)", read(f"{out}/soc_top.def"), ())
+die = grab(r"DIEAREA \( 0 0 \) \( (\d+) (\d+) \)", read(f"{out}/chip_top.def"), ())
 row["die_um"] = f"{int(die[0]) / 1000:.0f}x{int(die[1]) / 1000:.0f}" if die else ""
 row["place_density"] = grab(r"Placement target density:\s+([\d.]+)", read(f"{out}/place.log"))
 row["util_pct"] = grab(r"Design area \d+ um\^2 (\d+)% utilization", read(f"{out}/cts.log"))
 total = re.findall(r"^Total\s+\S+\s+\S+\s+\S+\s+(\S+)", read(f"{rep}/power.rpt"), re.M)
-row["power_mw"] = f"{float(total[0]) * 1e3:.2f}" if total else ""
+# core power: the design total less the pad cells listed after it
+pads = re.findall(r"^\s*\S+\s+\S+\s+\S+\s+(\S+)\s+p_\w+\.p$", read(f"{rep}/power.rpt"), re.M)
+row["power_mw"] = f"{(float(total[0]) - sum(map(float, pads))) * 1e3:.2f}" if total else ""
 ir = [float(x) for x in re.findall(r"Worstcase IR drop:\s+([\d.eE+-]+)", read(f"{rep}/ir.rpt"))]
 row["ir_drop_mv"] = f"{max(ir) * 1e3:.2f}" if ir else ""
 row["grt_congestion"] = str(read(f"{rep}/congestion.rpt").count("violation type")) if os.path.exists(f"{out}/route.log") else ""
@@ -47,7 +49,27 @@ row["route_drc"] = str(read(f"{rep}/route_drc.rpt").count("violation type")) if 
 row["antenna_nets"] = grab(r"Found (\d+) net violations", read(f"{out}/finish.log") or read(f"{out}/route.log"))
 row["magic_drc"] = grab(r"total (\d+)", read(f"{rep}/drc_magic.rpt"))
 kl = read(f"{rep}/drc_klayout.xml")
-row["klayout_drc"] = str(kl.count("<item>")) if kl else ""
+# KLayout errors inside the SkyWater I/O cells are waived (signoff/waivers.txt) and counted apart
+io_boxes = []
+lef = read(os.environ.get("PDK_ROOT", os.path.expanduser("~/.volare")) + "/sky130A/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef")
+size = {m[0]: (float(m[1]), float(m[2])) for m in re.findall(r"MACRO (\S+)\s.*?SIZE ([\d.]+) BY ([\d.]+)", lef, re.S)}
+for name, master, x, y, o in re.findall(r"- (\S+) (sky130_ef_io__\S+) \+ \w+ \( (\d+) (\d+) \) (\S+)", read(f"{out}/chip_top.def")):
+    w, h = size[master][::-1] if o in ("E", "W", "FE", "FW") else size[master]
+    io_boxes.append((int(x) / 1000 - 0.5, int(y) / 1000 - 0.5, int(x) / 1000 + w + 0.5, int(y) / 1000 + h + 0.5))
+kl_items = re.findall(r"<item>.*?<category>'?([^<']+)'?</category>.*?<values>(.*?)</values>", kl, re.S)
+by_rule = collections.Counter()
+for rule, v in kl_items:
+    xy = [float(n) for n in re.findall(r"-?\d+(?:\.\d+)?", v.split(":", 1)[-1])]
+    cx, cy = (min(xy[0::2]) + max(xy[0::2])) / 2, (min(xy[1::2]) + max(xy[1::2])) / 2
+    by_rule[rule, any(x0 <= cx <= x1 and y0 <= cy <= y1 for x0, y0, x1, y1 in io_boxes)] += 1
+kl_io = sum(n for (_, io), n in by_rule.items() if io)
+row["klayout_drc"] = str(len(kl_items) - kl_io) if kl else ""
+row["klayout_drc_waived"] = str(kl_io) if kl else ""
+if kl:
+    with open(f"{rep}/drc_klayout.summary", "w") as f:
+        f.write("rule outside_io_cells inside_io_cells\n")
+        for rule in sorted({r for r, _ in by_rule}):
+            f.write(f"{rule} {by_rule[rule, False]} {by_rule[rule, True]}\n")
 lvs = read(f"{rep}/lvs.summary")
 row["lvs"] = "" if not lvs else "clean" if "Circuits match uniquely" in lvs else "mismatch"
 
@@ -62,7 +84,7 @@ print(row)
 
 # README results table, between the metrics markers
 cols = ["run", "place_density", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "wns_pclk_ns", "fmax_pclk_mhz", "slew_viol", "slew_waived", "cap_viol",
-        "antenna_nets", "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "lvs"]
+        "antenna_nets", "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "klayout_drc_waived", "lvs"]
 table = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
 table += "".join("| " + " | ".join(r.get(c) or "-" for c in cols) + " |\n" for r in rows)
 readme = read("README.md")
