@@ -1,5 +1,7 @@
-# KLayout: DEF + cell GDS -> final GDS. Run: klayout -b -r signoff/def2gds.py
+# KLayout: DEF + cell GDS -> final GDS with a seal ring. Run: klayout -b -r signoff/def2gds.py
 import os
+import re
+import subprocess
 import pya
 
 pdk = os.environ["PDK_ROOT"] + "/sky130A"
@@ -28,6 +30,13 @@ ly.read(f"{sm}/gds/{sram}.gds")
 for g in ["sky130_ef_io", "sky130_fd_io", "sky130_ef_io__gpiov2_pad_wrapped",
           "sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um"]:
     ly.read(f"{io}/gds/{g}.gds")
+
+# SkyWater seal ring from the PDK generator, its outer edge on the die edge
+die = re.search(r"DIEAREA \( 0 0 \) \( (\d+) \d+ \)", open(out + "/chip_top.def").read()).group(1)
+subprocess.run(["python3", pdk + "/libs.tech/magic/seal_ring_generator/sky130_gen_sealring.py",
+                str(int(die) / 1000), str(int(die) / 1000), ".", "-force", "-outer"], cwd=out, check=True)
+ly.read(out + "/advSeal_6um_gen.gds")
+top.insert(pya.CellInstArray(ly.cell("advSeal_6um_gen").cell_index(), pya.Trans()))
 
 final = pya.Layout()
 final.dbu = ly.dbu

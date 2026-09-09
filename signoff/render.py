@@ -18,5 +18,9 @@ for name, src, color in layers:
     view.insert_layer(view.end_layers(), lp)
 view.max_hier()
 view.set_config("background-color", "#101418")
-view.zoom_fit()
-view.save_image_with_options(os.environ["REP"] + "/layout.png", 1400, 1400, 0, 0, 0, pya.DBox(), False)
+# the drawn layers only; the seal ring's scribe marker reaches past the die
+ly = view.cellview(0).layout()
+box = pya.DBox()
+for name, src, color in layers:
+    box += ly.top_cell().dbbox_per_layer(ly.layer(*map(int, src.split("/"))))
+view.save_image_with_options(os.environ["REP"] + "/layout.png", 1400, 1400, 0, 0, 0, box.enlarged(20, 20), False)

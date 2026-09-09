@@ -8,9 +8,10 @@ set tech_lef $sc/techlef/sky130_fd_sc_hd__nom.tlef
 set out      $::env(OUT)
 set rep      $::env(REP)
 
-# floorplan: 2.1 mm die, core inside the pad ring and the power ring
-set die      2100
-set core_off 265
+# floorplan: 2.12 mm die, the pad ring 20 um in from the edge, the core inside the pad ring and the power ring
+set die      2120
+set io_off   20
+set core_off 285
 set macro_channel 40
 
 # estimated wire capacitance relative to the tech LEF, calibrated to OpenRCX
