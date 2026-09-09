@@ -13,10 +13,20 @@ set_false_path -hold -from [get_clocks {mclk sdram_clk}] -to [get_clocks clk]
 set_input_transition 1.0 [all_inputs]
 set_load 5 [all_outputs]
 
-# system I/O
-set_input_delay  4 -clock clk [get_ports {rst_n uart_rx gpio[*] spi_miso}]
-set_output_delay 4 -clock clk [get_ports {uart_tx gpio[*] spi_cs_n spi_sclk spi_mosi}]
+# reset, UART and GPIO are asynchronous
 set_false_path -from [get_ports {rst_n uart_rx gpio[*]}]
+set_false_path -to [get_ports {uart_tx gpio[*]}]
+
+# SPI flash in mode 0 at clk/2: 2 ns setup, 3 ns hold, 7 ns clock to output, 0.5 ns of board each way
+create_generated_clock -name spi_clk -source [get_ports clk] -divide_by 2 [get_ports spi_sclk]
+set_output_delay -clock spi_clk -max  2.5 [get_ports {spi_mosi spi_cs_n}]
+set_output_delay -clock spi_clk -min -2.5 [get_ports {spi_mosi spi_cs_n}]
+set_input_delay  -clock spi_clk -clock_fall -max 8.0 [get_ports spi_miso]
+set_input_delay  -clock spi_clk -clock_fall -min 0.0 [get_ports spi_miso]
+# MOSI and CS change on the falling SCLK edge; MISO is sampled on the next falling edge
+set_multicycle_path -hold 1 -end -from [get_clocks clk] -to [get_clocks spi_clk]
+set_multicycle_path -setup 2 -from [get_ports spi_miso]
+set_multicycle_path -hold 1 -end -from [get_ports spi_miso]
 
 # SDRAM I/O against the forwarded clock: MT48LC16M16A2-75 tIS 1.5, tIH 0.8, tAC 5.4, tOH 2.7, 1 ns board round trip
 set sdram_out [get_ports {sdram_cke sdram_cs_n sdram_ras_n sdram_cas_n sdram_we_n sdram_ba[*] sdram_a[*]
