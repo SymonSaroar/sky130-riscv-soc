@@ -22,8 +22,12 @@ drc check
 drc catchup
 set f [open $rep/drc_magic.rpt w]
 set n 0
+set um [cif scale out]
 foreach {why boxes} [drc listall why] {
-  puts $f "[llength $boxes]\t$why"
+  # one line per error: rule, then the box in microns
+  foreach box $boxes {
+    puts $f "$why\t[join [lmap v $box {format %.2f [expr {$v * $um}]}] { }]"
+  }
   incr n [llength $boxes]
 }
 puts $f "total $n"

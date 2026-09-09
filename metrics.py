@@ -47,7 +47,6 @@ row["ir_drop_mv"] = f"{max(ir) * 1e3:.2f}" if ir else ""
 row["grt_congestion"] = str(read(f"{rep}/congestion.rpt").count("violation type")) if os.path.exists(f"{out}/route.log") else ""
 row["route_drc"] = str(read(f"{rep}/route_drc.rpt").count("violation type")) if os.path.exists(f"{rep}/route_drc.rpt") else ""
 row["antenna_nets"] = grab(r"Found (\d+) net violations", read(f"{out}/finish.log") or read(f"{out}/route.log"))
-row["magic_drc"] = grab(r"total (\d+)", read(f"{rep}/drc_magic.rpt"))
 kl = read(f"{rep}/drc_klayout.xml")
 # KLayout errors inside the SkyWater I/O cells are waived (signoff/waivers.txt) and counted apart
 io_boxes = []
@@ -56,14 +55,23 @@ size = {m[0]: (float(m[1]), float(m[2])) for m in re.findall(r"MACRO (\S+)\s.*?S
 for name, master, x, y, o in re.findall(r"- (\S+) (sky130_ef_io__\S+) \+ \w+ \( (\d+) (\d+) \) (\S+)", read(f"{out}/chip_top.def")):
     w, h = size[master][::-1] if o in ("E", "W", "FE", "FW") else size[master]
     io_boxes.append((int(x) / 1000 - 0.5, int(y) / 1000 - 0.5, int(x) / 1000 + w + 0.5, int(y) / 1000 + h + 0.5))
-kl_items = re.findall(r"<item>.*?<category>'?([^<']+)'?</category>.*?<values>(.*?)</values>", kl, re.S)
+kl_items = re.findall(r"<item>.*?<category>'?([^<']+)'?</category>.*?<cell>([^<:]*).*?<values>(.*?)</values>", kl, re.S)
 by_rule = collections.Counter()
-for rule, v in kl_items:
+for rule, cell, v in kl_items:
+    # items inside a cell carry that cell's coordinates; top-level items are placed against the pad boxes
+    if cell != "chip_top":
+        by_rule[rule, cell.startswith(("sky130_ef_io__", "sky130_fd_io__"))] += 1
+        continue
     xy = [float(n) for n in re.findall(r"-?\d+(?:\.\d+)?", v.split(":", 1)[-1])]
     cx, cy = (min(xy[0::2]) + max(xy[0::2])) / 2, (min(xy[1::2]) + max(xy[1::2])) / 2
     by_rule[rule, any(x0 <= cx <= x1 and y0 <= cy <= y1 for x0, y0, x1, y1 in io_boxes)] += 1
 kl_io = sum(n for (_, io), n in by_rule.items() if io)
 row["klayout_drc"] = str(len(kl_items) - kl_io) if kl else ""
+# Magic reads the pad cells as LEF abstracts; errors within 2 um of a pad cell are on that abstract geometry
+magic = read(f"{rep}/drc_magic.rpt")
+boxes = [tuple(map(float, l.split("\t")[1].split())) for l in magic.splitlines() if l.count("\t") == 1 and len(l.split("\t")[1].split()) == 4]
+on_io = sum(any(x0 - 1.5 <= a and c <= x1 + 1.5 and y0 - 1.5 <= b and d <= y1 + 1.5 for x0, y0, x1, y1 in io_boxes) for a, b, c, d in boxes)
+row["magic_drc"] = str(len(boxes) - on_io) if boxes else grab(r"total (\d+)", magic)
 row["klayout_drc_waived"] = str(kl_io) if kl else ""
 if kl:
     with open(f"{rep}/drc_klayout.summary", "w") as f:
