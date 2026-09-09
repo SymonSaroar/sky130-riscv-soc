@@ -29,7 +29,7 @@ Details are in [docs/spec_v7.md](docs/spec_v7.md). The SoC sits in a pad ring of
 
 ## Results
 
-All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns in rows 26 to 37. From row 39, timing runs from the chip pins through the pad cells, power leaves out the pad cells, and `klayout_drc` leaves out errors inside the SkyWater I/O cells, which are counted under `klayout_drc_waived`.
+All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns in rows 26 to 37. From row 39, timing runs from the chip pins through the pad cells, power leaves out the pad cells, and `klayout_drc` leaves out errors inside the SkyWater I/O cells, which are counted under `klayout_drc_waived`. From row 40, `magic_drc` leaves out errors on the pad cells' LEF abstracts.
 
 <!-- metrics -->
 | run | place_density | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | wns_pclk_ns | fmax_pclk_mhz | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | ir_drop_mv | grt_congestion | route_drc | magic_drc | klayout_drc | klayout_drc_waived | lvs |
@@ -73,6 +73,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 37-control-resets | 0.5100 | 0.238 | 0.000 | 0.066 | 0 | 0 | 102.4 | 1.989 | 124.8 | 5.356 | 94.0 | 13 | 44 | 2 | 0 | 67.90 | 3.73 | 0 | 0 | 0 | 0 | - | clean |
 | 38-pcie-removed | 0.5000 | 0.435 | 0.000 | 0.066 | 0 | 0 | 104.6 | 1.946 | 124.2 | - | - | 0 | 44 | 0 | 0 | 51.60 | 2.63 | 0 | 0 | 0 | 0 | - | clean |
 | 39-pad-ring | 0.5000 | -2.870 | -77.189 | 0.075 | 39 | 0 | 77.7 | -2.223 | 81.8 | - | - | 0 | 44 | 0 | 0 | 49.42 | 1.89 | 0 | 0 | 93 | 15 | 6451 | mismatch |
+| 40-falling-edge-captures | 0.5000 | 0.502 | 0.000 | 0.022 | 0 | 0 | 109.4 | 0.502 | 105.3 | - | - | 4 | 44 | 1 | 0 | 50.44 | 1.99 | 0 | 0 | 0 | 0 | 34334 | clean |
 <!-- /metrics -->
 
 ## Journal

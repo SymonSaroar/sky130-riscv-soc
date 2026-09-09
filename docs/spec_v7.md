@@ -9,7 +9,7 @@
 | I/O cells | sky130_ef_io |
 | Timing corner | tt_025C_1v80 |
 | Clocks | `clk` 100 MHz (10 ns) for the system and `mclk` 100 MHz (10 ns) for the SDRAM controller |
-| Form | 2.1 x 2.1 mm chip: pad ring of 64 signal pads and 18 supply pads |
+| Form | 2.12 x 2.12 mm chip: pad ring of 64 signal pads and 18 supply pads, seal ring |
 | Supplies | VCCD 1.8 V core, VDDIO 3.3 V pads, VDDA 3.3 V |
 
 ## Blocks
@@ -24,7 +24,7 @@
 | APB bridge | `axil2apb.v` | AXI4-Lite to APB, five zero-wait slaves |
 | UART | `uart.v` | 8N1, programmable divider |
 | GPIO | `gpio.v` | 16 bidirectional pins with output enables |
-| SPI | `spi.v` | Master, mode 0, SCLK = clk/2 |
+| SPI | `spi.v` | Master, mode 0, SCLK = clk/2, MISO sampled on the falling SCLK edge |
 | Timer | `timer.v` | 32-bit mtime/mtimecmp |
 | Interrupt controller | `intc.v` | Level sources, enable mask, drives machine external interrupt |
 | SDRAM port | `sdram.v`, `sdram_ctrl.v`, `async_fifo.v` | AXI4-Lite slave on `clk`, SDR SDRAM controller on `mclk`, async FIFOs between |
@@ -78,6 +78,7 @@
 | Timing (cycles) | tRCD 2, tRP 2, tRFC 7, tMRD 2, tWR 2 |
 | Refresh | Every 750 cycles (7.5 us) |
 | Power-up | 100 us wait, precharge all, 2 auto refresh, mode register set |
+| Pins | Driven from falling-edge registers of `mclk`; read data captured on the falling edge, a cycle and a half after the SDRAM clock edge |
 | Clock crossing | Command and response async FIFOs, 4 entries, Gray-coded pointers |
 
 ## Instruction cache
@@ -115,6 +116,8 @@
 
 Corners and supply pads are `sky130_ef_io` cells; bus slices fill the gaps and one slice per side ties VCCHIB to VCCD and VSWITCH to VDDIO. The pad cells' high-voltage enables come from their own tie outputs.
 
+The SkyWater seal ring, from the PDK's generator, takes the outer 6 µm of the die. The pad ring starts 20 µm in.
+
 | Side | Pads, in coordinate order |
 |---|---|
 | South | vssio, `sdram_a[0:2]`, vccd, `sdram_a[3:5]`, vdda, `sdram_a[6:8]`, vssa, `sdram_a[9:11]`, vssd, `sdram_a[12]`, `sdram_ba[0:1]`, vddio |
@@ -128,7 +131,8 @@ Corners and supply pads are `sky130_ef_io` cells; bus slices fill the gaps and o
 |---|---|
 | Board | 1 ns input edges, 5 pF on every output |
 | SDRAM | MT48LC16M16A2-75: tIS 1.5 ns, tIH 0.8 ns, tAC 5.4 ns, tOH 2.7 ns, 1 ns board round trip |
-| UART, GPIO, SPI | 4 ns input and output delays against `clk`; reset, `uart_rx` and GPIO inputs asynchronous |
+| SPI flash | 2 ns setup, 3 ns hold, 7 ns clock to output, 0.5 ns of board each way |
+| UART, GPIO, reset | Asynchronous |
 
 ## Verification
 
