@@ -85,7 +85,7 @@ MAGIC := magic -dnull -noconsole -rcfile $(PDK_ROOT)/sky130A/libs.tech/magic/sky
 rcx:
 	openroad -no_init -exit -log $(OUT)/rcx.log extraction/rcx.tcl > /dev/null
 sta:
-	sta -no_init -exit sta/sta.tcl > $(OUT)/sta.log
+	for c in tt ss ff; do CORNER=$$c sta -no_init -exit sta/sta.tcl > $(OUT)/sta_$$c.log || exit 1; done
 ir:
 	openroad -no_init -threads max -exit -log $(OUT)/ir.log power/ir.tcl > /dev/null
 	grep -A6 'Supply voltage' $(OUT)/ir.log > $(REP)/ir.rpt
