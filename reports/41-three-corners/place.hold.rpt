@@ -1,0 +1,115 @@
+Startpoint: _39551_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _39567_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ _39551_/CLK (sky130_fd_sc_hd__dfxtp_2)
+   0.29    0.29 ^ _39551_/Q (sky130_fd_sc_hd__dfxtp_2)
+   0.00    0.29 ^ _39567_/D (sky130_fd_sc_hd__dfxtp_2)
+           0.29   data arrival time
+
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.25    0.25   clock uncertainty
+   0.00    0.25   clock reconvergence pessimism
+           0.25 ^ _39567_/CLK (sky130_fd_sc_hd__dfxtp_2)
+  -0.03    0.22   library hold time
+           0.22   data required time
+---------------------------------------------------------
+           0.22   data required time
+          -0.29   data arrival time
+---------------------------------------------------------
+           0.07   slack (MET)
+
+
+Startpoint: sdram_dq[8] (input port clocked by sdram_clk)
+Endpoint: _39626_ (rising edge-triggered flip-flop clocked by mclk')
+Path Group: mclk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+  10.00   10.00   clock sdram_clk (rise edge)
+   0.00   10.00   clock network delay (ideal)
+   3.70   13.70 ^ input external delay
+   0.00   13.70 ^ sdram_dq[8] (inout)
+   1.40   15.10 ^ p_sdram_dq8.p/IN (sky130_ef_io__gpiov2_pad_wrapped)
+   0.00   15.10 ^ _39626_/D (sky130_fd_sc_hd__dfxtp_2)
+          15.10   data arrival time
+
+  15.00   15.00   clock mclk' (rise edge)
+   0.00   15.00   clock network delay (ideal)
+   0.25   15.25   clock uncertainty
+   0.00   15.25   clock reconvergence pessimism
+          15.25 ^ _39626_/CLK (sky130_fd_sc_hd__dfxtp_2)
+  -0.04   15.21   library hold time
+          15.21   data required time
+---------------------------------------------------------
+          15.21   data required time
+         -15.10   data arrival time
+---------------------------------------------------------
+          -0.11   slack (VIOLATED)
+
+
+Startpoint: _39617_ (rising edge-triggered flip-flop clocked by mclk')
+Endpoint: sdram_dq[4] (output port clocked by sdram_clk)
+Path Group: sdram_clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   5.00    5.00   clock mclk' (rise edge)
+   0.00    5.00   clock network delay (ideal)
+   0.00    5.00 ^ _39617_/CLK (sky130_fd_sc_hd__dfxtp_2)
+   0.41    5.41 v _39617_/Q (sky130_fd_sc_hd__dfxtp_2)
+   0.46    5.87 ^ _30317_/Y (sky130_fd_sc_hd__inv_6)
+   2.46    8.33 v p_sdram_dq4.p/PAD (sky130_ef_io__gpiov2_pad_wrapped)
+   0.00    8.33 v sdram_dq[4] (inout)
+           8.33   data arrival time
+
+   0.00    0.00   clock sdram_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.25    0.25   clock uncertainty
+   0.00    0.25   clock reconvergence pessimism
+   0.80    1.05   output external delay
+           1.05   data required time
+---------------------------------------------------------
+           1.05   data required time
+          -8.33   data arrival time
+---------------------------------------------------------
+           7.28   slack (MET)
+
+
+Startpoint: _39382_ (rising edge-triggered flip-flop clocked by clk)
+Endpoint: spi_mosi (output port clocked by spi_clk)
+Path Group: spi_clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ _39382_/CLK (sky130_fd_sc_hd__dfxtp_2)
+   0.33    0.33 ^ _39382_/Q (sky130_fd_sc_hd__dfxtp_2)
+   0.34    0.67 ^ _35797_/X (sky130_fd_sc_hd__mux2_2)
+   0.25    0.92 ^ wire1417/X (sky130_fd_sc_hd__buf_12)
+   4.13    5.06 ^ p_spi_mosi.p/PAD (sky130_ef_io__gpiov2_pad_wrapped)
+   0.00    5.06 ^ spi_mosi (out)
+           5.06   data arrival time
+
+ -20.00  -20.00   clock spi_clk (rise edge)
+   0.00  -20.00   clock network delay (ideal)
+   0.00  -20.00   clock reconvergence pessimism
+   2.50  -17.50   output external delay
+         -17.50   data required time
+---------------------------------------------------------
+         -17.50   data required time
+          -5.06   data arrival time
+---------------------------------------------------------
+          22.56   slack (MET)
+
+
