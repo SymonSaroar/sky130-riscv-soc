@@ -81,7 +81,7 @@ route:
 
 MAGIC := magic -dnull -noconsole -rcfile $(PDK_ROOT)/sky130A/libs.tech/magic/sky130A.magicrc
 
-.PHONY: rcx sta ir gds render magic klayout_drc lvs signoff
+.PHONY: rcx sta ir gds render magic klayout_drc density lvs signoff
 rcx:
 	openroad -no_init -exit -log $(OUT)/rcx.log extraction/rcx.tcl > /dev/null
 sta:
@@ -91,6 +91,7 @@ ir:
 	grep -A6 'Supply voltage' $(OUT)/ir.log > $(REP)/ir.rpt
 gds:
 	klayout -b -r signoff/def2gds.py > $(OUT)/gds.log
+	klayout -b -r signoff/fill.py >> $(OUT)/gds.log
 render:
 	klayout -b -r signoff/render.py
 magic:
@@ -99,11 +100,15 @@ klayout_drc:
 	klayout -b -r $(PDK_ROOT)/sky130A/libs.tech/klayout/drc/sky130A_mr.drc \
 	  -rd input=$(CURDIR)/$(OUT)/chip_top.gds -rd top_cell=chip_top -rd report=$(CURDIR)/$(REP)/drc_klayout.xml \
 	  -rd feol=true -rd beol=true -rd offgrid=true -rd seal=true > $(OUT)/drc_klayout.log
+density:
+	klayout -b -r $(PDK_ROOT)/sky130A/libs.tech/klayout/drc/met_min_ca_density.lydrc \
+	  -rd input=$(CURDIR)/$(OUT)/chip_top.gds -rd top_cell=chip_top -rd report=$(CURDIR)/$(REP)/density.xml > $(OUT)/density.log
+	grep "density is" $(OUT)/density.log > $(REP)/density.rpt
 lvs: magic
 	netgen -batch source signoff/lvs.tcl > $(OUT)/lvs.log
 	{ sed -n "$$(grep -n 'Subcircuit summary' $(REP)/lvs.rpt | tail -1 | cut -d: -f1),\$$p" $(REP)/lvs.rpt | head -80; \
 	  grep -A1 '^Final result' $(REP)/lvs.rpt; } > $(REP)/lvs.summary
-signoff: rcx sta ir gds render lvs klayout_drc
+signoff: rcx sta ir gds render lvs klayout_drc density
 
 .PHONY: metrics all
 metrics:
