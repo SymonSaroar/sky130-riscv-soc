@@ -75,7 +75,7 @@
 | Address | Row = addr[24:12], bank = addr[11:10], column = {addr[9:2], beat} |
 | Mode | CAS latency 3, burst length 2, sequential |
 | Timing (cycles) | tRCD 2, tRP 2, tRFC 7, tMRD 2, tWR 2 |
-| Refresh | Every 750 cycles (7.5 us) |
+| Refresh | Every 480 cycles: 4.8 us at 100 MHz, 7.7 us at 62.5 MHz |
 | Power-up | 100 us wait, precharge all, 2 auto refresh, mode register set |
 | Pins | Driven from falling-edge registers of `mclk`; read data captured on the falling edge, a cycle and a half after the SDRAM clock edge |
 | Clock crossing | Command and response async FIFOs, 4 entries, Gray-coded pointers |
@@ -138,10 +138,10 @@ The SkyWater seal ring, from the PDK's generator, takes the outer 6 µm of the d
 | Corner | Cells | Pads | SRAM | Interconnect | Checks | Clocks |
 |---|---|---|---|---|---|---|
 | tt | tt_025C_1v80 | tt_tt_025C_1v80_3v30 | TT liberty | nominal | setup, hold, slew, load | 100 MHz |
-| ss | ss_100C_1v60 | ss_ss_100C_1v60_3v00 | TT liberty, delays and setup x2.1 | max | setup, slew, load | 100 MHz |
-| ff | ff_n40C_1v95 | ff_ff_n40C_1v95_5v50 | TT liberty, delays x0.64 | min | hold | 100 MHz |
+| ss | ss_100C_1v60 | ss_ss_100C_1v60_3v00 | TT liberty, delays and setup x2.1 | max | setup, hold, slew, load | `clk` 50 MHz, `mclk` 62.5 MHz |
+| ff | ff_n40C_1v95 | ff_ff_n40C_1v95_5v50 | TT liberty, delays x0.64 | min | setup, hold | 100 MHz |
 
-The SRAM factors are the `dfxtp_2` clock-to-Q ratios between the corners. IR drop is sourced at the straps from the supply pads.
+The SRAM factors are the `dfxtp_2` clock-to-Q ratios between the corners. At the slow corner the clock-domain crossings are bounded by 16 ns. IR drop is sourced at the straps from the supply pads. Metal fill on the sky130 fill layers covers met1 to met5 outside the seal ring, the I/O cells and the SRAMs, and the layout passes the PDK's pattern density check.
 
 ## Verification
 

@@ -5,6 +5,7 @@ Spec: [spec_v8.md](../spec_v8.md). Signoff covers three corners instead of one. 
 | Change | Setup WNS clk / mclk, tt (ns) | Setup WNS clk / mclk, ss (ns) | Hold WNS tt / ff (ns) | DRC / LVS |
 |---|---|---|---|---|
 | Three corners on the pad-ring layout | +0.86 / +0.50 | -8.32 / -2.87 | +0.022 / -0.086 | clean |
+| Slow corner at 50 / 62.5 MHz, 0.2 ns hold margin, design repair after timing repair, metal fill | +0.96 / +0.42 | +1.98 / +1.47 | +0.189 / +0.019 | clean |
 
 ## Three corners
 
@@ -24,3 +25,29 @@ Hold at the fast corner fails on 22 endpoints, by up to 0.086 ns, all between fl
 IR drop from the pads is 17.3 mV on VPWR and 16.3 mV on VGND, against 2 mV when every met5 node was a source.
 
 Decision: specify the slow corner at 50 MHz on both clocks and size the SDRAM refresh interval for 50 MHz, repair hold at the typical corner with 0.2 ns of margin, repair slew and load once more after timing repair, and fill the metal layers.
+
+## Slow-corner clocks, hold margin, fill
+
+The slow corner is now specified at `clk` 50 MHz and `mclk` 62.5 MHz. Checked on the same layout, 50 MHz on `mclk` breaks hold on SDRAM read data by 0.26 ns: the read is captured a fixed cycle and a half after the SDRAM clock edge, and with a 20 ns cycle the next read's data reaches the flop before that edge. At 62.5 MHz it closes. The clock-domain crossings at the slow corner are bounded by 16 ns. The SDRAM refresh interval drops from 750 to 480 cycles, 7.7 µs at 62.5 MHz and 4.8 µs at 100 MHz; the benchmark takes 13,233 cycles cold.
+
+Hold repair at the typical corner keeps 0.2 ns of margin, which adds 61 hold buffers at CTS and 21 after global routing. Slew and load repair runs once more after timing repair. The GDS step fills met1 to met5 on the sky130 fill layers: squares of 2 µm on a 4 µm pitch on met1 to met3 and 3 µm on 6 µm on met4 and met5, at least 1 or 2 µm from drawn metal, outside the seal ring, the I/O cells and the SRAMs. The PDK's density check then runs on the filled GDS.
+
+Synthesis gives 22,860 cells.
+
+![layout](../../reports/42-slow-corner-clocks/layout.png)
+
+All three corners close:
+
+| Corner | Setup, worst (ns) | Hold, worst (ns) |
+|---|---|---|
+| tt, 100 MHz | +0.42, `sdram_dq[15]` write data; +0.96 inside the core | +0.189 |
+| ss, `clk` 50 MHz, `mclk` 62.5 MHz | +1.47, `sdram_dq[15]` write data; +1.98 inside the core (55.5 MHz max) | +0.648 |
+| ff, 100 MHz | +1.36 | +0.019 |
+
+No pin is over its slew or load limit at tt or ff apart from the waived SRAM inputs. At ss one net is 0.04 ns over its 1.47 ns slew limit.
+
+Power without the pad cells is 50.4 mW and IR drop 17.1 mV. Antennas and router DRC are at 0, Magic and KLayout find nothing outside the I/O cells, LVS matches, and the density check passes: the metal layers are 26 to 38% covered after fill.
+
+Gate-level simulation passes with flops starting at 0 and at 1.
+
+Decision: keep 10% of slew and load margin in design repair, and simulate the routed netlist with the signoff delays.
