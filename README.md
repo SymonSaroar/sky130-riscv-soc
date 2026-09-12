@@ -76,6 +76,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 40-falling-edge-captures | 0.5000 | 0.502 | 0.000 | 0.022 | 0 | 0 | 109.4 | 0.502 | 105.3 | - | - | - | - | - | - | - | 4 | 44 | 1 | 0 | 50.44 | 1.99 | 0 | 0 | 0 | 0 | 34334 | - | clean |
 | 41-three-corners | 0.5000 | 0.502 | 0.000 | 0.022 | 0 | 0 | 109.4 | 0.502 | 105.3 | - | - | -8.323 | 54.6 | 77.7 | -0.086 | 22 | 4 | 44 | 1 | 0 | 50.44 | 17.30 | 0 | 0 | 0 | 0 | 34334 | - | clean |
 | 42-slow-corner-clocks | 0.5000 | 0.415 | 0.000 | 0.189 | 0 | 0 | 110.6 | 0.415 | 104.3 | - | - | 1.471 | 55.5 | 68.8 | 0.019 | 0 | 0 | 43 | 0 | 0 | 50.42 | 17.10 | 0 | 0 | 0 | 0 | 34334 | clean | clean |
+| 43-slew-margin-10 | 0.5000 | 0.425 | 0.000 | 0.176 | 0 | 0 | 110.8 | 0.425 | 104.4 | - | - | 1.489 | 55.4 | 68.9 | 0.013 | 0 | 0 | 44 | 0 | 0 | 50.43 | 17.10 | 0 | 0 | 0 | 0 | 34334 | clean | clean |
 <!-- /metrics -->
 
 ## Journal
@@ -95,15 +96,15 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 
 | Path | Contents |
 |---|---|
-| `rtl/` | SoC RTL |
-| `tb/` | Testbench, flash and SRAM models, firmware |
+| `rtl/` | SoC RTL; `chip_top.v` adds the pad ring |
+| `tb/` | Testbench, flash, SRAM and SDRAM models, firmware |
 | `constraints/` | SDC |
 | `synthesis/` | Yosys script |
-| `floorplan/`, `placement/`, `cts/`, `routing/` | OpenROAD stage scripts |
+| `floorplan/`, `placement/`, `cts/`, `routing/` | OpenROAD stage scripts; `floorplan/padring.tcl` places the pad ring |
 | `power/` | Static IR drop |
 | `extraction/` | OpenRCX |
-| `sta/` | OpenSTA signoff timing and power |
-| `signoff/` | KLayout stream-out, Magic DRC and extraction, Netgen LVS |
+| `sta/` | OpenSTA signoff timing and power at three corners, corner copies of the pad and SRAM liberties |
+| `signoff/` | KLayout stream-out with seal ring and fill, Magic DRC and extraction, Netgen LVS, waivers |
 | `reports/<name>/` | Reports kept for each committed result |
 | `docs/` | Spec and journal |
 
@@ -112,8 +113,9 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 ```
 make sim               # RTL simulation with firmware
 make -j2 gls RUN=dev    # gate-level simulation, flops starting at 0 and at 1
+make gls_sdf RUN=dev    # routed netlist with the signoff delays
 make all RUN=dev        # synthesis through signoff, then metrics
-make <stage> RUN=dev    # synth floorplan place cts route rcx sta gds lvs klayout_drc metrics
+make <stage> RUN=dev    # synth floorplan place cts route rcx sta ir gds lvs klayout_drc density metrics
 ```
 
 `PDK_ROOT` defaults to `~/.volare`. Build outputs go to `build/<RUN>/`.

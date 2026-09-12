@@ -6,6 +6,7 @@ Spec: [spec_v8.md](../spec_v8.md). Signoff covers three corners instead of one. 
 |---|---|---|---|---|
 | Three corners on the pad-ring layout | +0.86 / +0.50 | -8.32 / -2.87 | +0.022 / -0.086 | clean |
 | Slow corner at 50 / 62.5 MHz, 0.2 ns hold margin, design repair after timing repair, metal fill | +0.96 / +0.42 | +1.98 / +1.47 | +0.189 / +0.019 | clean |
+| 10% slew and load margin in design repair | +0.98 / +0.43 | +1.95 / +1.49 | +0.176 / +0.013 | clean |
 
 ## Three corners
 
@@ -51,3 +52,13 @@ Power without the pad cells is 50.4 mW and IR drop 17.1 mV. Antennas and router 
 Gate-level simulation passes with flops starting at 0 and at 1.
 
 Decision: keep 10% of slew and load margin in design repair, and simulate the routed netlist with the signoff delays.
+
+## 10% slew and load margin
+
+Design repair keeps 10% of margin on slew and load. Timing ends where it was: tt +0.98 / +0.43 ns, ss +1.95 / +1.49 ns (55.4 MHz on `clk`), hold +0.176 ns at tt and +0.013 ns at ff. LVS matches, DRC and the density check are clean, and power and IR drop stay at 50.4 mW and 17.1 mV.
+
+![layout](../../reports/43-slew-margin-10/layout.png)
+
+The margin does not reach the slow corner. Two nets are still over the 1.49 ns slew limit there, at 1.60 and 1.49 ns. At tt the same nets are at 0.86 and 0.77 ns, and the slow corner nearly doubles a slew. Only three cell outputs at tt are above 0.75 ns.
+
+Decision: keep 50% slew margin in design repair.
