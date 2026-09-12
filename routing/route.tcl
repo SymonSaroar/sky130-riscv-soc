@@ -8,6 +8,8 @@ estimate_parasitics -global_routing
 repair_design
 repair_timing -setup -skip_buffering
 repair_timing -hold -hold_margin 0.2
+# slew and load once more on the gates timing repair cloned or resized
+repair_design
 global_route -start_incremental
 detailed_placement
 global_route -end_incremental -congestion_report_file $rep/congestion.rpt
