@@ -42,6 +42,7 @@ if {$corner eq "tt"} {
   report_power -instances [get_cells -filter "ref_name == sky130_ef_io__gpiov2_pad_wrapped" *] >> $rep/power.rpt
   report_checks -path_delay max -from [get_clocks clk] -to [get_clocks mclk] -group_path_count 5 > $rep/cdc.rpt
   report_checks -path_delay max -from [get_clocks mclk] -to [get_clocks clk] -group_path_count 5 >> $rep/cdc.rpt
+  write_sdf -digits 4 $out/chip_top.sdf
 }
 
 set f [open $rep/$tag.summary w]

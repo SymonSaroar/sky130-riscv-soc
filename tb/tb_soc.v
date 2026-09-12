@@ -35,6 +35,10 @@ module tb_soc;
   );
   spi_flash flash (.cs_n(spi_cs_n), .sclk(spi_sclk), .mosi(spi_mosi), .miso(spi_miso));
 
+`ifdef SDF
+  initial $sdf_annotate(`SDF, dut);
+`endif
+
   integer i, j;
   reg [7:0] c, d;
 
