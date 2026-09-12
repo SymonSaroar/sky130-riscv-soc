@@ -116,16 +116,22 @@ metrics:
 all: synth floorplan place cts route signoff metrics
 
 SC_V := $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog
-# every flop starts at 0 (gls0) or at 1 (gls1); the netlist has no pad supply pins, so the
-# simulation copy of the gpiov2 wrapper leaves them off and the pad model uses its own supplies
+.PRECIOUS: $(OUT)/primitives_%.v
+# simulation copies: every flop starts at 0 or at 1, and the gpiov2 wrapper leaves off the supply pins
+# the netlist does not have, so the pad model uses its own supplies
+$(OUT)/primitives_%.v:
+	sed "s/^\( *\)reg Q;/&\n\1initial Q = 1'b$*;/" $(SC_V)/primitives.v > $@
+$(OUT)/sky130_ef_io_gls.v:
+	sed -e '/^module sky130_ef_io__gpiov2_pad_wrapped/,/^endmodule/{/^ *\.\(VSSA\|VDDA\|VSWITCH\|VDDIO_Q\|VCCHIB\|VDDIO\|VCCD\|VSSIO\|VSSD\|VSSIO_Q\)(/d' \
+	    -e 's/\.AMUXBUS_B(AMUXBUS_B),/.AMUXBUS_B(AMUXBUS_B)/}' $(IO_V)/sky130_ef_io.v > $@
+
+# the synthesized netlist with functional cell models, flops starting at 0 (gls0) and at 1 (gls1)
 .PHONY: gls gls0 gls1
 gls: gls0 gls1
-gls0 gls1: fw
-	sed "s/^\( *\)reg Q;/&\n\1initial Q = 1'b$(@:gls%=%);/" $(SC_V)/primitives.v > $(OUT)/primitives_$(@:gls%=%).v
-	sed -e '/^module sky130_ef_io__gpiov2_pad_wrapped/,/^endmodule/{/^ *\.\(VSSA\|VDDA\|VSWITCH\|VDDIO_Q\|VCCHIB\|VDDIO\|VCCD\|VSSIO\|VSSD\|VSSIO_Q\)(/d' \
-	    -e 's/\.AMUXBUS_B(AMUXBUS_B),/.AMUXBUS_B(AMUXBUS_B)/}' $(IO_V)/sky130_ef_io.v > $(OUT)/sky130_ef_io_gls.v
+gls0 gls1: gls%: fw $(OUT)/primitives_%.v $(OUT)/sky130_ef_io_gls.v
 	iverilog -g2012 -s tb_soc -DGLS -DFUNCTIONAL -DUNIT_DELAY=#1 -o $(OUT)/tb_$@ \
 	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v \
-	  $(OUT)/primitives_$(@:gls%=%).v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/chip_top.v \
+	  $(OUT)/primitives_$*.v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/chip_top.v \
 	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v
 	vvp -n $(OUT)/tb_$@ | sed 's/^/$@: /'
+
