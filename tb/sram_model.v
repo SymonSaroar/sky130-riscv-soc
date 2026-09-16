@@ -1,5 +1,5 @@
-// Simulation model of sky130_sram_2kbyte_1rw1r_32x512_8 with the OpenRAM timing:
-// inputs registered on posedge, dout X after posedge, valid after negedge.
+// Simulation model of sky130_sram_2kbyte_1rw1r_32x512_8: inputs registered on posedge, dout X 1 ns after
+// posedge, valid 0.53 ns after negedge (the largest clock-to-dout in the liberty).
 module sky130_sram_2kbyte_1rw1r_32x512_8 (
   input             clk0, csb0, web0,
   input       [3:0] wmask0,
@@ -30,7 +30,7 @@ module sky130_sram_2kbyte_1rw1r_32x512_8 (
     if (we0) for (i = 0; i < 4; i = i + 1) begin
       if (wm0[i]) mem[a0][i*8 +: 8] <= d0[i*8 +: 8];
     end
-    else dout0 <= #3 mem[a0];
+    else dout0 <= #0.53 mem[a0];
   end
-  always @(negedge clk1) if (cs1) dout1 <= #3 mem[a1];
+  always @(negedge clk1) if (cs1) dout1 <= #0.53 mem[a1];
 endmodule
