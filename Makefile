@@ -117,13 +117,12 @@ all: synth floorplan place cts route signoff metrics
 
 SC_V := $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog
 .PRECIOUS: $(OUT)/primitives_%.v
-# simulation copies: every flop starts at 0 or at 1, and the gpiov2 wrapper leaves off the supply pins
-# the netlist does not have, so the pad model uses its own supplies
+# simulation copies: every flop starts at 0 or at 1, and the gpiov2 wrapper without supply pins and with
+# per-instance pad delays
 $(OUT)/primitives_%.v:
 	sed "s/^\( *\)reg Q;/&\n\1initial Q = 1'b$*;/" $(SC_V)/primitives.v > $@
-$(OUT)/sky130_ef_io_gls.v:
-	sed -e '/^module sky130_ef_io__gpiov2_pad_wrapped/,/^endmodule/{/^ *\.\(VSSA\|VDDA\|VSWITCH\|VDDIO_Q\|VCCHIB\|VDDIO\|VCCD\|VSSIO\|VSSD\|VSSIO_Q\)(/d' \
-	    -e 's/\.AMUXBUS_B(AMUXBUS_B),/.AMUXBUS_B(AMUXBUS_B)/}' $(IO_V)/sky130_ef_io.v > $@
+$(OUT)/sky130_ef_io_gls.v: tb/pad_gls.py
+	python3 tb/pad_gls.py $(IO_V)/sky130_ef_io.v $@
 
 # the synthesized netlist with functional cell models, flops starting at 0 (gls0) and at 1 (gls1)
 .PHONY: gls gls0 gls1
@@ -135,12 +134,12 @@ gls0 gls1: gls%: fw $(OUT)/primitives_%.v $(OUT)/sky130_ef_io_gls.v
 	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v
 	vvp -n $(OUT)/tb_$@ +progress=$(OUT)/$@.time | sed 's/^/$@: /'
 
-# the routed netlist with the cell timing models and the tt delays from signoff STA
+# the routed netlist with the cell timing models and the tt delays from signoff STA, pads included
 .PHONY: gls_sdf
 gls_sdf: fw $(OUT)/primitives_0.v $(OUT)/sky130_ef_io_gls.v
-	python3 sta/sdf_iverilog.py $(OUT)/chip_top.sdf $(OUT)/chip_top_iverilog.sdf
-	iverilog -g2012 -gspecify -ginterconnect -s tb_soc -DGLS -DSDF='"$(OUT)/chip_top_iverilog.sdf"' -o $(OUT)/tb_gls_sdf \
-	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v \
+	python3 sta/sdf_iverilog.py $(OUT)/chip_top.sdf $(OUT)/chip_top_iverilog.sdf $(OUT)/chip_top_pads.v
+	iverilog -g2012 -gspecify -ginterconnect -s tb_soc -s sdf_pads -DGLS -DSDF='"$(OUT)/chip_top_iverilog.sdf"' \
+	  -o $(OUT)/tb_gls_sdf tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v \
 	  $(OUT)/primitives_0.v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/chip_top.final.v \
-	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v
+	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v $(OUT)/chip_top_pads.v
 	vvp -n $(OUT)/tb_gls_sdf +progress=$(OUT)/gls_sdf.time
