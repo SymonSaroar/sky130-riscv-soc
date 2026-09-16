@@ -148,4 +148,5 @@ The SRAM factors are the `dfxtp_2` clock-to-Q ratios between the corners. At the
 - `make sim` simulates the chip with the pad models: it boots from a flash model, runs the program from SDRAM through the instruction cache, and checks 52 RV32IM cases, the timer and UART interrupts, a SPI flash read, SDRAM word, halfword and byte accesses in four rows across three banks, and an 8x8 matrix multiply against shift-and-add products.
 - The SDRAM model flags protocol errors: access to a closed bank, tRCD, refresh with an open bank, refresh interval, commands before the mode register is set.
 - `make gls` runs the same test on the synthesized netlist, once with every flop starting at 0 and once at 1.
+- `make gls_sdf` runs it on the routed netlist with the typical-corner delays from signoff STA, pads included. The SRAM model reads with the largest clock-to-dout delay in its liberty.
 - `make lint` runs Verilator lint.

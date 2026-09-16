@@ -27,6 +27,19 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
 
 Details are in [docs/spec_v8.md](docs/spec_v8.md). The SoC sits in a pad ring of SKY130 I/O cells.
 
+## The chip
+
+![chip layout](reports/44-slew-margin-50/layout.png)
+
+| | |
+|---|---|
+| Die | 2.12 x 2.12 mm, SkyWater seal ring, 64 signal pads and 18 supply pads |
+| Clocks | `clk` and `mclk` at 100 MHz typical; 50 and 62.5 MHz at the slow corner |
+| Timing | tt +0.77 / +0.65 ns setup, +0.167 ns hold; ss +1.91 / +1.86 ns setup; ff +0.007 ns hold |
+| Power | 50.4 mW without the pad cells, 17.1 mV IR drop from the supply pads |
+| Physical checks | Magic and KLayout DRC clean outside the SkyWater I/O cells, LVS clean, antennas 0, density clean with metal fill |
+| Simulation | The test passes on the RTL, on the synthesized netlist, and on the routed netlist with the signoff delays |
+
 ## Results
 
 All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics unless a column says otherwise. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns in rows 26 to 37. From row 39, timing runs from the chip pins through the pad cells, power leaves out the pad cells, and `klayout_drc` leaves out errors inside the SkyWater I/O cells, which are counted under `klayout_drc_waived`. From row 40, `magic_drc` leaves out errors on the pad cells' LEF abstracts. From row 41, `wns_ss_ns` and the `_ss` maxima come from the slow corner (ss, 100 C, 1.60 V, maximum RC) and `whs_ff_ns` from the fast corner (ff, -40 C, 1.95 V, minimum RC). From row 42, `fmax_ss_mhz` and `fmax_mclk_ss_mhz` are measured against the slow-corner clocks of 50 and 62.5 MHz, and `density` is the PDK pattern density check on the filled GDS.
@@ -77,6 +90,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 41-three-corners | 0.5000 | 0.502 | 0.000 | 0.022 | 0 | 0 | 109.4 | 0.502 | 105.3 | - | - | -8.323 | 54.6 | 77.7 | -0.086 | 22 | 4 | 44 | 1 | 0 | 50.44 | 17.30 | 0 | 0 | 0 | 0 | 34334 | - | clean |
 | 42-slow-corner-clocks | 0.5000 | 0.415 | 0.000 | 0.189 | 0 | 0 | 110.6 | 0.415 | 104.3 | - | - | 1.471 | 55.5 | 68.8 | 0.019 | 0 | 0 | 43 | 0 | 0 | 50.42 | 17.10 | 0 | 0 | 0 | 0 | 34334 | clean | clean |
 | 43-slew-margin-10 | 0.5000 | 0.425 | 0.000 | 0.176 | 0 | 0 | 110.8 | 0.425 | 104.4 | - | - | 1.489 | 55.4 | 68.9 | 0.013 | 0 | 0 | 44 | 0 | 0 | 50.43 | 17.10 | 0 | 0 | 0 | 0 | 34334 | clean | clean |
+| 44-slew-margin-50 | 0.5000 | 0.651 | 0.000 | 0.167 | 0 | 0 | 108.4 | 0.651 | 107.0 | - | - | 1.857 | 55.3 | 70.7 | 0.007 | 0 | 0 | 40 | 0 | 0 | 50.44 | 17.10 | 0 | 0 | 0 | 0 | 34334 | clean | clean |
 <!-- /metrics -->
 
 ## Journal
@@ -97,7 +111,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | Path | Contents |
 |---|---|
 | `rtl/` | SoC RTL; `chip_top.v` adds the pad ring |
-| `tb/` | Testbench, flash, SRAM and SDRAM models, firmware |
+| `tb/` | Testbench, flash, SRAM and SDRAM models, firmware, pad model copy for gate-level simulation |
 | `constraints/` | SDC |
 | `synthesis/` | Yosys script |
 | `floorplan/`, `placement/`, `cts/`, `routing/` | OpenROAD stage scripts; `floorplan/padring.tcl` places the pad ring |
