@@ -42,6 +42,8 @@ proc xform {inst x y} {
     R270 { list [expr {$lx + $y}]      [expr {$ly + $w - $x}] }
     MX   { list [expr {$lx + $x}]      [expr {$ly + $h - $y}] }
     MY   { list [expr {$lx + $w - $x}] [expr {$ly + $y}] }
+    MXR90 { list [expr {$lx + $y}]      [expr {$ly + $x}] }
+    MYR90 { list [expr {$lx + $h - $y}] [expr {$ly + $w - $x}] }
   }
 }
 

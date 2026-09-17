@@ -1,15 +1,15 @@
-# Pad ring: four corners, each side's pads in order, bus slices in the gaps.
-# Signal pads are netlist instances p_<name>.p; vccd, vssd, vddio, vssio, vdda, vssa add a supply pad,
-# conn a slice that ties VCCHIB to VCCD and VSWITCH to VDDIO.
-# Sides are listed in coordinate order: south and north left to right, west and east bottom to top.
-set row(south) {conn vssio sdram_a0 sdram_a1 sdram_a2 vccd sdram_a3 sdram_a4 sdram_a5 vdda sdram_a6 sdram_a7
-               sdram_a8 vssa sdram_a9 sdram_a10 sdram_a11 vssd sdram_a12 sdram_ba0 sdram_ba1 vddio}
-set row(east)  {conn sdram_dq0 sdram_dq1 sdram_dq2 sdram_dq3 vddio sdram_dq4 sdram_dq5 sdram_dq6 sdram_dq7
-               vccd sdram_dq8 sdram_dq9 sdram_dq10 sdram_dq11 vssio sdram_dq12 sdram_dq13 sdram_dq14 sdram_dq15 vssd}
-set row(north) {conn spi_cs_n spi_sclk spi_mosi spi_miso vssd uart_tx uart_rx rst_n clk vddio mclk sdram_clk
-               sdram_cke sdram_cs_n vccd sdram_ras_n sdram_cas_n sdram_we_n vssio sdram_dqm0 sdram_dqm1}
-set row(west)  {conn vssio gpio15 gpio14 gpio13 gpio12 vccd gpio11 gpio10 gpio9 gpio8 vddio gpio7 gpio6 gpio5
-               gpio4 vssd gpio3 gpio2 gpio1 gpio0}
+# Pad ring after the SkyWater I/O user guide: gpio pads abut with every other one mirrored, supply pads go in
+# pairs, and the vssd/vccd pair keeps bus slices of at least 12 um on its outer sides, where its overlays reach.
+# Signal pads are netlist instances p_<name>.p; conn is a slice that ties VCCHIB to VCCD and VSWITCH to VDDIO.
+# Rows are in the cells' own left-to-right order: north and west run with the coordinate, south and east against it.
+set row(south) {conn sdram_a0 sdram_a1 sdram_a2 sdram_a3 vddio vssio sdram_a4 sdram_a5 sdram_a6 sdram_a7 sdram_a8
+               vssd vccd sdram_a9 sdram_a10 sdram_a11 sdram_a12 vdda vssa sdram_ba0 sdram_ba1}
+set row(east)  {conn sdram_dq0 sdram_dq1 sdram_dq2 sdram_dq3 sdram_dq4 sdram_dq5 sdram_dq6 sdram_dq7 vddio vssio
+               sdram_dq8 sdram_dq9 sdram_dq10 sdram_dq11 vssd vccd sdram_dq12 sdram_dq13 sdram_dq14 sdram_dq15}
+set row(north) {conn spi_cs_n spi_sclk spi_mosi spi_miso uart_tx uart_rx rst_n clk vddio vssio mclk sdram_clk
+               sdram_cke sdram_cs_n vssd vccd sdram_ras_n sdram_cas_n sdram_we_n sdram_dqm0 sdram_dqm1}
+set row(west)  {conn gpio15 gpio14 gpio13 gpio12 gpio11 gpio10 gpio9 gpio8 vddio vssio gpio7 gpio6 gpio5 gpio4
+               vssd vccd gpio3 gpio2 gpio1 gpio0}
 
 array set supply_pad {
   vccd  sky130_ef_io__vccd_lvc_clamped_pad   vssd  sky130_ef_io__vssd_lvc_clamped_pad
@@ -17,6 +17,9 @@ array set supply_pad {
   vdda  sky130_ef_io__vdda_hvc_clamped_pad   vssa  sky130_ef_io__vssa_hvc_clamped_pad
   conn  sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 }
+array set mirrored {vssio 1 vssa 1 vssd 1}
+array set base {south R180 north R0 west R90 east R270}
+array set flip {south MX north MY west MYR90 east MXR90}
 set corner sky130_ef_io__corner_pad
 # corner 200 x 204: its 204 edge abuts the north and south rows, its 200 edge the east and west rows
 set cw 200
@@ -39,25 +42,6 @@ proc io_size {pad} {
     set m [[$block findInst p_$pad.p] getMaster]
   }
   list [ord::dbu_to_microns [$m getWidth]] [ord::dbu_to_microns [$m getHeight]]
-}
-
-# minimum gap between neighbouring ring cells: the gpiov2 pad and the overlay of the lvc supply pads
-# reach past their outlines
-proc io_kind {p} {
-  switch -- $p {
-    conn { return conn }
-    vccd - vssd { return lvc }
-    vddio - vssio - vdda - vssa { return hvc }
-    default { return gpio }
-  }
-}
-proc io_gap {a b} {
-  switch -- [lsort [list [io_kind $a] [io_kind $b]]] {
-    {gpio gpio} - {gpio lvc} { return 12 }
-    {gpio hvc} { return 5 }
-    {hvc hvc} - {hvc lvc} - {lvc lvc} { return 20 }
-    default { return 0 }
-  }
 }
 
 # bus slices for a gap of whole microns
@@ -85,23 +69,33 @@ foreach side {south east north west} {
   if {$side in {south north}} { set lo [expr {$o + $cw}] } else { set lo [expr {$o + $ch}] }
   set len [expr {$d - $lo - ($lo - $o)}]
   set used 0
-  set min {0}
   foreach p $pads { set used [expr {$used + [lindex [io_size $p] 0]}] }
-  foreach a [lrange $pads 0 end-1] b [lrange $pads 1 end] {
-    lappend min [io_gap $a $b]
-    set used [expr {$used + [lindex $min end]}]
-  }
-  set free [expr {int(floor($len - $used))}]
-  if {$free < 0} { error "pad ring: the $side side needs [expr {$used - $len}] um more" }
-  set n [expr {[llength $pads] + 1}]
-  set fill($side) {}
-  # whole-micron gaps on top of the minimum, the remainder spread from the start of the side
-  set pos $lo
-  set i 0
+  set free [expr {int(round($len - $used))}]
+  if {$free < 24} { error "pad ring: the $side side needs [expr {24 - $free}] um more" }
+
+  # in the cells' own order: the spare length split around the vssd/vccd pair, gpio pads alternately mirrored
+  set seq {}
+  set g 0
   foreach p $pads {
-    set gap [expr {[lindex $min $i] + $free / $n + ($i < $free % $n)}]
-    io_fill $side $pos $gap
-    set pos [expr {$pos + $gap}]
+    if {$p eq "vssd"} { lappend seq [list gap [expr {$free / 2}]] }
+    if {[info exists supply_pad($p)]} {
+      lappend seq [list $p [info exists mirrored($p)]]
+    } else {
+      lappend seq [list $p [expr {[incr g] % 2 == 0}]]
+    }
+    if {$p eq "vccd"} { lappend seq [list gap [expr {$free - $free / 2}]] }
+  }
+  if {$side in {south east}} { set seq [lreverse $seq] }
+
+  set fill($side) {}
+  set pos $lo
+  foreach e $seq {
+    lassign $e p m
+    if {$p eq "gap"} {
+      io_fill $side $pos $m
+      set pos [expr {$pos + $m}]
+      continue
+    }
     lassign [io_size $p] w h
     if {[info exists supply_pad($p)]} {
       set name ${p}_${side}
@@ -110,16 +104,15 @@ foreach side {south east north west} {
       set name p_$p.p
       set master ""
     }
+    set orient [expr {$m ? $flip($side) : $base($side)}]
     switch $side {
-      south { io_place $name $master $pos $o R180 }
-      north { io_place $name $master $pos [expr {$d - $h}] R0 }
-      west  { io_place $name $master $o $pos R90 }
-      east  { io_place $name $master [expr {$d - $h}] $pos R270 }
+      south { io_place $name $master $pos $o $orient }
+      north { io_place $name $master $pos [expr {$d - $h}] $orient }
+      west  { io_place $name $master $o $pos $orient }
+      east  { io_place $name $master [expr {$d - $h}] $pos $orient }
     }
     set pos [expr {$pos + $w}]
-    incr i
   }
-  io_fill $side $pos [expr {int(round($d - ($lo - $o) - $pos))}]
 }
 
 set k 0
@@ -130,10 +123,10 @@ foreach side {south east north west} {
     set h 197.965
     set name io_fill_[incr k]
     switch $side {
-      south { io_place $name $master $pos $o R180 }
-      north { io_place $name $master $pos [expr {$d - $h}] R0 }
-      west  { io_place $name $master $o $pos R90 }
-      east  { io_place $name $master [expr {$d - $h}] $pos R270 }
+      south { io_place $name $master $pos $o $base($side) }
+      north { io_place $name $master $pos [expr {$d - $h}] $base($side) }
+      west  { io_place $name $master $o $pos $base($side) }
+      east  { io_place $name $master [expr {$d - $h}] $pos $base($side) }
     }
   }
 }

@@ -8,8 +8,8 @@ set tech_lef $sc/techlef/sky130_fd_sc_hd__nom.tlef
 set out      $::env(OUT)
 set rep      $::env(REP)
 
-# floorplan: 2.35 mm die, the pad ring 20 um in from the edge, the core inside the pad ring and the power ring
-set die      2350
+# floorplan: 2.15 mm die, the pad ring 20 um in from the edge, the core inside the pad ring and the power ring
+set die      2150
 set io_off   20
 set core_off 285
 set macro_channel 40
