@@ -8,7 +8,7 @@
 | Standard cells | sky130_fd_sc_hd |
 | I/O cells | sky130_ef_io |
 | Clocks | `clk` 100 MHz (10 ns) for the system and `mclk` 100 MHz (10 ns) for the SDRAM controller |
-| Form | 2.35 x 2.35 mm standalone die: pad ring of 64 signal pads and 18 supply pads, seal ring |
+| Form | 2.15 x 2.15 mm standalone die: pad ring of 64 signal pads and 18 supply pads, seal ring |
 | Supplies | VCCD 1.8 V core, VDDIO 3.3 V pads, VDDA 3.3 V |
 
 ## Blocks
@@ -113,16 +113,23 @@
 
 ## Pad ring
 
-Corners and supply pads are `sky130_ef_io` cells; bus slices fill the gaps and one slice per side ties VCCHIB to VCCD and VSWITCH to VDDIO. The pad cells' high-voltage enables come from their own tie outputs.
+The ring follows SkyWater's `sky130_fd_io` user guide. Corners and supply pads are `sky130_ef_io` cells.
+
+- `gpiov2` pads abut, every other one mirrored.
+- Supply pads come in pairs: `vddio` with `vssio` and `vdda` with `vssa` back to back, the second one mirrored; `vssd` and `vccd` on their compliant sides, with a bus slice of at least 12 µm on each outer side.
+- One slice per side ties VCCHIB to VCCD and VSWITCH to VDDIO. Bus slices fill the rest of each side.
+- The pad cells' high-voltage enables come from their own tie outputs.
 
 The SkyWater seal ring, from the PDK's generator, takes the outer 6 µm of the die. The pad ring starts 20 µm in.
 
 | Side | Pads, in coordinate order |
 |---|---|
-| South | vssio, `sdram_a[0:2]`, vccd, `sdram_a[3:5]`, vdda, `sdram_a[6:8]`, vssa, `sdram_a[9:11]`, vssd, `sdram_a[12]`, `sdram_ba[0:1]`, vddio |
-| East | `sdram_dq[0:3]`, vddio, `sdram_dq[4:7]`, vccd, `sdram_dq[8:11]`, vssio, `sdram_dq[12:15]`, vssd |
-| North | `spi_cs_n`, `spi_sclk`, `spi_mosi`, `spi_miso`, vssd, `uart_tx`, `uart_rx`, `rst_n`, `clk`, vddio, `mclk`, `sdram_clk`, `sdram_cke`, `sdram_cs_n`, vccd, `sdram_ras_n`, `sdram_cas_n`, `sdram_we_n`, vssio, `sdram_dqm[0:1]` |
-| West | vssio, `gpio[15:12]`, vccd, `gpio[11:8]`, vddio, `gpio[7:4]`, vssd, `gpio[3:0]` |
+| South | `sdram_ba[1:0]`, vssa, vdda, `sdram_a[12:9]`, vccd, vssd, `sdram_a[8:4]`, vssio, vddio, `sdram_a[3:0]` |
+| East | `sdram_dq[15:12]`, vccd, vssd, `sdram_dq[11:8]`, vssio, vddio, `sdram_dq[7:0]` |
+| North | `spi_cs_n`, `spi_sclk`, `spi_mosi`, `spi_miso`, `uart_tx`, `uart_rx`, `rst_n`, `clk`, vddio, vssio, `mclk`, `sdram_clk`, `sdram_cke`, `sdram_cs_n`, vssd, vccd, `sdram_ras_n`, `sdram_cas_n`, `sdram_we_n`, `sdram_dqm[0:1]` |
+| West | `gpio[15:8]`, vddio, vssio, `gpio[7:4]`, vssd, vccd, `gpio[3:0]` |
+
+`make pads` lists every pad opening with its pin or supply and its centre, numbered counter-clockwise from the south-west corner.
 
 ## I/O timing
 

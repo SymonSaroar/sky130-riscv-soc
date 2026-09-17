@@ -6,6 +6,7 @@ Spec: [spec_v9.md](../spec_v9.md). The chip is a standalone die, and its GDS has
 | Pads spaced by measured distances | 2.35 | +0.99 / +0.50 | +1.97 / +1.59 | +0.181 / +0.016 | 0 |
 | 3.2 µm met4 and met5 stripes | 2.35 | +0.98 / +0.51 | +1.94 / +1.60 | +0.168 / +0.013 | 0 |
 | Pad ring after the SkyWater I/O guide | 2.15 | +0.67 / +0.61 | +1.46 / +1.74 | +0.162 / -0.003 | 0 |
+| 0.3 ns hold margin | 2.15 | +0.89 / +0.62 | +1.41 / +1.77 | +0.190 / +0.015 | 0 |
 
 ## Pad ring seams
 
@@ -38,4 +39,21 @@ No segment is over its limit, and IR drop falls to 13.3 mV. Timing and DRC stay 
 SkyWater's `sky130_fd_io` user guide sets three rules for the ring: cells cannot be abutted with each other in general, GPIO cells must be mirrored and placed by abutment, and supply pads come in pairs, because each has only one side that meets the rules towards a GPIO. The spaced ring breaks the last two.
 
 Decision: rebuild the ring to the guide.
+
+## Pad ring after the SkyWater I/O guide
+
+- `gpiov2` pads abut, every other one mirrored.
+- `vddio` with `vssio`, and `vdda` with `vssa`, sit back to back, the second one mirrored.
+- `vssd` and `vccd` abut on their compliant sides. Their other sides carry the overlay, so each keeps a bus slice of at least 12 µm there.
+- One slice per side ties VCCHIB to VCCD and VSWITCH to VDDIO; bus slices fill what is left.
+
+Rows of PDK cells in each of these arrangements give no KLayout error. The die is 2.15 mm.
+
+![layout](../../reports/47-pad-ring/layout.png)
+
+Setup closes at all corners, with `clk` at 107.1 MHz and `mclk` at 106.5 MHz at tt. Hold at the fast corner fails on one endpoint by 0.003 ns.
+
+Repairing hold against the typical and fast corners in one OpenROAD session fails: with both corners defined, the clocks forwarded through the pads get the wrong latency, OpenSTA reports -0.977 ns of hold at tt, and repair adds 1,545 hold buffers.
+
+Decision: repair hold at the typical corner with 0.3 ns of margin.
 
