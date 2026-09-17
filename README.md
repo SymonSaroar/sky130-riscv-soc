@@ -105,6 +105,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 - [PCIe removed](docs/journal/pcie-removed.md)
 - [Chip assembly](docs/journal/chip-assembly.md)
 - [Signoff](docs/journal/signoff.md)
+- [Fab readiness](docs/journal/fab-readiness.md)
 
 ## Layout of the repo
 
