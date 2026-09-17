@@ -11,7 +11,7 @@ repair_clock_nets
 estimate_parasitics -placement
 repair_timing -setup
 # hold margin at tt covers the fast corner
-repair_timing -hold -hold_margin 0.2
+repair_timing -hold -hold_margin 0.3
 detailed_placement
 check_placement -verbose
 

@@ -7,7 +7,7 @@ global_route -congestion_report_file $rep/congestion.rpt
 estimate_parasitics -global_routing
 repair_design -slew_margin 50 -cap_margin 10
 repair_timing -setup -skip_buffering
-repair_timing -hold -hold_margin 0.2
+repair_timing -hold -hold_margin 0.3
 # slew and load once more on the gates timing repair cloned or resized, with margin
 repair_design -slew_margin 50 -cap_margin 10
 global_route -start_incremental
