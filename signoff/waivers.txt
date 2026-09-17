@@ -2,4 +2,3 @@
 max_slew    *u_sram.mem/*    OpenRAM characterization ends at 40 ps; every setup and hold table in the SRAM liberty is flat across slew
 max_slew    *u_icache.mem/*  OpenRAM characterization ends at 40 ps; every setup and hold table in the SRAM liberty is flat across slew
 max_cap     *u_sram.mem/dout1[[]16[]] OpenRAM characterization ends at 27.6 fF; the 12 um net to its buffer detours 450 um around the pin row, and paths through the pin keep 3.79 ns of setup slack at tt and 7.65 ns at ss
-klayout_drc sky130_ef_io__*  SkyWater I/O cells as delivered with the PDK; the errors lie inside the cells and are counted under klayout_drc_waived

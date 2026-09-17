@@ -53,7 +53,7 @@ row["grt_congestion"] = str(read(f"{rep}/congestion.rpt").count("violation type"
 row["route_drc"] = str(read(f"{rep}/route_drc.rpt").count("violation type")) if os.path.exists(f"{rep}/route_drc.rpt") else ""
 row["antenna_nets"] = grab(r"Found (\d+) net violations", read(f"{out}/finish.log") or read(f"{out}/route.log"))
 kl = read(f"{rep}/drc_klayout.xml")
-# KLayout errors inside the SkyWater I/O cells are waived (signoff/waivers.txt) and counted apart
+# KLayout errors inside the SkyWater I/O cells are counted apart
 io_boxes = []
 lef = read(os.environ.get("PDK_ROOT", os.path.expanduser("~/.volare")) + "/sky130A/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef")
 size = {m[0]: (float(m[1]), float(m[2])) for m in re.findall(r"MACRO (\S+)\s.*?SIZE ([\d.]+) BY ([\d.]+)", lef, re.S)}
