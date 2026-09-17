@@ -8,7 +8,7 @@
 | Standard cells | sky130_fd_sc_hd |
 | I/O cells | sky130_ef_io |
 | Clocks | `clk` 100 MHz (10 ns) for the system and `mclk` 100 MHz (10 ns) for the SDRAM controller |
-| Form | 2.12 x 2.12 mm standalone die: pad ring of 64 signal pads and 18 supply pads, seal ring |
+| Form | 2.35 x 2.35 mm standalone die: pad ring of 64 signal pads and 18 supply pads, seal ring |
 | Supplies | VCCD 1.8 V core, VDDIO 3.3 V pads, VDDA 3.3 V |
 
 ## Blocks
