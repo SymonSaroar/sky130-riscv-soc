@@ -5,6 +5,7 @@ Spec: [spec_v9.md](../spec_v9.md). The chip is a standalone die, and its GDS has
 | Change | Die (mm) | Setup WNS clk / mclk, tt (ns) | Setup WNS clk / mclk, ss (ns) | Hold WNS tt / ff (ns) | KLayout DRC |
 | Pads spaced by measured distances | 2.35 | +0.99 / +0.50 | +1.97 / +1.59 | +0.181 / +0.016 | 0 |
 | 3.2 µm met4 and met5 stripes | 2.35 | +0.98 / +0.51 | +1.94 / +1.60 | +0.168 / +0.013 | 0 |
+| Pad ring after the SkyWater I/O guide | 2.15 | +0.67 / +0.61 | +1.46 / +1.74 | +0.162 / -0.003 | 0 |
 
 ## Pad ring seams
 
@@ -27,4 +28,14 @@ KLayout finds no error on the whole GDS, pad cells included, and nothing is waiv
 PDNSim's segment currents, checked against the average-current limits in the tech LEF (90 °C), pass on every wire. Two via4 crossings carry 2.96 and 3.09 mA per cut against 2.49 mA.
 
 Decision: widen the met4 and met5 stripes from 1.6 to 3.2 µm.
+
+## Wider stripes
+
+![layout](../../reports/46-pdn-stripes/layout.png)
+
+No segment is over its limit, and IR drop falls to 13.3 mV. Timing and DRC stay where they were.
+
+SkyWater's `sky130_fd_io` user guide sets three rules for the ring: cells cannot be abutted with each other in general, GPIO cells must be mirrored and placed by abutment, and supply pads come in pairs, because each has only one side that meets the rules towards a GPIO. The spaced ring breaks the last two.
+
+Decision: rebuild the ring to the guide.
 
