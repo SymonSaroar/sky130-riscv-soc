@@ -3,6 +3,7 @@
 Spec: [spec_v9.md](../spec_v9.md). The chip is a standalone die, and its GDS has to pass a foundry's own checks with nothing waived. That adds checks the flow did not have: KLayout DRC over the whole GDS with the I/O cells included, electromigration on the power grid, equivalence of the routed netlist, Magic DRC on the full GDS, and the PDK's density windows.
 
 | Change | Die (mm) | Setup WNS clk / mclk, tt (ns) | Setup WNS clk / mclk, ss (ns) | Hold WNS tt / ff (ns) | KLayout DRC |
+|---|---|---|---|---|---|
 | Pads spaced by measured distances | 2.35 | +0.99 / +0.50 | +1.97 / +1.59 | +0.181 / +0.016 | 0 |
 | 3.2 µm met4 and met5 stripes | 2.35 | +0.98 / +0.51 | +1.94 / +1.60 | +0.168 / +0.013 | 0 |
 | Pad ring after the SkyWater I/O guide | 2.15 | +0.67 / +0.61 | +1.46 / +1.74 | +0.162 / -0.003 | 0 |
@@ -79,3 +80,57 @@ Three checks a foundry relies on are still missing from the flow:
 
 Decision: prove the routed netlist equivalent with flops, SRAMs and pads as cut points, check electromigration and list the bond pads in the flow, and fill every layer with the PDK's fill generator.
 
+## Equivalence, electromigration, bond pads, fill
+
+`make lec` turns the flops, SRAMs and pads into cut points matched by instance name, builds a miter of the synthesized and routed netlists, and ABC proves it unsatisfiable in about a second: 4,650 inputs and 66,358 AND nodes. Every flop input and clock pin, every output and every SRAM and pad input agrees, and the clock pins show the clock tree is buffers only. A copy of the routed netlist with one `o21ai` changed to an `a21oi` comes back satisfiable.
+
+`make em` checks PDNSim's segment currents against the tech LEF limits: wires by the metal width across the segment, vias by the cuts where the two metals overlap. Nothing is over. The highest loads are via4 at 36.9% of its limit and met4 at 27.5%.
+
+`make pads` lists the 82 pad openings, 60 x 70 µm each, with the pin or supply and the centre, numbered counter-clockwise from the south-west corner.
+
+The GDS step fills with the PDK's generator (`generate_fill.py`, Magic's wafflefill style) on diffusion, poly, li and met1 to met5, on the drawing layer numbers with datatype 99. Fill-block layers keep it off the seal ring band, the I/O cells, and the SRAMs below met4. The generator's tiles run past the die, so only fill wholly inside the die stays.
+
+On the filled GDS:
+
+- KLayout's deck finds no error. It reads the drawing datatypes only, so a copy with the li and metal fill moved onto them went through the BEOL rules as well, and they find none. The diffusion and poly fill keep their spacing to drawn diffusion, poly and contacts, no poly fill crosses diffusion, and no diffusion fill sits in an n-well.
+- The PDK's zero-area and pin-label checks find nothing.
+- KLayout's density deck passes, with 44 to 65% of the die clear on li1 and every metal.
+- In `check_density.py`'s windows, met4 and met5 now meet their minimums everywhere. Of the 484 windows, met1, met2 and met3 are under 35% in 304, 280 and 161, diffusion is under 33% in 109, and li is under 35% in 26 and over 60% in 270, over the SRAMs and the densest logic. Across the die met1 is at 34.6% and every other layer is within its range.
+
+SkyWater's periphery rules list pattern density for met1 to met4 only, as recommended rules that the foundry's own waffle fill implements, and have none for diffusion or li.
+
+## Magic on the full GDS
+
+Magic's DRC on the whole GDS, read the way the PDK's own DRC script reads it, reports 11,511,209 errors on the layout before the PDK fill. 11,147,232 are inside the SRAMs, which give 5,579,000 each on their own. The core and its routing have none.
+
+Each of the remaining 363,977, in the I/O cells and the seal ring, was mapped into its cell's own coordinates and compared with Magic on the bare PDK cells and on the generated seal ring: 337,436 match on rule and place. The rest come from Magic's hierarchical check. The seal ring cell spans the die, so every pad is re-checked flattened against it; the largest group is Magic's rule that some layers can't partially overlap between subcells.
+
+To check what the ring's assembly adds, windows around each of the 34 kinds of pad junction and corner were cut out, flattened and checked. Everything there is in the flattened bare cells, the seal ring, or at a window's cut, except one rule: at the mirrored `gpiov2` seams, Magic wants 2.0 µm between high-voltage n-wells and finds 1.44 µm. The two wells are the same isolation ring in neighbouring pads on the shared pad bus, the spacing comes from the guide's mirrored abutment, and the PDK's KLayout deck checks n-well spacing at 1.27 µm.
+
+On the filled GDS Magic reports 11,525,414. Outside the SRAMs every one of its errors lies on an error of the same rule from before the fill, so the fill adds none.
+
+## Status
+
+The GDS passes the PDK's KLayout DRC, density, zero-area and pin-label checks with nothing waived. The ring follows SkyWater's I/O guide, every layer carries fill, the routed netlist is proven equivalent to the synthesized one, the power grid stays within its current limits, and the routed netlist passes the test with signoff delays.
+
+| | Before | After |
+|---|---|---|
+| Die | 2.12 mm; ring with 34,334 KLayout errors waived | 2.15 mm; ring to SkyWater's I/O guide, no KLayout error |
+| `clk` | 108.4 MHz max at tt, 55.3 MHz at ss | 109.8 MHz at tt, 53.8 MHz at ss |
+| `mclk` | 107.0 MHz max at tt, 70.7 MHz at ss | 106.5 MHz at tt, 70.3 MHz at ss |
+| Hold, worst (ns) | +0.167 at tt, +0.007 at ff | +0.190 at tt, +0.015 at ff |
+| IR drop | 17.1 mV | 11.5 mV |
+| Electromigration | not checked | every power-grid segment within its limit, worst 36.9% |
+| Equivalence | netlists agree in simulation | routed netlist proven equal to the synthesized one |
+| Fill | met1 to met5, KLayout squares | every layer, PDK generator |
+| Bond pads | not listed | 82 openings with pins and centres |
+
+Open:
+
+- The RTL and the synthesized netlist are not proven equivalent; they agree in simulation.
+- `check_density.py` windows on met1 to met3, diffusion and li stay outside its targets in part of the die.
+- One SRAM output, `dout1[16]`, drives more than its liberty's largest load and is waived.
+- The SRAM slow and fast corners are scaled from its typical liberty.
+- Power leaves out the pad cells.
+- Extraction does not see the fill.
+- In the SDF simulation the SRAMs use one read delay from their liberty, not annotated values.
