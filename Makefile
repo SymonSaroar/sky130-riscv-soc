@@ -81,7 +81,7 @@ route:
 
 MAGIC := magic -dnull -noconsole -rcfile $(PDK_ROOT)/sky130A/libs.tech/magic/sky130A.magicrc
 
-.PHONY: rcx sta ir em gds render magic klayout_drc density lvs lec signoff
+.PHONY: rcx sta ir em gds pads render magic klayout_drc density lvs lec signoff
 rcx:
 	openroad -no_init -exit -log $(OUT)/rcx.log extraction/rcx.tcl > /dev/null
 sta:
@@ -94,6 +94,8 @@ em:
 gds:
 	klayout -b -r signoff/def2gds.py > $(OUT)/gds.log
 	klayout -b -r signoff/fill.py >> $(OUT)/gds.log
+pads:
+	klayout -b -r signoff/pads.py > $(OUT)/pads.log
 render:
 	klayout -b -r signoff/render.py
 magic:
@@ -114,7 +116,7 @@ lec:
 	yosys -q -l $(OUT)/lec.log -c signoff/lec.tcl > /dev/null 2>&1
 	yosys-abc -c "read_aiger $(OUT)/lec.aig; print_stats; iprove" | sed 's/\x1b\[[0-9;]*m//g' > $(REP)/lec.rpt
 	grep -q UNSATISFIABLE $(REP)/lec.rpt
-signoff: rcx sta ir gds em render lvs klayout_drc density lec
+signoff: rcx sta ir gds em pads render lvs klayout_drc density lec
 
 .PHONY: metrics all
 metrics:
