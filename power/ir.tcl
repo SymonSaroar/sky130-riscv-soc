@@ -26,5 +26,5 @@ foreach {net v} {VPWR 1.8 VGND 0.0} {
   }
   close $f
   set_pdnsim_net_voltage -net $net -voltage $v
-  analyze_power_grid -net $net -vsrc $out/vsrc_$net.csv -voltage_file $out/ir_$net.csv
+  analyze_power_grid -net $net -vsrc $out/vsrc_$net.csv -voltage_file $out/ir_$net.csv -enable_em -em_outfile $out/em_$net.csv
 }
