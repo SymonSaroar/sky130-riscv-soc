@@ -148,7 +148,7 @@ The SkyWater seal ring, from the PDK's generator, takes the outer 6 µm of the d
 | ss | ss_100C_1v60 | ss_ss_100C_1v60_3v00 | TT liberty, delays and setup x2.1 | max | setup, hold, slew, load | `clk` 50 MHz, `mclk` 62.5 MHz |
 | ff | ff_n40C_1v95 | ff_ff_n40C_1v95_5v50 | TT liberty, delays x0.64 | min | setup, hold | 100 MHz |
 
-The SRAM factors are the `dfxtp_2` clock-to-Q ratios between the corners. At the slow corner the clock-domain crossings are bounded by 16 ns. IR drop is sourced at the straps from the supply pads. Metal fill on the sky130 fill layers covers met1 to met5 outside the seal ring, the I/O cells and the SRAMs, and the layout passes the PDK's pattern density check.
+The SRAM factors are the `dfxtp_2` clock-to-Q ratios between the corners. At the slow corner the clock-domain crossings are bounded by 16 ns. Hold is repaired at the typical corner with 0.3 ns of margin. IR drop is sourced at the straps from the supply pads. Metal fill on the sky130 fill layers covers met1 to met5 outside the seal ring, the I/O cells and the SRAMs, and the layout passes the PDK's pattern density check.
 
 | Check | Requirement |
 |---|---|

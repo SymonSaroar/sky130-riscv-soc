@@ -57,3 +57,25 @@ Repairing hold against the typical and fast corners in one OpenROAD session fail
 
 Decision: repair hold at the typical corner with 0.3 ns of margin.
 
+## 0.3 ns hold margin
+
+![layout](../../reports/48-hold-margin/layout.png)
+
+| Corner | Setup, worst (ns) | Hold, worst (ns) |
+|---|---|---|
+| tt, 100 MHz | +0.62 `mclk`; +0.89 `clk` (109.8 MHz max) | +0.190 |
+| ss, `clk` 50 MHz, `mclk` 62.5 MHz | +1.41 `clk` (53.8 MHz max); +1.77 `mclk` | +0.639 |
+| ff, 100 MHz | +1.48 | +0.015 |
+
+Hold repair adds 44 buffers at CTS and 14 after global routing. No pin is over its slew limit apart from the waived SRAM inputs, and `dout1[16]` is the only pin over its load limit: its net to a buffer 13 µm away is routed about 460 µm around the SRAM pin row, and paths through it keep 3.81 ns of setup slack at tt and 7.70 ns at ss.
+
+Power without the pad cells is 50.4 mW, and IR drop is 11.5 mV. Antennas and router DRC are at 0, LVS matches, and KLayout finds nothing. The routed netlist runs the test with the signoff delays and passes in 11.93 ms: 13,233 cycles cold and 12,484 warm, with no SDRAM protocol error.
+
+Three checks a foundry relies on are still missing from the flow:
+
+- The routed netlist is not proven equivalent to the synthesized one. On the 2.35 mm layout, Yosys's `equiv_simple` on the flattened netlists left 2,595 points unproven. Each sits on a gate whose interchangeable inputs timing repair swapped, A1 and A2 of `_26732_` for example, and matching on cell-pin names reads the swap as a difference.
+- Electromigration is checked by hand.
+- The PDK's density check, `check_density.py`, looks at every 700 µm window on diffusion, li and the five metals. With metal fill alone, met1 to met4 are under 35% in nearly every window, met5 under 45%, and diffusion under 33% in 147 windows.
+
+Decision: prove the routed netlist equivalent with flops, SRAMs and pads as cut points, check electromigration and list the bond pads in the flow, and fill every layer with the PDK's fill generator.
+
