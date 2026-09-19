@@ -2,6 +2,10 @@
 
 A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each result of the flow is committed with its reports, and the journal records what it showed and what changed next.
 
+## Branch status
+
+This branch holds the SoC with the PCIe Gen1 x4 root port. The layout is a block-level macro with 424 pins, not a chip: it has no pad ring or seal ring. Timing is checked at the typical corner only. The PCIe PHY is off chip, behind a 32-bit PIPE interface.
+
 ## The SoC
 
 ```
