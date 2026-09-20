@@ -32,8 +32,8 @@ foreach {k v} [list wns [sta::worst_slack_cmd max] tns [sta::total_negative_slac
 }
 puts $f "viol_endpoints [sta::endpoint_violation_count max]"
 puts $f "hold_viol_endpoints [sta::endpoint_violation_count min]"
-# per clock domain; the SDRAM I/O paths count toward mclk
-foreach {name groups} {clk clk mclk {mclk sdram_clk} pclk pclk} {
+# per clock domain; the SPI pins count toward clk and the SDRAM pins toward mclk
+foreach {name groups} {clk {clk spi_clk} mclk {mclk sdram_clk} pclk pclk} {
   set ws ""
   foreach g $groups {
     set p [lindex [find_timing_paths -path_group $g -path_delay max -group_path_count 1] 0]
