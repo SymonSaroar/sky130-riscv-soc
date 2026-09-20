@@ -109,8 +109,10 @@ module tb_soc;
     rx_r = 1;
   end
 
+  // the result, once every pad has switched
   always @(gpio) if (gpio[15:8] === 8'ha5) begin
-    $display("\n%s at %0t ns (SDRAM protocol errors: %0d)",
+    #100;
+    $display("\n%s at %0d ns (SDRAM protocol errors: %0d)",
              gpio[0] && sdram.errors == 0 ? "TEST PASSED" : "TEST FAILED", $time, sdram.errors);
     $finish;
   end
