@@ -3,7 +3,7 @@ import collections, csv, fnmatch, os, re, sys
 
 run = sys.argv[1]
 rep, out = f"reports/{run}", f"build/{run}"
-FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "slew_viol", "slew_waived", "cap_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "wns_pclk_ns", "fmax_pclk_mhz", "die_um", "util_pct", "place_density",
+FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "slew_viol", "slew_waived", "cap_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "wns_pclk_ns", "fmax_pclk_mhz", "wns_ss_ns", "fmax_ss_mhz", "fmax_mclk_ss_mhz", "whs_ff_ns", "hold_viol_ff", "die_um", "util_pct", "place_density",
           "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "antenna_nets", "magic_drc", "klayout_drc", "klayout_drc_waived", "lvs"]
 
 
@@ -24,6 +24,11 @@ row.update(wns_ns=sta.get("wns", ""), tns_ns=sta.get("tns", ""), whs_ns=sta.get(
            fmax_mclk_mhz=sta.get("fmax_mclk_mhz", ""), wns_pclk_ns=sta.get("wns_pclk", ""),
            fmax_pclk_mhz=sta.get("fmax_pclk_mhz", ""),
            fmax_mhz=sta.get("fmax_mhz", ""))
+# slow corner setup and fast corner hold
+ss = dict(l.split() for l in read(f"{rep}/sta_ss.summary").splitlines())
+ff = dict(l.split() for l in read(f"{rep}/sta_ff.summary").splitlines())
+row.update(wns_ss_ns=ss.get("wns", ""), fmax_ss_mhz=ss.get("fmax_mhz", ""), fmax_mclk_ss_mhz=ss.get("fmax_mclk_mhz", ""),
+           whs_ff_ns=ff.get("whs", ""), hold_viol_ff=ff.get("hold_viol_endpoints", ""))
 drv = read(f"{rep}/sta.drv.rpt")
 waivers = [l.split()[:2] for l in read("signoff/waivers.txt").splitlines() if l.strip() and not l.startswith("#")]
 for key, sec, check in (("slew_viol", "max slew", "max_slew"), ("cap_viol", "max capacitance", "max_cap")):
@@ -83,7 +88,7 @@ row["lvs"] = "" if not lvs else "clean" if "Circuits match uniquely" in lvs else
 
 path = "reports/metrics.csv"
 rows = list(csv.DictReader(open(path))) if os.path.exists(path) else []
-rows = sorted([r for r in rows if r["run"] != run] + [row], key=lambda r: r["run"])
+rows = sorted([r for r in rows if r["run"] != run] + [row], key=lambda r: (int(re.match(r"\d+", r["run"]).group()), r["run"]))
 with open(path, "w", newline="") as f:
     w = csv.DictWriter(f, FIELDS)
     w.writeheader()
@@ -91,7 +96,7 @@ with open(path, "w", newline="") as f:
 print(row)
 
 # README results table, between the metrics markers
-cols = ["run", "place_density", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "wns_pclk_ns", "fmax_pclk_mhz", "slew_viol", "slew_waived", "cap_viol",
+cols = ["run", "place_density", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "wns_pclk_ns", "fmax_pclk_mhz", "wns_ss_ns", "fmax_ss_mhz", "fmax_mclk_ss_mhz", "whs_ff_ns", "hold_viol_ff", "slew_viol", "slew_waived", "cap_viol",
         "antenna_nets", "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "klayout_drc_waived", "lvs"]
 table = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
 table += "".join("| " + " | ".join(r.get(c) or "-" for c in cols) + " |\n" for r in rows)
