@@ -136,3 +136,12 @@ gls0 gls1: gls%: fw $(OUT)/primitives_%.v $(OUT)/sky130_ef_io_gls.v
 	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v
 	vvp -n $(OUT)/tb_$@ | sed 's/^/$@: /'
 
+# the routed netlist with the cell timing models and the tt delays from signoff STA
+.PHONY: gls_sdf
+gls_sdf: fw $(OUT)/primitives_0.v $(OUT)/sky130_ef_io_gls.v
+	python3 sta/sdf_iverilog.py $(OUT)/chip_top.sdf $(OUT)/chip_top_iverilog.sdf
+	iverilog -g2012 -gspecify -ginterconnect -s tb_soc -DGLS -DSDF='"$(OUT)/chip_top_iverilog.sdf"' -o $(OUT)/tb_gls_sdf \
+	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v tb/pipe_phy.v tb/pcie_ep.v rtl/pcie_mac.v \
+	  $(OUT)/primitives_0.v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/chip_top.final.v \
+	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v
+	vvp -n $(OUT)/tb_gls_sdf | sed 's/^/$@: /'

@@ -44,6 +44,7 @@ if {$corner eq "tt"} {
   report_checks -path_delay max -from [get_clocks mclk] -to [get_clocks clk] -group_path_count 5 >> $rep/cdc.rpt
   report_checks -path_delay max -from [get_clocks clk] -to [get_clocks pclk] -group_path_count 5 >> $rep/cdc.rpt
   report_checks -path_delay max -from [get_clocks pclk] -to [get_clocks clk] -group_path_count 5 >> $rep/cdc.rpt
+  write_sdf -digits 4 $out/chip_top.sdf
 }
 
 set f [open $rep/$tag.summary w]
