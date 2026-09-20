@@ -1,9 +1,13 @@
 source config.tcl
 load floorplan
 
+# the bond pad nets and the pads' own tie loops stay as they are
+set_dont_touch [get_nets -of_objects [get_pins {*/PAD */TIE_HI_ESD */TIE_LO_ESD}]]
+
 global_placement -density $place_density -pad_left $gpl_pad -pad_right $gpl_pad
-# a buffer next to every input pin
-buffer_ports -inputs
+# a tie cell next to every constant pin
+repair_tie_fanout sky130_fd_sc_hd__conb_1/LO
+repair_tie_fanout sky130_fd_sc_hd__conb_1/HI
 # A buffer next to every SRAM signal pin. The SRAM liberty limits input slew to 40 ps and
 # output load to 0.0276 pF; the short pin-to-buffer nets stay out of repair.
 foreach sram [[ord::get_db_block] getInsts] {
