@@ -3,14 +3,14 @@ set pdk      $::env(PDK_ROOT)/sky130A
 set sc       $pdk/libs.ref/sky130_fd_sc_hd
 set sm       $pdk/libs.ref/sky130_sram_macros
 set sram     sky130_sram_2kbyte_1rw1r_32x512_8
+set io       $pdk/libs.ref/sky130_fd_io
 set tech_lef $sc/techlef/sky130_fd_sc_hd__nom.tlef
 set out      $::env(OUT)
 set rep      $::env(REP)
 
-# floorplan
-set core_util   45
-set core_aspect 1
-set core_space  10
+# floorplan: 2.1 mm die, core inside the pad ring and the power ring
+set die      2100
+set core_off 265
 set macro_channel 40
 
 # estimated wire capacitance relative to the tech LEF, calibrated to OpenRCX
@@ -23,12 +23,14 @@ set gpl_pad 4
 set dpl_pad 2
 
 proc read_libs {} {
-  global sc sm sram tech_lef
+  global sc sm sram io tech_lef
   read_lef $tech_lef
   read_lef $sc/lef/sky130_fd_sc_hd.lef
   read_lef $sm/lef/$sram.lef
+  read_lef $io/lef/sky130_ef_io.lef
   read_liberty $sc/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
   read_liberty $sm/lib/${sram}_TT_1p8V_25C.lib
+  read_liberty $::env(OUT)/gpiov2_sta.lib
 }
 
 proc load {stage} {
