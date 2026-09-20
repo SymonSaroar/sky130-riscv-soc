@@ -9,7 +9,7 @@ module sdram_ctrl #(
   parameter T_RFC  = 7,
   parameter T_MRD  = 2,
   parameter T_WR   = 2,
-  parameter T_REFI = 750      // refresh interval, cycles
+  parameter T_REFI = 480      // refresh interval, cycles (7.7 us at 62.5 MHz)
 ) (
   input             clk,
   input             rst,
