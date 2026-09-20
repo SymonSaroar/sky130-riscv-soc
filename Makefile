@@ -45,6 +45,13 @@ OUT := $(B)/$(RUN)
 REP := reports/$(RUN)
 export OUT REP RUN
 
+# timing copy of the gpiov2 pad liberty
+PAD_LIB := $(OUT)/gpiov2_sta.lib
+$(PAD_LIB): sta/pad_lib.py
+	@mkdir -p $(OUT)
+	python3 sta/pad_lib.py $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_io/lib/sky130_ef_io__gpiov2_pad_wrapped_tt_tt_025C_1v80_3v30.lib $@
+floorplan place cts route rcx sta ir: $(PAD_LIB)
+
 .PHONY: synth
 synth:
 	@mkdir -p $(OUT) $(REP)

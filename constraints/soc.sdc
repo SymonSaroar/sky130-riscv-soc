@@ -14,21 +14,22 @@ set_max_delay 10 -ignore_clock_latency -from [get_clocks pclk] -to [get_clocks c
 set_false_path -hold -from [get_clocks clk] -to [get_clocks pclk]
 set_false_path -hold -from [get_clocks pclk] -to [get_clocks clk]
 
-set_driving_cell -lib_cell sky130_fd_sc_hd__inv_2 -pin Y [all_inputs]
-set_load 0.033 [all_outputs]
+# board: 1 ns edges into the pads, 5 pF on every output pad
+set_input_transition 1.0 [all_inputs]
+set_load 5 [all_outputs]
 
 # system I/O
-set_input_delay  4 -clock clk [get_ports {rst_n uart_rx gpio_in[*] spi_miso}]
-set_output_delay 4 -clock clk [get_ports {uart_tx gpio_out[*] gpio_oe[*] spi_cs_n spi_sclk spi_mosi}]
-set_false_path -from [get_ports {rst_n uart_rx gpio_in[*]}]
+set_input_delay  4 -clock clk [get_ports {rst_n uart_rx gpio[*] spi_miso}]
+set_output_delay 4 -clock clk [get_ports {uart_tx gpio[*] spi_cs_n spi_sclk spi_mosi}]
+set_false_path -from [get_ports {rst_n uart_rx gpio[*]}]
 
 # SDRAM I/O against the forwarded clock: MT48LC16M16A2-75 tIS 1.5, tIH 0.8, tAC 5.4, tOH 2.7, 1 ns board round trip
 set sdram_out [get_ports {sdram_cke sdram_cs_n sdram_ras_n sdram_cas_n sdram_we_n sdram_ba[*] sdram_a[*]
-                          sdram_dqm[*] sdram_dq_out[*] sdram_dq_oe}]
+                          sdram_dqm[*] sdram_dq[*]}]
 set_output_delay -clock sdram_clk -max  1.5 $sdram_out
 set_output_delay -clock sdram_clk -min -0.8 $sdram_out
-set_input_delay  -clock sdram_clk -max  6.4 [get_ports {sdram_dq_in[*]}]
-set_input_delay  -clock sdram_clk -min  3.7 [get_ports {sdram_dq_in[*]}]
+set_input_delay  -clock sdram_clk -max  6.4 [get_ports {sdram_dq[*]}]
+set_input_delay  -clock sdram_clk -min  3.7 [get_ports {sdram_dq[*]}]
 
 # PIPE against PCLK, assumed PHY budget: 3 ns setup, 1 ns input hold, 0.5 ns output hold
 set pipe_in  [get_ports {pipe_rx_data[*] pipe_rx_datak[*] pipe_rx_elecidle[*] pipe_rx_status[*] pipe_phy_status}]
