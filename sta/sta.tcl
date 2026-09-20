@@ -1,5 +1,5 @@
 # Signoff STA in OpenSTA on the routed netlist with OpenRCX parasitics, one corner per run:
-# tt (tt_025C_1v80, nominal RC), ss (ss_100C_1v60, max RC), ff (ff_n40C_1v95, min RC).
+# tt (tt_025C_1v80, nominal RC), ss (ss_100C_1v60, max RC, 50 MHz), ff (ff_n40C_1v95, min RC).
 set pdk $::env(PDK_ROOT)/sky130A
 set out $::env(OUT)
 set rep $::env(REP)
@@ -16,7 +16,19 @@ if {$corner eq "tt"} {
 read_liberty $out/gpiov2_$corner.lib
 read_verilog $out/chip_top.final.v
 link_design chip_top
-read_sdc constraints/soc.sdc
+# the slow corner is specified at clk 50 MHz and mclk 62.5 MHz, crossings bounded by 16 ns
+if {$corner eq "ss"} {
+  set f [open constraints/soc.sdc]
+  set sdc [string map {"-name clk  -period 10" "-name clk  -period 20" "-name mclk -period 10" "-name mclk -period 16"
+                       "set_max_delay 10" "set_max_delay 16"} [read $f]]
+  close $f
+  set f [open $out/soc_ss.sdc w]
+  puts -nonewline $f $sdc
+  close $f
+  read_sdc $out/soc_ss.sdc
+} else {
+  read_sdc constraints/soc.sdc
+}
 set_propagated_clock [all_clocks]
 read_spef $out/chip_top.$rc($corner).spef
 
