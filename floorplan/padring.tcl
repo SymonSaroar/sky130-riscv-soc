@@ -41,6 +41,25 @@ proc io_size {pad} {
   list [ord::dbu_to_microns [$m getWidth]] [ord::dbu_to_microns [$m getHeight]]
 }
 
+# minimum gap between neighbouring ring cells: the gpiov2 pad and the overlay of the lvc supply pads
+# reach past their outlines
+proc io_kind {p} {
+  switch -- $p {
+    conn { return conn }
+    vccd - vssd { return lvc }
+    vddio - vssio - vdda - vssa { return hvc }
+    default { return gpio }
+  }
+}
+proc io_gap {a b} {
+  switch -- [lsort [list [io_kind $a] [io_kind $b]]] {
+    {gpio gpio} - {gpio lvc} { return 12 }
+    {gpio hvc} { return 5 }
+    {hvc hvc} - {hvc lvc} - {lvc lvc} { return 20 }
+    default { return 0 }
+  }
+}
+
 # bus slices for a gap of whole microns
 proc io_fill {side x0 len} {
   foreach w {20 10 5 1} {
@@ -66,15 +85,21 @@ foreach side {south east north west} {
   if {$side in {south north}} { set lo [expr {$o + $cw}] } else { set lo [expr {$o + $ch}] }
   set len [expr {$d - $lo - ($lo - $o)}]
   set used 0
+  set min {0}
   foreach p $pads { set used [expr {$used + [lindex [io_size $p] 0]}] }
+  foreach a [lrange $pads 0 end-1] b [lrange $pads 1 end] {
+    lappend min [io_gap $a $b]
+    set used [expr {$used + [lindex $min end]}]
+  }
   set free [expr {int(floor($len - $used))}]
+  if {$free < 0} { error "pad ring: the $side side needs [expr {$used - $len}] um more" }
   set n [expr {[llength $pads] + 1}]
   set fill($side) {}
-  # whole-micron gaps, the remainder spread from the start of the side
+  # whole-micron gaps on top of the minimum, the remainder spread from the start of the side
   set pos $lo
   set i 0
   foreach p $pads {
-    set gap [expr {$free / $n + ($i < $free % $n)}]
+    set gap [expr {[lindex $min $i] + $free / $n + ($i < $free % $n)}]
     io_fill $side $pos $gap
     set pos [expr {$pos + $gap}]
     lassign [io_size $p] w h
