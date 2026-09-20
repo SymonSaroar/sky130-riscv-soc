@@ -91,7 +91,7 @@ magic:
 klayout_drc:
 	klayout -b -r $(PDK_ROOT)/sky130A/libs.tech/klayout/drc/sky130A_mr.drc \
 	  -rd input=$(CURDIR)/$(OUT)/chip_top.gds -rd top_cell=chip_top -rd report=$(CURDIR)/$(REP)/drc_klayout.xml \
-	  -rd feol=true -rd beol=true -rd offgrid=true > $(OUT)/drc_klayout.log
+	  -rd feol=true -rd beol=true -rd offgrid=true -rd seal=true > $(OUT)/drc_klayout.log
 lvs: magic
 	netgen -batch source signoff/lvs.tcl > $(OUT)/lvs.log
 	{ sed -n "$$(grep -n 'Subcircuit summary' $(REP)/lvs.rpt | tail -1 | cut -d: -f1),\$$p" $(REP)/lvs.rpt | head -80; \

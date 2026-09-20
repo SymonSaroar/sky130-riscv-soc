@@ -52,17 +52,19 @@ proc io_fill {side x0 len} {
   }
 }
 
-set d [ord::dbu_to_microns [[[ord::get_db_block] getDieArea] xMax]]
+# the ring sits io_off in from the die edge
+set o $io_off
+set d [expr {[ord::dbu_to_microns [[[ord::get_db_block] getDieArea] xMax]] - $o}]
 
-io_place corner_sw $corner 0 0 R180
-io_place corner_se $corner [expr {$d - $cw}] 0 MX
+io_place corner_sw $corner $o $o R180
+io_place corner_se $corner [expr {$d - $cw}] $o MX
 io_place corner_ne $corner [expr {$d - $cw}] [expr {$d - $ch}] R0
-io_place corner_nw $corner 0 [expr {$d - $ch}] MY
+io_place corner_nw $corner $o [expr {$d - $ch}] MY
 
 foreach side {south east north west} {
   set pads $row($side)
-  if {$side in {south north}} { set lo $cw } else { set lo $ch }
-  set len [expr {$d - 2 * $lo}]
+  if {$side in {south north}} { set lo [expr {$o + $cw}] } else { set lo [expr {$o + $ch}] }
+  set len [expr {$d - $lo - ($lo - $o)}]
   set used 0
   foreach p $pads { set used [expr {$used + [lindex [io_size $p] 0]}] }
   set free [expr {int(floor($len - $used))}]
@@ -84,15 +86,15 @@ foreach side {south east north west} {
       set master ""
     }
     switch $side {
-      south { io_place $name $master $pos 0 R180 }
+      south { io_place $name $master $pos $o R180 }
       north { io_place $name $master $pos [expr {$d - $h}] R0 }
-      west  { io_place $name $master 0 $pos R90 }
+      west  { io_place $name $master $o $pos R90 }
       east  { io_place $name $master [expr {$d - $h}] $pos R270 }
     }
     set pos [expr {$pos + $w}]
     incr i
   }
-  io_fill $side $pos [expr {int(round($d - $lo - $pos))}]
+  io_fill $side $pos [expr {int(round($d - ($lo - $o) - $pos))}]
 }
 
 set k 0
@@ -103,9 +105,9 @@ foreach side {south east north west} {
     set h 197.965
     set name io_fill_[incr k]
     switch $side {
-      south { io_place $name $master $pos 0 R180 }
+      south { io_place $name $master $pos $o R180 }
       north { io_place $name $master $pos [expr {$d - $h}] R0 }
-      west  { io_place $name $master 0 $pos R90 }
+      west  { io_place $name $master $o $pos R90 }
       east  { io_place $name $master [expr {$d - $h}] $pos R270 }
     }
   }
