@@ -31,7 +31,7 @@ foreach sram [[ord::get_db_block] getInsts] {
 }
 
 estimate_parasitics -placement
-repair_design
+repair_design -slew_margin 10 -cap_margin 10
 detailed_placement
 check_placement -verbose
 

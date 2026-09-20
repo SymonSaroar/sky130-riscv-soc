@@ -5,11 +5,11 @@ set_propagated_clock [all_clocks]
 set_routing_layers -signal met1-met5 -clock met1-met5
 global_route -congestion_report_file $rep/congestion.rpt
 estimate_parasitics -global_routing
-repair_design
+repair_design -slew_margin 10 -cap_margin 10
 repair_timing -setup -skip_buffering
 repair_timing -hold -hold_margin 0.2
-# slew and load once more on the gates timing repair cloned or resized
-repair_design
+# slew and load once more on the gates timing repair cloned or resized, with 10% margin
+repair_design -slew_margin 10 -cap_margin 10
 global_route -start_incremental
 detailed_placement
 global_route -end_incremental -congestion_report_file $rep/congestion.rpt
