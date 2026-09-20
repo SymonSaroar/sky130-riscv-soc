@@ -7,7 +7,7 @@ layers = [("li1", "67/20", 0x9e9e9e), ("met1", "68/20", 0x2f6fdf), ("met2", "69/
           ("met3", "70/20", 0x1fb5a8), ("met4", "71/20", 0xd6a51c), ("met5", "72/20", 0xe0582a)]
 
 view = pya.LayoutView()
-view.load_layout(out + "/soc_top.gds", False)
+view.load_layout(out + "/chip_top.gds", False)
 view.clear_layers()
 for name, src, color in layers:
     lp = pya.LayerPropertiesNode()

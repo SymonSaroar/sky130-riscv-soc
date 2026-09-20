@@ -38,6 +38,15 @@ check_antennas -report_file $rep/antenna.rpt
 foreach b [[ord::get_db_block] getBlockages] { odb::dbBlockage_destroy $b }
 
 write_db $out/route.odb
-write_def $out/soc_top.def
-write_verilog $out/soc_top.final.v
-write_verilog -include_pwr_gnd $out/soc_top.pwr.v
+write_def $out/chip_top.def
+# the timing netlist leaves out the supply pads, corners and bus slices
+set ring_cells {}
+foreach lib [[ord::get_db] getLibs] {
+  foreach m [$lib getMasters] {
+    if {[string match sky130_ef_io__* [$m getName]] && [$m getName] ne "sky130_ef_io__gpiov2_pad_wrapped"} {
+      lappend ring_cells [$m getName]
+    }
+  }
+}
+write_verilog -remove_cells $ring_cells $out/chip_top.final.v
+write_verilog -include_pwr_gnd $out/chip_top.pwr.v
