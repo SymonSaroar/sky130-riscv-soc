@@ -49,8 +49,8 @@ module sdram_ctrl #(
   reg [31:0] wd;
   reg  [3:0] ws;
 
-  reg [15:0] dq_q;                 // input register at the pins
-  reg [CL+3:0] rdv;                // read issued, shifted once per cycle
+  reg [15:0] dq_q;                 // read data, one cycle after the falling-edge capture
+  reg [CL+4:0] rdv;                // read issued, shifted once per cycle
   reg [15:0] lo;
 
   wire done_wait = cnt == 0;
@@ -60,7 +60,7 @@ module sdram_ctrl #(
 
   always @(posedge clk) begin
     dq_q   <= dq_in;
-    rdv    <= {rdv[CL+2:0], 1'b0};
+    rdv    <= {rdv[CL+3:0], 1'b0};
     r_push <= 1'b0;
     cmd(NOP);
     dq_oe  <= 1'b0;
@@ -80,8 +80,8 @@ module sdram_ctrl #(
       else refcnt <= refcnt - 1;
 
       // read data: beat 0 then beat 1
-      if (rdv[CL+2]) lo <= dq_q;
-      if (rdv[CL+3]) begin r_push <= 1'b1; r_data <= {dq_q, lo}; end
+      if (rdv[CL+3]) lo <= dq_q;
+      if (rdv[CL+4]) begin r_push <= 1'b1; r_data <= {dq_q, lo}; end
 
       if (done_wait) case (st)
         S_INIT: begin cmd(PRE); a <= 13'h400; cnt <= T_RP - 1;  st <= S_REF1; end
