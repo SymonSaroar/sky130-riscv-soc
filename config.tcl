@@ -31,7 +31,7 @@ proc read_libs {} {
   read_lef $io/lef/sky130_ef_io.lef
   read_liberty $sc/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
   read_liberty $sm/lib/${sram}_TT_1p8V_25C.lib
-  read_liberty $::env(OUT)/gpiov2_sta.lib
+  read_liberty $::env(OUT)/gpiov2_tt.lib
 }
 
 proc load {stage} {

@@ -45,12 +45,20 @@ OUT := $(B)/$(RUN)
 REP := reports/$(RUN)
 export OUT REP RUN
 
-# timing copy of the gpiov2 pad liberty
-PAD_LIB := $(OUT)/gpiov2_sta.lib
-$(PAD_LIB): sta/pad_lib.py
+# timing copies of the gpiov2 pad liberty and SRAM liberties for the slow and fast corners
+LIB_IO   := $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_io/lib/sky130_ef_io__gpiov2_pad_wrapped
+LIB_SRAM := $(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/lib/sky130_sram_2kbyte_1rw1r_32x512_8_TT_1p8V_25C.lib
+CORNER_LIBS := $(addprefix $(OUT)/,gpiov2_tt.lib gpiov2_ss.lib gpiov2_ff.lib sram_ss.lib sram_ff.lib)
+$(OUT)/gpiov2_tt.lib: PAD := tt_tt_025C_1v80_3v30
+$(OUT)/gpiov2_ss.lib: PAD := ss_ss_100C_1v60_3v00
+$(OUT)/gpiov2_ff.lib: PAD := ff_ff_n40C_1v95_5v50
+$(OUT)/gpiov2_%.lib: sta/pad_lib.py
 	@mkdir -p $(OUT)
-	python3 sta/pad_lib.py $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_io/lib/sky130_ef_io__gpiov2_pad_wrapped_tt_tt_025C_1v80_3v30.lib $@
-floorplan place cts route rcx sta ir: $(PAD_LIB)
+	python3 sta/pad_lib.py $(LIB_IO)_$(PAD).lib $@
+$(OUT)/sram_%.lib: sta/sram_lib.py
+	@mkdir -p $(OUT)
+	python3 sta/sram_lib.py $(LIB_SRAM) $* $@
+floorplan place cts route rcx sta ir: $(CORNER_LIBS)
 
 .PHONY: synth
 synth:
