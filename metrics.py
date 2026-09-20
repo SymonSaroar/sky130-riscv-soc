@@ -4,7 +4,7 @@ import collections, csv, fnmatch, os, re, sys
 run = sys.argv[1]
 rep, out = f"reports/{run}", f"build/{run}"
 FIELDS = ["run", "clock_ns", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "slew_viol", "slew_waived", "cap_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "wns_pclk_ns", "fmax_pclk_mhz", "wns_ss_ns", "fmax_ss_mhz", "fmax_mclk_ss_mhz", "whs_ff_ns", "hold_viol_ff", "die_um", "util_pct", "place_density",
-          "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "antenna_nets", "magic_drc", "klayout_drc", "klayout_drc_waived", "density", "lvs"]
+          "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "antenna_nets", "magic_drc", "klayout_drc", "klayout_drc_waived", "density", "lvs", "lec"]
 
 
 def read(path):
@@ -88,6 +88,8 @@ dens = read(f"{rep}/density.xml")
 row["density"] = ("clean" if dens.count("<item>") == 0 else str(dens.count("<item>"))) if dens else ""
 lvs = read(f"{rep}/lvs.summary")
 row["lvs"] = "" if not lvs else "clean" if "Circuits match uniquely" in lvs else "mismatch"
+lec = read(f"{rep}/lec.rpt")
+row["lec"] = "" if not lec else "equivalent" if "UNSATISFIABLE" in lec else "differ"
 
 path = "reports/metrics.csv"
 rows = list(csv.DictReader(open(path))) if os.path.exists(path) else []
@@ -100,7 +102,7 @@ print(row)
 
 # README results table, between the metrics markers
 cols = ["run", "place_density", "wns_ns", "tns_ns", "whs_ns", "viol_endpoints", "hold_viol", "fmax_mhz", "wns_mclk_ns", "fmax_mclk_mhz", "wns_pclk_ns", "fmax_pclk_mhz", "wns_ss_ns", "fmax_ss_mhz", "fmax_mclk_ss_mhz", "whs_ff_ns", "hold_viol_ff", "slew_viol", "slew_waived", "cap_viol",
-        "antenna_nets", "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "klayout_drc_waived", "density", "lvs"]
+        "antenna_nets", "power_mw", "ir_drop_mv", "grt_congestion", "route_drc", "magic_drc", "klayout_drc", "klayout_drc_waived", "density", "lvs", "lec"]
 table = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
 table += "".join("| " + " | ".join(r.get(c) or "-" for c in cols) + " |\n" for r in rows)
 readme = read("README.md")
