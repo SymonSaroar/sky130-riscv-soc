@@ -82,6 +82,17 @@ module tb_soc;
 `endif
   end
 
+  // +progress=<file>: simulated time in us, rewritten every 100 us
+  reg [8*256-1:0] progress;
+  integer pf;
+  initial if ($value$plusargs("progress=%s", progress))
+    forever begin
+      #100_000;
+      pf = $fopen(progress, "w");
+      $fdisplay(pf, "%0d", $time / 1000);
+      $fclose(pf);
+    end
+
   // UART monitor
   always @(negedge uart_tx) begin
     #(BIT * 3 / 2);
