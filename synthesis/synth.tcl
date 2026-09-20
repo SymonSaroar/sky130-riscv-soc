@@ -27,6 +27,5 @@ setundef -zero
 hilomap -singleton -hicell sky130_fd_sc_hd__conb_1 HI -locell sky130_fd_sc_hd__conb_1 LO
 splitnets
 opt_clean -purge
-insbuf -buf sky130_fd_sc_hd__buf_2 A X
 tee -o $rep/synth_stat.txt stat -liberty $lib -liberty $sram
 write_verilog -noattr -noexpr -nohex -nodec $out/chip_top.v
