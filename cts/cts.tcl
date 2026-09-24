@@ -1,8 +1,8 @@
 source config.tcl
 load place
 
-# the trees start at the clock pads' core-side outputs
-clock_tree_synthesis -clk_nets {c_clk c_mclk} -root_buf sky130_fd_sc_hd__clkbuf_16 \
+# the trees start at the clock pads' core-side outputs; pclk starts at its divider flop
+clock_tree_synthesis -clk_nets {c_clk c_mclk c_rx_clk u_core.u_pcie.pclk} -root_buf sky130_fd_sc_hd__clkbuf_16 \
   -buf_list {sky130_fd_sc_hd__clkbuf_8 sky130_fd_sc_hd__clkbuf_4 sky130_fd_sc_hd__clkbuf_2} \
   -sink_clustering_enable
 set_propagated_clock [all_clocks]
