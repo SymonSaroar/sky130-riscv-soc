@@ -37,13 +37,16 @@ module pcie_pipe (
 );
   // resets: asserted at once, released on the clock they reset
   reg [1:0] rr, pr;
-  reg       ph;
+  reg       ph, ps;
   always @(posedge rx_clk or posedge arst)
     if (arst) rr <= 2'b00; else rr <= {rr[0], 1'b1};
   wire rrst = !rr[1];
   always @(posedge rx_clk or posedge arst)
     if (arst) ph <= 1'b0; else if (rrst) ph <= 1'b0; else ph <= !ph;
   assign pclk = ph;
+  // ps follows ph and carries the phase to data pins, so the pclk net drives clock pins only
+  always @(posedge rx_clk or posedge arst)
+    if (arst) ps <= 1'b0; else if (rrst) ps <= 1'b0; else ps <= !ps;
   always @(posedge pclk or posedge arst)
     if (arst) pr <= 2'b00; else pr <= {pr[0], 1'b1};
   assign prst = !pr[1];
@@ -55,7 +58,7 @@ module pcie_pipe (
   always @(posedge rx_clk) begin
     rx_p <= rx_n;
     rx_q <= rx_p;
-    if (ph) rx2 <= {rx_p, rx_q};
+    if (ps) rx2 <= {rx_p, rx_q};
   end
   always @(posedge pclk) begin
     r_data <= {rx2[47:32], rx2[23:8]};
@@ -70,15 +73,15 @@ module pcie_pipe (
   reg [42:0] tw;
   always @(posedge rx_clk or posedge arst)
     if (arst) tw <= {2'b10, 1'b0, 1'b0, 1'b1, 38'b0};
-    else if (ph) tw <= {t_pd, t_pol, t_det, t_ei, t_comp, t_k, t_data};
+    else if (ps) tw <= {t_pd, t_pol, t_det, t_ei, t_comp, t_k, t_data};
   always @(negedge rx_clk or posedge arst)
     if (arst) begin
       tx_data <= 16'b0; tx_datak <= 2'b0; tx_compliance <= 1'b0;
       tx_elecidle <= 1'b1; tx_det_lb <= 1'b0; rx_polarity <= 1'b0; powerdown <= 2'b10;
     end else begin
-      tx_data       <= ph ? tw[31:16] : tw[15:0];
-      tx_datak      <= ph ? tw[35:34] : tw[33:32];
-      tx_compliance <= ph ? tw[37] : tw[36];
+      tx_data       <= ps ? tw[31:16] : tw[15:0];
+      tx_datak      <= ps ? tw[35:34] : tw[33:32];
+      tx_compliance <= ps ? tw[37] : tw[36];
       tx_elecidle   <= tw[38];
       tx_det_lb     <= tw[39];
       rx_polarity   <= tw[40];
