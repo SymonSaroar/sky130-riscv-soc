@@ -2,8 +2,9 @@
 # Usage: python3 sta/pad_lib.py <pdk lib> <out lib>
 import itertools, re, sys
 
-# pins tied by chip_top.v; DM is 110 on outputs and bidirectional pins, 001 on inputs
-TIES = dict(SLOW=0, IB_MODE_SEL=0, VTRIP_SEL=0, INP_DIS=0, HLD_OVR=0, ANALOG_EN=0, ANALOG_SEL=0, ANALOG_POL=0,
+# pins tied by chip_top.v; DM is 110 on outputs and bidirectional pins, 001 on inputs; IB_MODE_SEL is 1 on the
+# 1.8 V inputs and 0 on the others, so the arcs of both input buffers stay
+TIES = dict(SLOW=0, VTRIP_SEL=0, INP_DIS=0, HLD_OVR=0, ANALOG_EN=0, ANALOG_SEL=0, ANALOG_POL=0,
             ENABLE_H=1, HLD_H_N=1, ENABLE_VDDA_H=1, ENABLE_INP_H=0, ENABLE_VSWITCH_H=0, ENABLE_VDDIO=1)
 MODES = [(1, 1, 0), (0, 0, 1)]
 
