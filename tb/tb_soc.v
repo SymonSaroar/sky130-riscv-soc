@@ -6,7 +6,8 @@ module tb_soc;
   wire clk = clk_r, mclk = mclk_r, rst_n = rst_r, uart_rx = rx_r;
   wire uart_tx, spi_cs_n, spi_sclk, spi_mosi, spi_miso;
   wire [15:0] gpio;
-  pulldown gpio_pd [15:0] (gpio);
+  pulldown gpio_pd [15:10] (gpio[15:10]);
+  pulldown gpio_pl [7:0] (gpio[7:0]);
   always #5 clk_r = !clk_r;
   always #5 mclk_r = !mclk_r;
 
@@ -15,21 +16,32 @@ module tb_soc;
   wire [12:0] sdram_a;
   wire [15:0] dq;
 
-  // PCIe: SoC root port and endpoint model, back to back through two PHY models
-  reg          pclk = 0;
-  always #8 pclk = !pclk;
-  wire [127:0] soc_tx, ep_tx;
-  wire  [15:0] soc_txk, ep_txk;
-  wire         soc_ei, ep_ei, soc_det, ep_det, soc_phys, ep_phys, pipe_reset_n;
-  wire  [11:0] soc_rxst, ep_rxst;
-  wire   [3:0] soc_rxei, ep_rxei;
-  pipe_phy phy_soc (.pclk(pclk), .reset_n(pipe_reset_n), .tx_detect_rx(soc_det), .partner_elecidle(ep_ei),
-                    .phy_status(soc_phys), .rx_status(soc_rxst), .rx_elecidle(soc_rxei));
-  pipe_phy phy_ep  (.pclk(pclk), .reset_n(pipe_reset_n), .tx_detect_rx(ep_det), .partner_elecidle(soc_ei),
-                    .phy_status(ep_phys), .rx_status(ep_rxst), .rx_elecidle(ep_rxei));
-  pcie_ep ep (.pclk(pclk), .reset_n(pipe_reset_n), .tx_data(ep_tx), .tx_datak(ep_txk), .tx_elecidle(ep_ei),
-              .tx_detect_rx(ep_det), .rx_data(soc_tx), .rx_datak(soc_txk), .rx_elecidle(ep_rxei),
-              .rx_status(ep_rxst), .phy_status(ep_phys));
+  // PCIe: the XIO1100 model and an endpoint model behind it. gpio[8] pulled high tells the firmware that faults are
+  // injected (+pcie_faults), so it reports link errors instead of failing on them; gpio[9] (+pcie_hot_reset) adds a
+  // Hot Reset and a second enumeration.
+  wire        rx_clk, tx_clk, rx_valid, phy_status, rx_ei, tx_ei, tx_comp, tx_det, rx_pol, phy_rst_n;
+  wire [15:0] rx_data, tx_data;
+  wire  [1:0] rx_datak, tx_datak, powerdown;
+  wire  [2:0] rx_status;
+  wire  [7:0] lt_sym, lr_sym;
+  wire        lt_k, lt_idle, lt_stb, lr_k, lr_idle, lr_stb;
+  reg         pcie_faults, pcie_hot;
+  initial pcie_faults = $test$plusargs("pcie_faults");
+  initial pcie_hot = $test$plusargs("pcie_hot_reset");
+  assign (pull0, pull1) gpio[8] = pcie_faults;
+  assign (pull0, pull1) gpio[9] = pcie_hot;
+  xio1100 phy (
+    .reset_n(phy_rst_n), .powerdown(powerdown), .tx_clk(tx_clk), .tx_data(tx_data), .tx_datak(tx_datak),
+    .tx_elecidle(tx_ei), .tx_compliance(tx_comp), .tx_det_lb(tx_det), .rx_polarity(rx_pol),
+    .rx_clk(rx_clk), .rx_data(rx_data), .rx_datak(rx_datak), .rx_status(rx_status), .rx_valid(rx_valid),
+    .phy_status(phy_status), .rx_elecidle(rx_ei),
+    .lt_sym(lt_sym), .lt_k(lt_k), .lt_idle(lt_idle), .lt_stb(lt_stb),
+    .lr_sym(lr_sym), .lr_k(lr_k), .lr_idle(lr_idle), .lr_stb(lr_stb)
+  );
+  pcie_dev dev (
+    .perst_n(rst_n), .tx_sym(lr_sym), .tx_k(lr_k), .tx_idle(lr_idle), .tx_stb(lr_stb),
+    .rx_sym(lt_sym), .rx_k(lt_k), .rx_idle(lt_idle), .rx_stb(lt_stb)
+  );
 
 `ifndef GLS
   supply1 vccd, vddio, vdda;
@@ -44,10 +56,11 @@ module tb_soc;
     .mclk(mclk), .sdram_clk(sdram_clk), .sdram_cke(sdram_cke), .sdram_cs_n(sdram_cs_n),
     .sdram_ras_n(sdram_ras_n), .sdram_cas_n(sdram_cas_n), .sdram_we_n(sdram_we_n),
     .sdram_ba(sdram_ba), .sdram_a(sdram_a), .sdram_dqm(sdram_dqm), .sdram_dq(dq),
-    .pclk(pclk), .pipe_tx_data(soc_tx), .pipe_tx_datak(soc_txk), .pipe_tx_elecidle(soc_ei),
-    .pipe_tx_detect_rx(soc_det), .pipe_power_down(), .pipe_reset_n(pipe_reset_n),
-    .pipe_rx_data(ep_tx), .pipe_rx_datak(ep_txk), .pipe_rx_elecidle(soc_rxei),
-    .pipe_rx_status(soc_rxst), .pipe_phy_status(soc_phys)
+    .pipe_rx_clk(rx_clk), .pipe_rx_data(rx_data), .pipe_rx_datak(rx_datak), .pipe_rx_status(rx_status),
+    .pipe_rx_valid(rx_valid), .pipe_phy_status(phy_status), .pipe_rx_elecidle(rx_ei),
+    .pipe_tx_clk(tx_clk), .pipe_tx_data(tx_data), .pipe_tx_datak(tx_datak), .pipe_tx_elecidle(tx_ei),
+    .pipe_tx_compliance(tx_comp), .pipe_tx_det_loopback(tx_det), .pipe_rx_polarity(rx_pol),
+    .pipe_powerdown(powerdown), .pipe_reset_n(phy_rst_n)
   );
   sdram_model sdram (
     .clk(sdram_clk), .cke(sdram_cke), .cs_n(sdram_cs_n), .ras_n(sdram_ras_n), .cas_n(sdram_cas_n),
@@ -61,15 +74,6 @@ module tb_soc;
 
   integer i, j;
 
-`ifndef GLS
-  // the link CRC is the reflected CRC-32: check value 0xCBF43926 for "123456789"
-  initial begin : crc_check
-    reg [31:0] c; integer n;
-    c = 32'hFFFFFFFF;
-    for (n = 0; n < 9; n = n + 1) c = dut.u_core.u_pcie.u_mac.crc32_byte(c, 8'h31 + n);
-    if (~c !== 32'hCBF43926) begin $display("CRC-32 CHECK FAILED %h", ~c); $finish; end
-  end
-`endif
   reg [7:0] c, d;
 
   initial begin
@@ -112,8 +116,9 @@ module tb_soc;
   // the result, once every pad has switched
   always @(gpio) if (gpio[15:8] === 8'ha5) begin
     #100;
-    $display("\n%s at %0d ns (SDRAM protocol errors: %0d)",
-             gpio[0] && sdram.errors == 0 ? "TEST PASSED" : "TEST FAILED", $time, sdram.errors);
+    $display("\n%s at %0d ns (SDRAM protocol errors: %0d, PHY violations: %0d, endpoint violations: %0d)",
+             gpio[0] && sdram.errors == 0 && phy.errors == 0 && dev.errors == 0 ? "TEST PASSED" : "TEST FAILED",
+             $time, sdram.errors, phy.errors, dev.errors);
     $finish;
   end
 endmodule

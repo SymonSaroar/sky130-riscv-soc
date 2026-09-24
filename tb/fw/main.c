@@ -6,7 +6,10 @@
 #define INTC  0x10004000
 #define SDRAM 0x80000000
 #define PCIE  0x40000000
+#define PCIE_CFG 0x50100000
 #define PCIE_ST 0x10005000
+#define PCIE_CTRL 0x10005004
+#define PCIE_ERR 0x10005008
 #define CLK_HZ 100000000
 
 int isa_test(void);
@@ -48,15 +51,44 @@ static int sdram_test(void) {
   return err;
 }
 
-// wait for the link, then 8 words and a byte store to the endpoint's memory
+static int faults, hot;
+
+// configuration read of the device on bus 1, retried while it answers RRS
+static unsigned cfg_rd(unsigned off) {
+  for (int t = 0; t < 1000; t++) {
+    REG(PCIE_ERR) = 8;
+    unsigned v = REG(PCIE_CFG + off);
+    if (!(REG(PCIE_ERR) & 8)) return v;
+  }
+  return 0xffffffff;
+}
+
+// enumerate the device behind the link, map its BAR at 0x4000_0000, then 8 words and a byte store to its memory
 static int pcie_test(void) {
   for (int t = 0; !(REG(PCIE_ST) & 1); t++) if (t > 100000) return -1;
   int err = 0;
+  if (cfg_rd(0) != 0xc0de5a5a) err++;
+  REG(PCIE_ERR) = 0x1ff;
+  if (REG(PCIE_CFG + (1 << 15)) != 0xffffffff || !(REG(PCIE_ERR) & 2)) err++;   // no device 1: UR
+  REG(PCIE_ERR) = 0x1ff;
+  REG(PCIE_CFG + 0x10) = 0xffffffff;
+  if (cfg_rd(0x10) != 0xfffff000) err++;
+  REG(PCIE_CFG + 0x10) = PCIE;
+  REG(PCIE_CFG + 4) = 6;
   for (int i = 0; i < 8; i++) REG(PCIE + 0x100 + i * 4) = pat(i);
   for (int i = 0; i < 8; i++) if (REG(PCIE + 0x100 + i * 4) != pat(i)) err++;
   *(volatile unsigned char *)(PCIE + 0x101) = 0x5a;
   if (REG(PCIE + 0x100) != ((pat(0) & 0xffff00ff) | 0x5a00)) err++;
-  if (REG(PCIE_ST) & 0xff0) err++;  // replays
+  if (!faults && (REG(PCIE_ERR) || (REG(PCIE_ST) & 0xffff00))) err++;
+  if (hot) {
+    // Hot Reset: the link goes down, trains again, and the device comes back unconfigured
+    REG(PCIE_CTRL) = 2;
+    for (int t = 0; REG(PCIE_ST) & 1; t++) if (t > 100000) return -2;
+    REG(PCIE_CTRL) = 0;
+    for (int t = 0; !(REG(PCIE_ST) & 1); t++) if (t > 1000000) return -3;
+    if (cfg_rd(0) != 0xc0de5a5a) err++;
+    if (cfg_rd(0x10) != 0) err++;
+  }
   return err;
 }
 
@@ -89,6 +121,9 @@ static void done(int ok) { REG(GPIO) = 0xa500 | ok; for (;;); }
 
 int main(void) {
   REG(UART + 8) = CLK_HZ / 115200;
+  faults = REG(GPIO + 4) >> 8 & 1;
+  hot = REG(GPIO + 4) >> 9 & 1;
+  REG(PCIE_CTRL) = 0;
   REG(GPIO + 8) = 0xffff;
   int e = isa_test();
   puts("boot\n");
@@ -124,7 +159,7 @@ int main(void) {
   puts("sdram ok\n");
 
   if (pcie_test()) { puts("pcie fail\n"); done(0); }
-  puts("pcie ok "); puthex(REG(PCIE_ST)); putc('\n');
+  puts("pcie ok "); puthex(REG(PCIE_ST)); putc(' '); puthex(REG(PCIE_ERR)); putc('\n');
 
   for (int i = 0; i < 64; i++) {
     ma[i / 8][i % 8] = (short)(pat(i) & 0x7fff) - 0x4000;

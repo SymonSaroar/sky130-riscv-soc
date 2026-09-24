@@ -28,7 +28,7 @@ $(B)/fw/fw.hex: $(wildcard tb/fw/*.S tb/fw/*.c tb/fw/*.ld)
 
 sim: fw
 	iverilog -g2012 -s tb_soc -DUSE_POWER_PINS -DFUNCTIONAL -o $(B)/tb_soc \
-	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v tb/pipe_phy.v tb/pcie_ep.v $(RTL) \
+	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v tb/xio1100.v tb/pcie_dev.v $(RTL) \
 	  $(IO_V)/sky130_ef_io.v $(IO_V)/sky130_fd_io.v
 	vvp -n $(B)/tb_soc $(SIMARGS)
 
@@ -138,7 +138,7 @@ $(OUT)/sky130_ef_io_gls.v: tb/pad_gls.py
 gls: gls0 gls1
 gls0 gls1: gls%: fw $(OUT)/primitives_%.v $(OUT)/sky130_ef_io_gls.v
 	iverilog -g2012 -s tb_soc -DGLS -DFUNCTIONAL -DUNIT_DELAY=#1 -o $(OUT)/tb_$@ \
-	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v tb/pipe_phy.v tb/pcie_ep.v rtl/pcie_mac.v \
+	  tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v tb/xio1100.v tb/pcie_dev.v \
 	  $(OUT)/primitives_$*.v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/chip_top.v \
 	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v
 	vvp -n $(OUT)/tb_$@ +progress=$(OUT)/$@.time | sed 's/^/$@: /'
@@ -149,7 +149,7 @@ gls_sdf: fw $(OUT)/primitives_0.v $(OUT)/sky130_ef_io_gls.v
 	python3 sta/sdf_iverilog.py $(OUT)/chip_top.sdf $(OUT)/chip_top_iverilog.sdf $(OUT)/chip_top_pads.v
 	iverilog -g2012 -gspecify -ginterconnect -s tb_soc -s sdf_pads -DGLS -DSDF='"$(OUT)/chip_top_iverilog.sdf"' \
 	  -o $(OUT)/tb_gls_sdf tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v \
-	  tb/pipe_phy.v tb/pcie_ep.v rtl/pcie_mac.v \
+	  tb/xio1100.v tb/pcie_dev.v \
 	  $(OUT)/primitives_0.v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/chip_top.final.v \
 	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v $(OUT)/chip_top_pads.v
 	vvp -n $(OUT)/tb_gls_sdf +progress=$(OUT)/gls_sdf.time

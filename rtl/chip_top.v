@@ -1,6 +1,6 @@
 // Chip top: the SoC core in a SKY130 pad ring of sky130_ef_io__gpiov2_pad_wrapped signal pads.
 // VDDIO 3.3 V, VCCD 1.8 V. Supply pads, corners and bus slices are placed by the floorplan.
-// The PCIe PIPE ports connect to the core without pads.
+// The PCIe PHY inputs use the pads' 1.8 V input buffer.
 module chip_top (
 `ifdef USE_POWER_PINS
   inout         vccd,
@@ -30,18 +30,22 @@ module chip_top (
   output [12:0] sdram_a,
   output  [1:0] sdram_dqm,
   inout  [15:0] sdram_dq,
-  input          pclk,
-  output [127:0] pipe_tx_data,
-  output  [15:0] pipe_tx_datak,
-  output         pipe_tx_elecidle,
-  output         pipe_tx_detect_rx,
-  output   [1:0] pipe_power_down,
-  output         pipe_reset_n,
-  input  [127:0] pipe_rx_data,
-  input   [15:0] pipe_rx_datak,
-  input    [3:0] pipe_rx_elecidle,
-  input   [11:0] pipe_rx_status,
-  input          pipe_phy_status
+  input         pipe_rx_clk,
+  input  [15:0] pipe_rx_data,
+  input   [1:0] pipe_rx_datak,
+  input   [2:0] pipe_rx_status,
+  input         pipe_rx_valid,
+  input         pipe_phy_status,
+  input         pipe_rx_elecidle,
+  output        pipe_tx_clk,
+  output [15:0] pipe_tx_data,
+  output  [1:0] pipe_tx_datak,
+  output        pipe_tx_elecidle,
+  output        pipe_tx_compliance,
+  output        pipe_tx_det_loopback,
+  output        pipe_rx_polarity,
+  output  [1:0] pipe_powerdown,
+  output        pipe_reset_n
 );
 `ifdef USE_POWER_PINS
   `define PWR .vccd(vccd), .vssd(vssd), .vddio(vddio), .vssio(vssio), .vdda(vdda), .vssa(vssa),
@@ -54,6 +58,10 @@ module chip_top (
   wire  [1:0] c_ba, c_dqm;
   wire [12:0] c_a;
   wire [15:0] c_gpio_in, c_gpio_out, c_gpio_oe, c_dq_in, c_dq_out;
+  wire        c_rx_clk, c_rx_valid, c_phy_status, c_rx_ei, c_tx_clk, c_tx_ei, c_tx_comp, c_tx_det, c_rx_pol, c_phy_rst_n;
+  wire [15:0] c_rx_data, c_tx_data;
+  wire  [1:0] c_rx_datak, c_tx_datak, c_pd;
+  wire  [2:0] c_rx_status;
 
   soc_top u_core (
     .clk(c_clk), .rst_n(c_rst_n), .uart_tx(c_uart_tx), .uart_rx(c_uart_rx),
@@ -63,10 +71,11 @@ module chip_top (
     .sdram_ras_n(c_ras_n), .sdram_cas_n(c_cas_n), .sdram_we_n(c_we_n),
     .sdram_ba(c_ba), .sdram_a(c_a), .sdram_dqm(c_dqm),
     .sdram_dq_out(c_dq_out), .sdram_dq_oe(c_dq_oe), .sdram_dq_in(c_dq_in),
-    .pclk(pclk), .pipe_tx_data(pipe_tx_data), .pipe_tx_datak(pipe_tx_datak), .pipe_tx_elecidle(pipe_tx_elecidle),
-    .pipe_tx_detect_rx(pipe_tx_detect_rx), .pipe_power_down(pipe_power_down), .pipe_reset_n(pipe_reset_n),
-    .pipe_rx_data(pipe_rx_data), .pipe_rx_datak(pipe_rx_datak), .pipe_rx_elecidle(pipe_rx_elecidle),
-    .pipe_rx_status(pipe_rx_status), .pipe_phy_status(pipe_phy_status)
+    .pipe_rx_clk(c_rx_clk), .pipe_rx_data(c_rx_data), .pipe_rx_datak(c_rx_datak), .pipe_rx_status(c_rx_status),
+    .pipe_rx_valid(c_rx_valid), .pipe_phy_status(c_phy_status), .pipe_rx_elecidle(c_rx_ei),
+    .pipe_tx_clk(c_tx_clk), .pipe_tx_data(c_tx_data), .pipe_tx_datak(c_tx_datak), .pipe_tx_elecidle(c_tx_ei),
+    .pipe_tx_compliance(c_tx_comp), .pipe_tx_det_loopback(c_tx_det), .pipe_rx_polarity(c_rx_pol),
+    .pipe_powerdown(c_pd), .pipe_reset_n(c_phy_rst_n)
   );
 
   // inputs
@@ -138,11 +147,67 @@ module chip_top (
   pad_gpio p_sdram_dq13  (`PWR .pad(sdram_dq[13]), .a(c_dq_out[13]),   .oe(c_dq_oe),       .y(c_dq_in[13]));
   pad_gpio p_sdram_dq14  (`PWR .pad(sdram_dq[14]), .a(c_dq_out[14]),   .oe(c_dq_oe),       .y(c_dq_in[14]));
   pad_gpio p_sdram_dq15  (`PWR .pad(sdram_dq[15]), .a(c_dq_out[15]),   .oe(c_dq_oe),       .y(c_dq_in[15]));
+
+  // PCIe PHY inputs, 1.8 V levels
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_clk          (`PWR .pad(pipe_rx_clk),          .a(1'b0), .oe(1'b0), .y(c_rx_clk));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data0        (`PWR .pad(pipe_rx_data[0]),      .a(1'b0), .oe(1'b0), .y(c_rx_data[0]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data1        (`PWR .pad(pipe_rx_data[1]),      .a(1'b0), .oe(1'b0), .y(c_rx_data[1]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data2        (`PWR .pad(pipe_rx_data[2]),      .a(1'b0), .oe(1'b0), .y(c_rx_data[2]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data3        (`PWR .pad(pipe_rx_data[3]),      .a(1'b0), .oe(1'b0), .y(c_rx_data[3]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data4        (`PWR .pad(pipe_rx_data[4]),      .a(1'b0), .oe(1'b0), .y(c_rx_data[4]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data5        (`PWR .pad(pipe_rx_data[5]),      .a(1'b0), .oe(1'b0), .y(c_rx_data[5]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data6        (`PWR .pad(pipe_rx_data[6]),      .a(1'b0), .oe(1'b0), .y(c_rx_data[6]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data7        (`PWR .pad(pipe_rx_data[7]),      .a(1'b0), .oe(1'b0), .y(c_rx_data[7]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data8        (`PWR .pad(pipe_rx_data[8]),      .a(1'b0), .oe(1'b0), .y(c_rx_data[8]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data9        (`PWR .pad(pipe_rx_data[9]),      .a(1'b0), .oe(1'b0), .y(c_rx_data[9]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data10       (`PWR .pad(pipe_rx_data[10]),     .a(1'b0), .oe(1'b0), .y(c_rx_data[10]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data11       (`PWR .pad(pipe_rx_data[11]),     .a(1'b0), .oe(1'b0), .y(c_rx_data[11]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data12       (`PWR .pad(pipe_rx_data[12]),     .a(1'b0), .oe(1'b0), .y(c_rx_data[12]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data13       (`PWR .pad(pipe_rx_data[13]),     .a(1'b0), .oe(1'b0), .y(c_rx_data[13]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data14       (`PWR .pad(pipe_rx_data[14]),     .a(1'b0), .oe(1'b0), .y(c_rx_data[14]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_data15       (`PWR .pad(pipe_rx_data[15]),     .a(1'b0), .oe(1'b0), .y(c_rx_data[15]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_datak0       (`PWR .pad(pipe_rx_datak[0]),     .a(1'b0), .oe(1'b0), .y(c_rx_datak[0]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_datak1       (`PWR .pad(pipe_rx_datak[1]),     .a(1'b0), .oe(1'b0), .y(c_rx_datak[1]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_status0      (`PWR .pad(pipe_rx_status[0]),    .a(1'b0), .oe(1'b0), .y(c_rx_status[0]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_status1      (`PWR .pad(pipe_rx_status[1]),    .a(1'b0), .oe(1'b0), .y(c_rx_status[1]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_status2      (`PWR .pad(pipe_rx_status[2]),    .a(1'b0), .oe(1'b0), .y(c_rx_status[2]));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_valid        (`PWR .pad(pipe_rx_valid),        .a(1'b0), .oe(1'b0), .y(c_rx_valid));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_phy_status      (`PWR .pad(pipe_phy_status),      .a(1'b0), .oe(1'b0), .y(c_phy_status));
+  pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_elecidle     (`PWR .pad(pipe_rx_elecidle),     .a(1'b0), .oe(1'b0), .y(c_rx_ei));
+
+  // PCIe PHY outputs
+  pad_gpio p_pipe_tx_clk          (`PWR .pad(pipe_tx_clk),          .a(c_tx_clk), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data0        (`PWR .pad(pipe_tx_data[0]),      .a(c_tx_data[0]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data1        (`PWR .pad(pipe_tx_data[1]),      .a(c_tx_data[1]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data2        (`PWR .pad(pipe_tx_data[2]),      .a(c_tx_data[2]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data3        (`PWR .pad(pipe_tx_data[3]),      .a(c_tx_data[3]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data4        (`PWR .pad(pipe_tx_data[4]),      .a(c_tx_data[4]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data5        (`PWR .pad(pipe_tx_data[5]),      .a(c_tx_data[5]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data6        (`PWR .pad(pipe_tx_data[6]),      .a(c_tx_data[6]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data7        (`PWR .pad(pipe_tx_data[7]),      .a(c_tx_data[7]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data8        (`PWR .pad(pipe_tx_data[8]),      .a(c_tx_data[8]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data9        (`PWR .pad(pipe_tx_data[9]),      .a(c_tx_data[9]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data10       (`PWR .pad(pipe_tx_data[10]),     .a(c_tx_data[10]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data11       (`PWR .pad(pipe_tx_data[11]),     .a(c_tx_data[11]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data12       (`PWR .pad(pipe_tx_data[12]),     .a(c_tx_data[12]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data13       (`PWR .pad(pipe_tx_data[13]),     .a(c_tx_data[13]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data14       (`PWR .pad(pipe_tx_data[14]),     .a(c_tx_data[14]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_data15       (`PWR .pad(pipe_tx_data[15]),     .a(c_tx_data[15]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_datak0       (`PWR .pad(pipe_tx_datak[0]),     .a(c_tx_datak[0]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_datak1       (`PWR .pad(pipe_tx_datak[1]),     .a(c_tx_datak[1]), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_elecidle     (`PWR .pad(pipe_tx_elecidle),     .a(c_tx_ei), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_compliance   (`PWR .pad(pipe_tx_compliance),   .a(c_tx_comp), .oe(1'b1), .y());
+  pad_gpio p_pipe_tx_det_loopback (`PWR .pad(pipe_tx_det_loopback), .a(c_tx_det), .oe(1'b1), .y());
+  pad_gpio p_pipe_rx_polarity     (`PWR .pad(pipe_rx_polarity),     .a(c_rx_pol), .oe(1'b1), .y());
+  pad_gpio p_pipe_powerdown0      (`PWR .pad(pipe_powerdown[0]),    .a(c_pd[0]), .oe(1'b1), .y());
+  pad_gpio p_pipe_powerdown1      (`PWR .pad(pipe_powerdown[1]),    .a(c_pd[1]), .oe(1'b1), .y());
+  pad_gpio p_pipe_reset_n         (`PWR .pad(pipe_reset_n),         .a(c_phy_rst_n), .oe(1'b1), .y());
 endmodule
 
-// gpiov2 pad: push-pull output (DM 110) or input only (DM 001), fast slew, CMOS input threshold.
+// gpiov2 pad: push-pull output (DM 110) or input only (DM 001), fast slew. Inputs use CMOS levels on VDDIO,
+// or with IB the 1.8 V input buffer on VCCHIB.
 // The pad's own tie cells hold HLD_H_N, ENABLE_H and ENABLE_VDDA_H high, ENABLE_INP_H and ENABLE_VSWITCH_H low.
-module pad_gpio #(parameter [2:0] DM = 3'b110) (
+module pad_gpio #(parameter [2:0] DM = 3'b110, parameter IB = 1'b0) (
 `ifdef USE_POWER_PINS
   inout  vccd, vssd, vddio, vssio, vdda, vssa,
 `endif
@@ -158,7 +223,7 @@ module pad_gpio #(parameter [2:0] DM = 3'b110) (
     .VSSIO(vssio), .VSSIO_Q(vssio), .VDDA(vdda), .VSSA(vssa),
 `endif
     .PAD(pad), .OUT(a), .OE_N(!oe), .IN(y), .DM(DM),
-    .INP_DIS(1'b0), .IB_MODE_SEL(1'b0), .VTRIP_SEL(1'b0), .SLOW(1'b0), .HLD_OVR(1'b0),
+    .INP_DIS(1'b0), .IB_MODE_SEL(IB), .VTRIP_SEL(1'b0), .SLOW(1'b0), .HLD_OVR(1'b0),
     .ANALOG_EN(1'b0), .ANALOG_SEL(1'b0), .ANALOG_POL(1'b0), .ENABLE_VDDIO(1'b1),
     .TIE_HI_ESD(hi), .TIE_LO_ESD(lo), .HLD_H_N(hi), .ENABLE_H(hi), .ENABLE_VDDA_H(hi),
     .ENABLE_INP_H(lo), .ENABLE_VSWITCH_H(lo),

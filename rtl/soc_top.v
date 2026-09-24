@@ -1,7 +1,7 @@
 // SoC top: RV32IM core, instruction cache, boot loader, AXI4-Lite interconnect, 2 KB SRAM, APB peripherals, SDRAM port, PCIe port.
 // Map: 0x0000_0000 SRAM, 0x1000_0000 UART, 0x1000_1000 GPIO, 0x1000_2000 SPI,
-//      0x1000_3000 TIMER, 0x1000_4000 INTC, 0x1000_5000 PCIe status,
-//      0x4000_0000 PCIe memory (256 MB), 0x8000_0000 SDRAM (32 MB).
+//      0x1000_3000 TIMER, 0x1000_4000 INTC, 0x1000_5000 PCIe registers,
+//      0x4000_0000 PCIe memory (256 MB), 0x5000_0000 PCIe configuration (256 MB), 0x8000_0000 SDRAM (32 MB).
 module soc_top (
   input         clk,
   input         rst_n,
@@ -28,29 +28,31 @@ module soc_top (
   output [15:0] sdram_dq_out,
   output        sdram_dq_oe,
   input  [15:0] sdram_dq_in,
-  // PCIe PIPE, x4 at 32 bits per lane, pclk domain
-  input          pclk,
-  output [127:0] pipe_tx_data,
-  output  [15:0] pipe_tx_datak,
-  output         pipe_tx_elecidle,
-  output         pipe_tx_detect_rx,
-  output   [1:0] pipe_power_down,
-  output         pipe_reset_n,
-  input  [127:0] pipe_rx_data,
-  input   [15:0] pipe_rx_datak,
-  input    [3:0] pipe_rx_elecidle,
-  input   [11:0] pipe_rx_status,
-  input          pipe_phy_status
+  // PCIe, TI-PIPE 16-bit SDR to the XIO1100
+  input         pipe_rx_clk,
+  input  [15:0] pipe_rx_data,
+  input   [1:0] pipe_rx_datak,
+  input   [2:0] pipe_rx_status,
+  input         pipe_rx_valid,
+  input         pipe_phy_status,
+  input         pipe_rx_elecidle,
+  output        pipe_tx_clk,
+  output [15:0] pipe_tx_data,
+  output  [1:0] pipe_tx_datak,
+  output        pipe_tx_elecidle,
+  output        pipe_tx_compliance,
+  output        pipe_tx_det_loopback,
+  output        pipe_rx_polarity,
+  output  [1:0] pipe_powerdown,
+  output        pipe_reset_n
 );
-  reg [1:0] rs, mrs, prs;
+  reg [1:0] rs, mrs;
   always @(posedge clk)  rs  <= {rs[0], rst_n};
   always @(posedge mclk) mrs <= {mrs[0], rst_n};
-  always @(posedge pclk) prs <= {prs[0], rst_n};
   wire rst  = !rs[1];
   wire mrst = !mrs[1];
-  wire prst = !prs[1];
-  assign pipe_reset_n = rst_n;
   assign sdram_clk = mclk;
+  assign pipe_tx_clk = pipe_rx_clk;
 
   // ---------------- masters ----------------
   wire        boot_done;
@@ -140,6 +142,9 @@ module soc_top (
     .dq_out(sdram_dq_out), .dq_oe(sdram_dq_oe), .dq_in(sdram_dq_in)
   );
 
+  wire [31:0] paddr, pwdata;
+  wire        pwrite, penable;
+  wire  [5:0] psel;
   wire [31:0] rd_pcie;
   pcie u_pcie (
     .clk(clk), .rst(rst),
@@ -148,18 +153,16 @@ module soc_top (
     .bvalid(s_bvalid[3]), .bready(s_bready[3]),
     .araddr(s_araddr), .arvalid(s_arvalid[3]), .arready(s_arready[3]),
     .rdata(s3_rdata), .rvalid(s_rvalid[3]), .rready(s_rready[3]),
-    .prdata(rd_pcie),
-    .pclk(pclk), .prst(prst),
-    .tx_data(pipe_tx_data), .tx_datak(pipe_tx_datak), .tx_elecidle(pipe_tx_elecidle),
-    .tx_detect_rx(pipe_tx_detect_rx), .power_down(pipe_power_down),
-    .rx_data(pipe_rx_data), .rx_datak(pipe_rx_datak), .rx_elecidle(pipe_rx_elecidle),
-    .rx_status(pipe_rx_status), .phy_status(pipe_phy_status)
+    .psel(psel[5]), .penable(penable), .pwrite(pwrite), .paddr(paddr[3:2]), .pwdata(pwdata), .prdata(rd_pcie),
+    .pipe_rx_clk(pipe_rx_clk), .pipe_rx_data(pipe_rx_data), .pipe_rx_datak(pipe_rx_datak),
+    .pipe_rx_status(pipe_rx_status), .pipe_rx_valid(pipe_rx_valid), .pipe_phy_status(pipe_phy_status),
+    .pipe_rx_elecidle(pipe_rx_elecidle),
+    .pipe_tx_data(pipe_tx_data), .pipe_tx_datak(pipe_tx_datak), .pipe_tx_elecidle(pipe_tx_elecidle),
+    .pipe_tx_compliance(pipe_tx_compliance), .pipe_tx_det_loopback(pipe_tx_det_loopback),
+    .pipe_rx_polarity(pipe_rx_polarity), .pipe_powerdown(pipe_powerdown), .pipe_reset_n(pipe_reset_n)
   );
 
   // ---------------- peripherals ----------------
-  wire [31:0] paddr, pwdata;
-  wire        pwrite, penable;
-  wire  [5:0] psel;
   wire [31:0] rd_uart, rd_gpio, rd_spi, rd_timer, rd_intc;
 
   axil2apb u_apb (
