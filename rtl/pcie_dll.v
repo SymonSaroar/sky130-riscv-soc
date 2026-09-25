@@ -108,7 +108,8 @@ module pcie_dll (
   reg [47:0] db;
   reg [15:0] sq;
   reg [23:0] ab;
-  reg  [5:0] n;
+  reg  [5:0] n, n0;
+  reg        nz, nd;          // a TLP started in this word; a DW completed since, at most one per clock
   reg        bd, ch_v, ch_first, te_v, te_null, te_bad, dv, dv_bad, rxe;
   reg [31:0] ch_d;
   reg  [5:0] ch_i, te_n;
@@ -118,7 +119,7 @@ module pcie_dll (
   reg        k;
   integer    i;
   always @* begin
-    m = pm; c = pc; db = dbuf; sq = pseq; ab = abuf; a = an; n = nch; bd = pbad;
+    m = pm; c = pc; db = dbuf; sq = pseq; ab = abuf; a = an; nz = 1'b0; nd = 1'b0; n0 = 6'd0; bd = pbad;
     ch_v = 1'b0; ch_first = 1'b0; ch_d = 32'h0; ch_i = 6'd0;
     te_v = 1'b0; te_null = 1'b0; te_bad = 1'b0; te_n = 6'd0; te_seq = 16'h0;
     dv = 1'b0; dv_bad = 1'b0; dv_d = 48'h0; rxe = 1'b0;
@@ -134,20 +135,22 @@ module pcie_dll (
           else begin db[c * 8 +: 8] = s; c = c + 3'd1; end
         end else if (m == 2'd2) begin
           if (k) begin
-            te_v = 1'b1; te_null = f_edb[i]; te_seq = sq; te_n = n;
-            te_bad = bd || !(f_end[i] || f_edb[i]) || a != 2'd0 || c != 3'd2 || n < 6'd4;
+            te_v = 1'b1; te_null = f_edb[i]; te_seq = sq; te_n = (nz ? 6'd0 : nch) + {5'd0, nd};
+            te_bad = bd || !(f_end[i] || f_edb[i]) || a != 2'd0 || c != 3'd2 || te_n < 6'd4;
             m = 2'd0;
           end else if (c != 3'd2) begin sq = {sq[7:0], s}; c = c + 3'd1; end
           else if (a == 2'd3) begin
-            ch_v = 1'b1; ch_d = {s, ab}; ch_i = n; ch_first = n == 6'd0; a = 2'd0;
-            if (n >= 6'd40) bd = 1'b1; else n = n + 6'd1;
+            n0 = nz ? 6'd0 : nch;
+            ch_v = 1'b1; ch_d = {s, ab}; ch_i = n0; ch_first = n0 == 6'd0; a = 2'd0;
+            if (n0 >= 6'd40) bd = 1'b1; else nd = 1'b1;
           end else begin ab[a * 8 +: 8] = s; a = a + 2'd1; end
         end
         // a start symbol opens a packet, also right after a packet cut short by it
-        if (m == 2'd0 && f_stp[i]) begin m = 2'd2; c = 3'd0; a = 2'd0; n = 6'd0; bd = 1'b0; end
+        if (m == 2'd0 && f_stp[i]) begin m = 2'd2; c = 3'd0; a = 2'd0; nz = 1'b1; nd = 1'b0; bd = 1'b0; end
         if (m == 2'd0 && f_sdp[i]) begin m = 2'd1; c = 3'd0; bd = 1'b0; end
       end
     end
+    n = (nz ? 6'd0 : nch) + {5'd0, nd};
   end
 
   reg        q_ch_v, q_ch_first, q_te_v, q_te_null, q_te_bad, q_dv, q_dv_bad;
