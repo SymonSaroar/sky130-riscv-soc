@@ -1,7 +1,7 @@
 // TI-PIPE front end on pipe_rx_clk (125 MHz, two symbols per clock). Receive pins are captured on the falling
 // edge, then on the rising edge, and two words are paired into four symbols for pclk. pclk is pipe_rx_clk divided
 // by 2 in a flop; words cross on the rising edge where pclk falls, half a pclk period from either pclk edge.
-// Transmit words leave falling-edge registers, low half first.
+// Transmit half-words leave falling-edge registers, low half first; pipe_tx_clk comes from a flop on each edge.
 module pcie_pipe (
   input             arst,          // asynchronous: chip reset or the PHY held in reset
   input             rx_clk,
@@ -11,6 +11,7 @@ module pcie_pipe (
   input             rx_valid,
   input             phy_status,
   input             rx_elecidle,
+  output            tx_clk,
   output reg [15:0] tx_data,
   output reg  [1:0] tx_datak,
   output reg        tx_elecidle,
@@ -69,22 +70,27 @@ module pcie_pipe (
     r_ei   <= rx2[24];
   end
 
-  // transmit
+  // transmit: the next half-word is chosen on the rising edge and leaves a falling-edge register, low half first
+  localparam [23:0] TH_RESET = {2'b10, 1'b0, 1'b0, 1'b1, 19'b0};   // P1, electrical idle
   reg [42:0] tw;
+  reg [23:0] th;           // {powerdown, polarity, detect, elecidle, compliance, k, data}
   always @(posedge rx_clk or posedge arst)
-    if (arst) tw <= {2'b10, 1'b0, 1'b0, 1'b1, 38'b0};
-    else if (ps) tw <= {t_pd, t_pol, t_det, t_ei, t_comp, t_k, t_data};
-  always @(negedge rx_clk or posedge arst)
     if (arst) begin
-      tx_data <= 16'b0; tx_datak <= 2'b0; tx_compliance <= 1'b0;
-      tx_elecidle <= 1'b1; tx_det_lb <= 1'b0; rx_polarity <= 1'b0; powerdown <= 2'b10;
+      tw <= {TH_RESET[23:19], 38'b0};
+      th <= TH_RESET;
     end else begin
-      tx_data       <= ps ? tw[31:16] : tw[15:0];
-      tx_datak      <= ps ? tw[35:34] : tw[33:32];
-      tx_compliance <= ps ? tw[37] : tw[36];
-      tx_elecidle   <= tw[38];
-      tx_det_lb     <= tw[39];
-      rx_polarity   <= tw[40];
-      powerdown     <= tw[42:41];
+      if (ps) tw <= {t_pd, t_pol, t_det, t_ei, t_comp, t_k, t_data};
+      th <= {tw[42:38], ps ? {tw[37], tw[35:34], tw[31:16]} : {tw[36], tw[33:32], tw[15:0]}};
     end
+  always @(negedge rx_clk or posedge arst)
+    if (arst) {powerdown, rx_polarity, tx_det_lb, tx_elecidle, tx_compliance, tx_datak, tx_data} <= TH_RESET;
+    else      {powerdown, rx_polarity, tx_det_lb, tx_elecidle, tx_compliance, tx_datak, tx_data} <= th;
+
+  // pipe_tx_clk from a flop on each edge, so it leaves through the same clock tree and flops as the data
+  reg tc_p, tc_n;
+  always @(posedge rx_clk or posedge arst)
+    if (arst) tc_p <= 1'b0; else tc_p <= !tc_p;
+  always @(negedge rx_clk or posedge arst)
+    if (arst) tc_n <= 1'b0; else tc_n <= tc_p;
+  assign tx_clk = tc_p ^ tc_n;
 endmodule

@@ -52,7 +52,6 @@ module soc_top (
   wire rst  = !rs[1];
   wire mrst = !mrs[1];
   assign sdram_clk = mclk;
-  assign pipe_tx_clk = pipe_rx_clk;
 
   // ---------------- masters ----------------
   wire        boot_done;
@@ -157,8 +156,8 @@ module soc_top (
     .pipe_rx_clk(pipe_rx_clk), .pipe_rx_data(pipe_rx_data), .pipe_rx_datak(pipe_rx_datak),
     .pipe_rx_status(pipe_rx_status), .pipe_rx_valid(pipe_rx_valid), .pipe_phy_status(pipe_phy_status),
     .pipe_rx_elecidle(pipe_rx_elecidle),
-    .pipe_tx_data(pipe_tx_data), .pipe_tx_datak(pipe_tx_datak), .pipe_tx_elecidle(pipe_tx_elecidle),
-    .pipe_tx_compliance(pipe_tx_compliance), .pipe_tx_det_loopback(pipe_tx_det_loopback),
+    .pipe_tx_clk(pipe_tx_clk), .pipe_tx_data(pipe_tx_data), .pipe_tx_datak(pipe_tx_datak),
+    .pipe_tx_elecidle(pipe_tx_elecidle), .pipe_tx_compliance(pipe_tx_compliance), .pipe_tx_det_loopback(pipe_tx_det_loopback),
     .pipe_rx_polarity(pipe_rx_polarity), .pipe_powerdown(pipe_powerdown), .pipe_reset_n(pipe_reset_n)
   );
 

@@ -114,7 +114,7 @@ Root port, x1, 2.5 GT/s. The XIO1100 does 8b/10b, scrambling, the elastic buffer
 |---|---|
 | Mode | TI-PIPE 16-bit SDR (`DDR_EN` 0 on the board), two symbols per `pipe_rx_clk`, symbol 0 in bits 7:0 |
 | Receive | `pipe_rx_*` captured on the falling edge of `pipe_rx_clk`, then on the rising edge, then paired into 32 bits on `pclk` |
-| Transmit | 32 bits on `pclk` split into two 16-bit words, driven from falling-edge registers of `pipe_rx_clk`. `pipe_tx_clk` is `pipe_rx_clk` forwarded |
+| Transmit | 32 bits on `pclk` split into two 16-bit words, driven from falling-edge registers of `pipe_rx_clk`. `pipe_tx_clk` is `pipe_rx_clk` rebuilt from a flop on each edge, so it leaves through the same clock tree as the data |
 | `pclk` | `pipe_rx_clk` divided by 2 in a flop: four symbols per clock |
 | Reset | CONTROL bit 0 drives `pipe_reset_n`. While it is low: TxDetectRx 0, TxElecIdle 1, TxCompliance 0, RxPolarity 0, PowerDown P1. The PHY is ready when it drops `pipe_phy_status` |
 | Power states | P1 in Detect, P0 everywhere else. P0s is not used |
@@ -182,7 +182,7 @@ Not implemented: L0s, L1, L2, Loopback, Disabled, speed change, ECRC generation 
 | `pipe_rx_clk` | in | 125 MHz from the PHY |
 | `pipe_rx_data[15:0]`, `pipe_rx_datak[1:0]` | in | Received symbols |
 | `pipe_rx_status[2:0]`, `pipe_rx_valid`, `pipe_phy_status`, `pipe_rx_elecidle` | in | PHY status |
-| `pipe_tx_clk` | out | Forwarded `pipe_rx_clk` |
+| `pipe_tx_clk` | out | `pipe_rx_clk` rebuilt from a flop on each edge |
 | `pipe_tx_data[15:0]`, `pipe_tx_datak[1:0]` | out | Transmitted symbols |
 | `pipe_tx_elecidle`, `pipe_tx_compliance`, `pipe_tx_det_loopback`, `pipe_rx_polarity`, `pipe_powerdown[1:0]`, `pipe_reset_n` | out | PHY control |
 
