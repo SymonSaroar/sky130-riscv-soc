@@ -79,6 +79,21 @@ module pcie_dll (
   endfunction
 
   // ---------------- receive: framing ----------------
+  // received symbols a clock later, with the framing symbols decoded
+  reg [31:0] f_data;
+  reg  [3:0] f_k, f_err, f_stp, f_sdp, f_end, f_edb;
+  reg        f_en;
+  integer    j;
+  always @(posedge clk) begin
+    f_data <= d_data; f_k <= d_k; f_err <= d_err; f_en <= d_en;
+    for (j = 0; j < 4; j = j + 1) begin
+      f_stp[j] <= d_k[j] && !d_err[j] && d_data[j * 8 +: 8] == STP;
+      f_sdp[j] <= d_k[j] && !d_err[j] && d_data[j * 8 +: 8] == SDP;
+      f_end[j] <= d_data[j * 8 +: 8] == END;
+      f_edb[j] <= d_data[j * 8 +: 8] == EDB;
+    end
+  end
+
   reg  [1:0] pm;            // 0 between packets, 1 in a DLLP, 2 in a TLP
   reg  [2:0] pc;            // DLLP bytes, or TLP sequence bytes
   reg [47:0] dbuf;
@@ -108,19 +123,19 @@ module pcie_dll (
     te_v = 1'b0; te_null = 1'b0; te_bad = 1'b0; te_n = 6'd0; te_seq = 16'h0;
     dv = 1'b0; dv_bad = 1'b0; dv_d = 48'h0; rxe = 1'b0;
     for (i = 0; i < 4; i = i + 1) begin
-      s = d_data[i * 8 +: 8]; k = d_k[i];
-      if (!d_en) m = 2'd0;
+      s = f_data[i * 8 +: 8]; k = f_k[i];
+      if (!f_en) m = 2'd0;
       else begin
-        if (d_err[i]) begin rxe = 1'b1; if (m != 2'd0) bd = 1'b1; end
+        if (f_err[i]) begin rxe = 1'b1; if (m != 2'd0) bd = 1'b1; end
         if (m == 2'd1) begin
           if (k) begin
-            dv = 1'b1; dv_d = db; dv_bad = bd || s != END || c != 3'd6; m = 2'd0;
+            dv = 1'b1; dv_d = db; dv_bad = bd || !f_end[i] || c != 3'd6; m = 2'd0;
           end else if (c == 3'd6) bd = 1'b1;
           else begin db[c * 8 +: 8] = s; c = c + 3'd1; end
         end else if (m == 2'd2) begin
           if (k) begin
-            te_v = 1'b1; te_null = s == EDB; te_seq = sq; te_n = n;
-            te_bad = bd || !(s == END || s == EDB) || a != 2'd0 || c != 3'd2 || n < 6'd4;
+            te_v = 1'b1; te_null = f_edb[i]; te_seq = sq; te_n = n;
+            te_bad = bd || !(f_end[i] || f_edb[i]) || a != 2'd0 || c != 3'd2 || n < 6'd4;
             m = 2'd0;
           end else if (c != 3'd2) begin sq = {sq[7:0], s}; c = c + 3'd1; end
           else if (a == 2'd3) begin
@@ -129,8 +144,8 @@ module pcie_dll (
           end else begin ab[a * 8 +: 8] = s; a = a + 2'd1; end
         end
         // a start symbol opens a packet, also right after a packet cut short by it
-        if (m == 2'd0 && k && !d_err[i] && s == STP) begin m = 2'd2; c = 3'd0; a = 2'd0; n = 6'd0; bd = 1'b0; end
-        if (m == 2'd0 && k && !d_err[i] && s == SDP) begin m = 2'd1; c = 3'd0; bd = 1'b0; end
+        if (m == 2'd0 && f_stp[i]) begin m = 2'd2; c = 3'd0; a = 2'd0; n = 6'd0; bd = 1'b0; end
+        if (m == 2'd0 && f_sdp[i]) begin m = 2'd1; c = 3'd0; bd = 1'b0; end
       end
     end
   end
