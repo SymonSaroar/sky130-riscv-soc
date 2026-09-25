@@ -5,6 +5,18 @@ set_propagated_clock [all_clocks]
 read_spef $out/chip_top.nom.spef
 set block [ord::get_db_block]
 set c [$block getCoreArea]
+# pad cells switch from VDDIO, so pads and data inputs carry no activity here; the clock pads still feed their trees
+set data_in [lmap p [all_inputs -no_clocks] {get_full_name $p}]
+set keep {}
+foreach p [all_inputs] {
+  if {[get_full_name $p] ni $data_in} { lappend keep p_[get_full_name $p].p/IN }
+}
+set pins {}
+foreach p [get_pins -of_objects [get_cells -filter "ref_name == sky130_ef_io__gpiov2_pad_wrapped" *]] {
+  if {[get_full_name $p] ni $keep} { lappend pins $p }
+}
+set_power_activity -input_ports [all_inputs -no_clocks] -density 0 -duty 0.5
+set_power_activity -pins $pins -density 0 -duty 0.5
 foreach {net v} {VPWR 1.8 VGND 0.0} {
   set f [open $out/vsrc_$net.csv w]
   foreach sw [[$block findNet $net] getSWires] {
