@@ -29,8 +29,16 @@ if {[check_antennas -report_file $rep/antenna.rpt] > 0} {
     detailed_route -output_drc $rep/route_drc.rpt -droute_end_iter 64 -verbose 1
   }
 }
-filler_placement {sky130_fd_sc_hd__decap_12 sky130_fd_sc_hd__decap_8 sky130_fd_sc_hd__decap_6 \
-                  sky130_fd_sc_hd__decap_4 sky130_fd_sc_hd__decap_3 sky130_fd_sc_hd__fill_2 sky130_fd_sc_hd__fill_1}
+# 5 nF of decaps where VPWR drops most and fill cells elsewhere; decap values are gate area at 8.4 fF/um2
+source power/grid.tcl
+estimate_parasitics -placement
+quiet_pads
+write_vsrc VPWR 1.8 $out/vsrc_VPWR.csv
+set_pdnsim_net_voltage -net VPWR -voltage 1.8
+analyze_power_grid -net VPWR -vsrc $out/vsrc_VPWR.csv
+insert_decap -target_cap 5000 -net VPWR -cells {sky130_fd_sc_hd__decap_12 0.0564 sky130_fd_sc_hd__decap_8 0.0345
+  sky130_fd_sc_hd__decap_6 0.0235 sky130_fd_sc_hd__decap_4 0.0125 sky130_fd_sc_hd__decap_3 0.0070}
+filler_placement {sky130_fd_sc_hd__fill_8 sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_2 sky130_fd_sc_hd__fill_1}
 global_connect
 check_antennas -report_file $rep/antenna.rpt
 
@@ -39,14 +47,17 @@ foreach b [[ord::get_db_block] getBlockages] { odb::dbBlockage_destroy $b }
 
 write_db $out/route.odb
 write_def $out/chip_top.def
-# the timing netlist leaves out the supply pads, corners and bus slices
-set ring_cells {}
+# the timing netlist leaves out the supply pads, corners, bus slices, and the fill, decap and tap cells
+set no_timing {}
 foreach lib [[ord::get_db] getLibs] {
   foreach m [$lib getMasters] {
-    if {[string match sky130_ef_io__* [$m getName]] && [$m getName] ne "sky130_ef_io__gpiov2_pad_wrapped"} {
-      lappend ring_cells [$m getName]
+    set n [$m getName]
+    if {([string match sky130_ef_io__* $n] && $n ne "sky130_ef_io__gpiov2_pad_wrapped") ||
+        [string match sky130_fd_sc_hd__fill_* $n] || [string match sky130_fd_sc_hd__decap_* $n] ||
+        $n eq "sky130_fd_sc_hd__tapvpwrvgnd_1"} {
+      lappend no_timing $n
     }
   }
 }
-write_verilog -remove_cells $ring_cells $out/chip_top.final.v
+write_verilog -remove_cells $no_timing $out/chip_top.final.v
 write_verilog -include_pwr_gnd $out/chip_top.pwr.v
