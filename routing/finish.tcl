@@ -45,6 +45,16 @@ check_antennas -report_file $rep/antenna.rpt
 # placement blockages are not needed past placement and Magic cannot read soft ones
 foreach b [[ord::get_db_block] getBlockages] { odb::dbBlockage_destroy $b }
 
+# gates and buffers named after a hierarchical net get '_' for '.'; flops, SRAMs and pads keep their names
+foreach inst [[ord::get_db_block] getInsts] {
+  set n [$inst getName]
+  set m [[$inst getMaster] getName]
+  if {[string first . $n] < 0 || ![string match sky130_fd_sc_hd__* $m] || [string match sky130_fd_sc_hd__df* $m]} continue
+  set to [string map {. _} $n]
+  while {[[ord::get_db_block] findInst $to] ne "NULL"} { append to _ }
+  $inst rename $to
+}
+
 write_db $out/route.odb
 write_def $out/chip_top.def
 # the timing netlist leaves out the supply pads, corners, bus slices, and the fill, decap and tap cells
