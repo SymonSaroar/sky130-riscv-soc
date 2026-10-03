@@ -27,6 +27,7 @@ proc read_libs {} {
   global sc sm sram io tech_lef
   read_lef $tech_lef
   read_lef $sc/lef/sky130_fd_sc_hd.lef
+  read_lef $sc/lef/sky130_ef_sc_hd.lef
   read_lef $sm/lef/$sram.lef
   read_lef $io/lef/sky130_ef_io.lef
   read_liberty $sc/lib/sky130_fd_sc_hd__tt_025C_1v80.lib

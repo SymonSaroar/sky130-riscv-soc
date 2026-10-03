@@ -14,8 +14,8 @@ tech.load(pdk + "/libs.tech/klayout/tech/sky130A.lyt")
 opt = tech.load_layout_options
 cfg = opt.lefdef_config
 cfg.map_file = pdk + "/libs.tech/klayout/tech/sky130A.map"
-cfg.lef_files = [sc + "/techlef/sky130_fd_sc_hd__nom.tlef", sc + "/lef/sky130_fd_sc_hd.lef", f"{sm}/lef/{sram}.lef",
-                 io + "/lef/sky130_ef_io.lef"]
+cfg.lef_files = [sc + "/techlef/sky130_fd_sc_hd__nom.tlef", sc + "/lef/sky130_fd_sc_hd.lef", sc + "/lef/sky130_ef_sc_hd.lef",
+                 f"{sm}/lef/{sram}.lef", io + "/lef/sky130_ef_io.lef"]
 cfg.produce_pin_names = True
 
 ly = pya.Layout()

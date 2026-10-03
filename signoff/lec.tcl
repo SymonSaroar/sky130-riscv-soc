@@ -12,7 +12,7 @@ read_verilog $out/chip_top.v
 yosys rename chip_top gold
 read_verilog $out/chip_top.final.v
 yosys rename chip_top gate
-delete t:sky130_fd_sc_hd__tapvpwrvgnd_1 t:sky130_fd_sc_hd__fill_* t:sky130_fd_sc_hd__decap_* t:sky130_fd_sc_hd__diode_2
+delete t:sky130_fd_sc_hd__tapvpwrvgnd_1 t:sky130_fd_sc_hd__fill_* t:sky130_*_sc_hd__decap_* t:sky130_fd_sc_hd__diode_2
 hierarchy -check
 flatten gold gate
 set cut {}
