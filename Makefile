@@ -126,10 +126,10 @@ all: synth floorplan place cts route signoff metrics
 
 SC_V := $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog
 .PRECIOUS: $(OUT)/primitives_%.v
-# simulation copies: every flop starts at 0 or at 1, and the gpiov2 wrapper without supply pins and with
-# per-instance pad delays
-$(OUT)/primitives_%.v:
-	sed "s/^\( *\)reg Q;/&\n\1initial Q = 1'b$*;/" $(SC_V)/primitives.v > $@
+# simulation copies: every flop starts at 0 or at 1 under constant supplies, and the gpiov2 wrapper without supply
+# pins and with per-instance pad delays
+$(OUT)/primitives_%.v: tb/primitives_gls.py
+	python3 tb/primitives_gls.py $(SC_V)/primitives.v $* $@
 $(OUT)/sky130_ef_io_gls.v: tb/pad_gls.py
 	python3 tb/pad_gls.py $(IO_V)/sky130_ef_io.v $@
 
