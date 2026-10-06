@@ -4,7 +4,7 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
 
 ## Branch status
 
-This branch holds the SoC with the PCIe Gen1 x4 root port inside the chip from `main`: pad ring, seal ring, three timing corners and the fab checks. The PCIe PHY is off chip, and the 311 PIPE pins reach the chip edge without pads. The results below are from the block-level macro.
+This branch holds the SoC with a PCIe Gen1 x1 root port for the TI XIO1100 PHY inside the standalone chip from `main`: 115 signal pads on a 3.2 mm die, three timing corners and the fab checks. The layout in `reports/42-decap-fill` passes signoff at all three corners and the test in timed simulation of the routed netlist.
 
 ## The SoC
 
@@ -23,58 +23,63 @@ This branch holds the SoC with the PCIe Gen1 x4 root port inside the chip from `
      |                       v                    v                    v
   SPI flash         AXI4-Lite to APB     async FIFOs (clk/mclk)  async FIFOs (clk/pclk)
                              |                    |                    |
-       +------+------+-----+-------+------+  SDRAM controller     PCIe Gen1 x4 link
-       | UART | GPIO | SPI | timer | INTC |   (100 MHz)            (62.5 MHz, PIPE)
-       +------+------+-----+-------+------+       |                    |
-                                           32 MB SDR SDRAM      external PCIe PHY
+       +------+------+-----+-------+------+  SDRAM controller     PCIe Gen1 x1 root port
+       | UART | GPIO | SPI | timer | INTC |   (100 MHz)            (62.5 MHz)
+       +------+------+-----+-------+------+       |                    | TI-PIPE, 125 MHz
+                                           32 MB SDR SDRAM      TI XIO1100 PHY
 ```
 
-Details are in [docs/spec_v5.md](docs/spec_v5.md).
+Details are in [docs/spec_v6.md](docs/spec_v6.md).
 
 ## Results
 
-All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26.
+All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26; `pipe_rx_clk` is 8 ns from row 38, where the chip grows to 3.2 mm. `_ss_` columns are the slow corner (ss, 100 C, 1.6 V) with `clk` at 20 ns and `mclk` at 16 ns, and `_ff` the fast corner.
 
 <!-- metrics -->
-| run | place_density | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | wns_pclk_ns | fmax_pclk_mhz | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | ir_drop_mv | grt_congestion | route_drc | magic_drc | klayout_drc | lvs |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 01-baseline | 0.6000 | -10.063 | -9075.234 | 0.076 | 1210 | - | 33.3 | - | - | - | - | 3384 | 22 | 156 | 65 | 8.98 | - | 0 | 0 | 1943 | 0 | mismatch |
-| 02-sram-corner | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 4290 | - | - | - | - |
-| 03-sram-channels | 0.6000 | -8.855 | -8749.597 | 0.084 | 1218 | - | 34.7 | - | - | - | - | 3941 | 22 | 190 | 48 | 9.10 | - | 0 | 0 | 0 | 0 | mismatch |
-| 04-cts-setup-repair | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
-| 05-placement-padding | 0.6000 | -3.677 | -3405.824 | 0.077 | 1209 | - | 42.2 | - | - | - | - | 1834 | 22 | 145 | 102 | 9.53 | - | 0 | 0 | 0 | 0 | clean |
-| 06-instruction-register | 0.6000 | -4.744 | -4707.600 | 0.083 | 1275 | - | 40.4 | - | - | - | - | 2388 | 22 | 147 | 78 | 9.72 | - | 0 | 0 | 0 | 0 | clean |
-| 07-load-use-stall | 0.6000 | -0.226 | -2.867 | 0.083 | 19 | - | 49.4 | - | - | - | - | 2763 | 22 | 203 | 62 | 9.92 | - | 0 | 0 | 0 | 0 | clean |
-| 08-wire-rc-calibration | 0.6000 | 2.777 | 0.000 | 0.084 | 0 | - | 58.1 | - | - | - | - | 207 | 22 | 37 | 84 | 9.90 | - | 0 | 0 | 0 | 0 | clean |
-| 09-sram-input-buffers | 0.6000 | 4.237 | 0.000 | 0.083 | 0 | - | 63.4 | - | - | - | - | 150 | 22 | 22 | 84 | 9.98 | - | 0 | 0 | 0 | 0 | clean |
-| 10-grt-repair | 0.6000 | 5.691 | 0.000 | 0.079 | 0 | - | 69.9 | - | - | - | - | 0 | 22 | 0 | 64 | 11.50 | - | 0 | 0 | 0 | 0 | clean |
-| 11-sdram-port | 0.6000 | 3.394 | 0.000 | -0.256 | 0 | 32 | 68.4 | 3.394 | 151.4 | - | - | 0 | 22 | 0 | 58 | 16.20 | - | 0 | 0 | 0 | 0 | clean |
-| 12-hold-repair | 0.6000 | 3.385 | 0.000 | -0.222 | 0 | 32 | 68.4 | 3.385 | 151.2 | - | - | 0 | 22 | 0 | 48 | 16.20 | - | 0 | 0 | 0 | 0 | clean |
-| 13-sdram-falling-edge | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | - | - | 0 | 22 | 0 | 74 | 16.90 | - | 1 | 0 | 0 | 0 | clean |
-| 14-cdc-constraints | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | - | - | 0 | 22 | 0 | 74 | 16.90 | - | 1 | 0 | 0 | 0 | clean |
-| 15-antenna-repair | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | - | - | 0 | 22 | 0 | 0 | 16.90 | - | 1 | 0 | 0 | 0 | clean |
-| 16-util-60 | 0.7400 | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | - | - | 0 | 22 | 0 | 2 | 16.70 | - | 0 | 0 | 0 | 0 | clean |
-| 17-antenna-passes | 0.7400 | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | - | - | 0 | 22 | 0 | 0 | 16.70 | - | 0 | 0 | 0 | 0 | clean |
-| 18-power-pins-ir | 0.7400 | 1.963 | 0.000 | 0.070 | 0 | 0 | 65.8 | 1.963 | 124.4 | - | - | 0 | 22 | 0 | 1 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | clean |
-| 19-antenna-buffers | 0.7400 | 1.964 | 0.000 | 0.070 | 0 | 0 | 65.7 | 1.964 | 124.4 | - | - | 0 | 22 | 0 | 0 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | clean |
-| 20-rv32m-icache | 0.7300 | -3.079 | -1062.946 | 0.076 | 928 | 0 | 55.3 | 1.808 | 122.1 | - | - | 0 | 44 | 0 | 0 | 31.70 | 2.89 | 0 | 0 | 0 | 0 | clean |
-| 21-two-cycle-mul | 0.7400 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
-| 22-resize-only-repair | 0.7400 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - |
-| 23-util-52 | 0.6000 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 1 | - | - | - | - |
-| 24-util-45 | 0.5000 | 2.078 | 0.000 | 0.080 | 0 | 0 | 78.8 | 2.078 | 126.2 | - | - | 0 | 44 | 1 | 0 | 33.90 | 3.09 | 0 | 0 | 0 | 0 | clean |
-| 25-sram-output-buffers | 0.5000 | 2.036 | 0.000 | 0.080 | 0 | 0 | 77.6 | 2.036 | 125.6 | - | - | 0 | 44 | 1 | 0 | 33.90 | 3.08 | 0 | 0 | 0 | 0 | clean |
-| 26-pcie-x4 | 0.5000 | 1.429 | 0.000 | 0.078 | 0 | 0 | 73.7 | 2.391 | 131.4 | 4.543 | 87.3 | 0 | 44 | 0 | 0 | 45.70 | 5.02 | 0 | 1 | 0 | 0 | clean |
-| 27-pipe-falling-edge | 0.5100 | 0.880 | 0.000 | 0.067 | 0 | 0 | 70.8 | 2.277 | 129.5 | 5.551 | 95.7 | 0 | 44 | 0 | 1 | 47.30 | 2.45 | 0 | 0 | 0 | 0 | clean |
-| 28-link-resets | 0.5100 | 0.927 | 0.000 | 0.078 | 0 | 0 | 71.1 | 2.259 | 129.2 | 5.313 | 93.6 | 0 | 44 | 0 | 3 | 47.50 | 4.08 | 0 | 0 | 0 | 0 | clean |
-| 29-finish-diodes | 0.5100 | 0.928 | 0.000 | 0.078 | 0 | 0 | 71.1 | 2.259 | 129.2 | 5.313 | 93.6 | 0 | 44 | 0 | 0 | 47.50 | 4.08 | 0 | 0 | 0 | 0 | clean |
-| 30-clk-100mhz | 0.5100 | -4.111 | -5623.679 | 0.075 | 1904 | 0 | 70.9 | 2.276 | 129.5 | 5.301 | 93.5 | 0 | 44 | 0 | 0 | 63.30 | 4.17 | 0 | 0 | 0 | 0 | clean |
-| 31-register-read-stage | 0.5100 | -0.393 | -2.101 | 0.079 | 10 | 0 | 96.2 | 2.176 | 127.8 | 5.468 | 94.9 | 0 | 44 | 0 | 0 | 66.70 | 2.50 | 0 | 0 | 0 | 0 | clean |
-| 32-kogge-stone | 0.5100 | -0.397 | -0.823 | 0.077 | 5 | 0 | 96.2 | 2.212 | 128.4 | 5.425 | 94.6 | 0 | 44 | 1 | 0 | 88.30 | 3.18 | 0 | 0 | 0 | 0 | clean |
-| 33-booth | 0.5000 | -1.021 | -11.291 | 0.077 | 34 | 0 | 90.7 | 2.193 | 128.1 | 5.409 | 94.4 | 0 | 44 | 0 | 1 | 66.80 | 2.10 | 0 | 0 | 0 | 0 | clean |
-| 34-cts-no-buffering | 0.5000 | -1.848 | -29.885 | 0.077 | 37 | 0 | 84.4 | 2.194 | 128.1 | 5.436 | 94.7 | 0 | 44 | 1 | 0 | 66.80 | 2.11 | 0 | 0 | 0 | 0 | clean |
-| 35-mul-operand-regs | 0.5100 | -0.543 | -2.973 | 0.075 | 11 | 0 | 94.8 | 1.930 | 123.9 | 5.386 | 94.2 | 0 | 44 | 1 | 0 | 67.90 | 3.01 | 0 | 0 | 0 | 0 | clean |
-| 36-fetch-ahead | 0.5100 | 0.014 | 0.000 | 0.029 | 0 | 0 | 100.1 | 2.020 | 125.3 | 5.384 | 94.2 | 0 | 44 | 1 | 0 | 67.30 | 3.36 | 0 | 0 | 0 | 0 | clean |
-| 37-control-resets | 0.5100 | 0.238 | 0.000 | 0.066 | 0 | 0 | 102.4 | 1.989 | 124.8 | 5.356 | 94.0 | 13 | 44 | 2 | 0 | 67.90 | 3.73 | 0 | 0 | 0 | 0 | clean |
+| run | place_density | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | wns_pclk_ns | fmax_pclk_mhz | wns_rx_clk_ns | wns_ss_ns | fmax_ss_mhz | fmax_mclk_ss_mhz | wns_pclk_ss_ns | wns_rx_clk_ss_ns | whs_ff_ns | hold_viol_ff | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | ir_drop_mv | grt_congestion | route_drc | magic_drc | klayout_drc | klayout_drc_waived | density | lvs | em_viol | lec |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 01-baseline | 0.6000 | -10.063 | -9075.234 | 0.076 | 1210 | - | 33.3 | - | - | - | - | - | - | - | - | - | - | - | - | 3384 | 22 | 156 | 65 | 8.98 | - | 0 | 0 | 1943 | 0 | - | - | mismatch | - | - |
+| 02-sram-corner | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 4290 | - | - | - | - | - | - | - | - |
+| 03-sram-channels | 0.6000 | -8.855 | -8749.597 | 0.084 | 1218 | - | 34.7 | - | - | - | - | - | - | - | - | - | - | - | - | 3941 | 22 | 190 | 48 | 9.10 | - | 0 | 0 | 0 | 0 | - | - | mismatch | - | - |
+| 04-cts-setup-repair | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - | - | - | - | - |
+| 05-placement-padding | 0.6000 | -3.677 | -3405.824 | 0.077 | 1209 | - | 42.2 | - | - | - | - | - | - | - | - | - | - | - | - | 1834 | 22 | 145 | 102 | 9.53 | - | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 06-instruction-register | 0.6000 | -4.744 | -4707.600 | 0.083 | 1275 | - | 40.4 | - | - | - | - | - | - | - | - | - | - | - | - | 2388 | 22 | 147 | 78 | 9.72 | - | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 07-load-use-stall | 0.6000 | -0.226 | -2.867 | 0.083 | 19 | - | 49.4 | - | - | - | - | - | - | - | - | - | - | - | - | 2763 | 22 | 203 | 62 | 9.92 | - | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 08-wire-rc-calibration | 0.6000 | 2.777 | 0.000 | 0.084 | 0 | - | 58.1 | - | - | - | - | - | - | - | - | - | - | - | - | 207 | 22 | 37 | 84 | 9.90 | - | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 09-sram-input-buffers | 0.6000 | 4.237 | 0.000 | 0.083 | 0 | - | 63.4 | - | - | - | - | - | - | - | - | - | - | - | - | 150 | 22 | 22 | 84 | 9.98 | - | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 10-grt-repair | 0.6000 | 5.691 | 0.000 | 0.079 | 0 | - | 69.9 | - | - | - | - | - | - | - | - | - | - | - | - | 0 | 22 | 0 | 64 | 11.50 | - | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 11-sdram-port | 0.6000 | 3.394 | 0.000 | -0.256 | 0 | 32 | 68.4 | 3.394 | 151.4 | - | - | - | - | - | - | - | - | - | - | 0 | 22 | 0 | 58 | 16.20 | - | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 12-hold-repair | 0.6000 | 3.385 | 0.000 | -0.222 | 0 | 32 | 68.4 | 3.385 | 151.2 | - | - | - | - | - | - | - | - | - | - | 0 | 22 | 0 | 48 | 16.20 | - | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 13-sdram-falling-edge | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | - | - | - | - | - | - | - | - | - | - | 0 | 22 | 0 | 74 | 16.90 | - | 1 | 0 | 0 | 0 | - | - | clean | - | - |
+| 14-cdc-constraints | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | - | - | - | - | - | - | - | - | - | - | 0 | 22 | 0 | 74 | 16.90 | - | 1 | 0 | 0 | 0 | - | - | clean | - | - |
+| 15-antenna-repair | 0.6000 | 2.144 | 0.000 | 0.074 | 0 | 0 | 64.5 | 2.144 | 127.3 | - | - | - | - | - | - | - | - | - | - | 0 | 22 | 0 | 0 | 16.90 | - | 1 | 0 | 0 | 0 | - | - | clean | - | - |
+| 16-util-60 | 0.7400 | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | - | - | - | - | - | - | - | - | - | - | 0 | 22 | 0 | 2 | 16.70 | - | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 17-antenna-passes | 0.7400 | 1.967 | 0.000 | 0.069 | 0 | 0 | 65.3 | 1.967 | 124.5 | - | - | - | - | - | - | - | - | - | - | 0 | 22 | 0 | 0 | 16.70 | - | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 18-power-pins-ir | 0.7400 | 1.963 | 0.000 | 0.070 | 0 | 0 | 65.8 | 1.963 | 124.4 | - | - | - | - | - | - | - | - | - | - | 0 | 22 | 0 | 1 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 19-antenna-buffers | 0.7400 | 1.964 | 0.000 | 0.070 | 0 | 0 | 65.7 | 1.964 | 124.4 | - | - | - | - | - | - | - | - | - | - | 0 | 22 | 0 | 0 | 16.70 | 1.60 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 20-rv32m-icache | 0.7300 | -3.079 | -1062.946 | 0.076 | 928 | 0 | 55.3 | 1.808 | 122.1 | - | - | - | - | - | - | - | - | - | - | 0 | 44 | 0 | 0 | 31.70 | 2.89 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 21-two-cycle-mul | 0.7400 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - | - | - | - | - |
+| 22-resize-only-repair | 0.7400 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 0 | - | - | - | - | - | - | - | - |
+| 23-util-52 | 0.6000 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 1 | - | - | - | - | - | - | - | - |
+| 24-util-45 | 0.5000 | 2.078 | 0.000 | 0.080 | 0 | 0 | 78.8 | 2.078 | 126.2 | - | - | - | - | - | - | - | - | - | - | 0 | 44 | 1 | 0 | 33.90 | 3.09 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 25-sram-output-buffers | 0.5000 | 2.036 | 0.000 | 0.080 | 0 | 0 | 77.6 | 2.036 | 125.6 | - | - | - | - | - | - | - | - | - | - | 0 | 44 | 1 | 0 | 33.90 | 3.08 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 26-pcie-x4 | 0.5000 | 1.429 | 0.000 | 0.078 | 0 | 0 | 73.7 | 2.391 | 131.4 | 4.543 | 87.3 | - | - | - | - | - | - | - | - | 0 | 44 | 0 | 0 | 45.70 | 5.02 | 0 | 1 | 0 | 0 | - | - | clean | - | - |
+| 27-pipe-falling-edge | 0.5100 | 0.880 | 0.000 | 0.067 | 0 | 0 | 70.8 | 2.277 | 129.5 | 5.551 | 95.7 | - | - | - | - | - | - | - | - | 0 | 44 | 0 | 1 | 47.30 | 2.45 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 28-link-resets | 0.5100 | 0.927 | 0.000 | 0.078 | 0 | 0 | 71.1 | 2.259 | 129.2 | 5.313 | 93.6 | - | - | - | - | - | - | - | - | 0 | 44 | 0 | 3 | 47.50 | 4.08 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 29-finish-diodes | 0.5100 | 0.928 | 0.000 | 0.078 | 0 | 0 | 71.1 | 2.259 | 129.2 | 5.313 | 93.6 | - | - | - | - | - | - | - | - | 0 | 44 | 0 | 0 | 47.50 | 4.08 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 30-clk-100mhz | 0.5100 | -4.111 | -5623.679 | 0.075 | 1904 | 0 | 70.9 | 2.276 | 129.5 | 5.301 | 93.5 | - | - | - | - | - | - | - | - | 0 | 44 | 0 | 0 | 63.30 | 4.17 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 31-register-read-stage | 0.5100 | -0.393 | -2.101 | 0.079 | 10 | 0 | 96.2 | 2.176 | 127.8 | 5.468 | 94.9 | - | - | - | - | - | - | - | - | 0 | 44 | 0 | 0 | 66.70 | 2.50 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 32-kogge-stone | 0.5100 | -0.397 | -0.823 | 0.077 | 5 | 0 | 96.2 | 2.212 | 128.4 | 5.425 | 94.6 | - | - | - | - | - | - | - | - | 0 | 44 | 1 | 0 | 88.30 | 3.18 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 33-booth | 0.5000 | -1.021 | -11.291 | 0.077 | 34 | 0 | 90.7 | 2.193 | 128.1 | 5.409 | 94.4 | - | - | - | - | - | - | - | - | 0 | 44 | 0 | 1 | 66.80 | 2.10 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 34-cts-no-buffering | 0.5000 | -1.848 | -29.885 | 0.077 | 37 | 0 | 84.4 | 2.194 | 128.1 | 5.436 | 94.7 | - | - | - | - | - | - | - | - | 0 | 44 | 1 | 0 | 66.80 | 2.11 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 35-mul-operand-regs | 0.5100 | -0.543 | -2.973 | 0.075 | 11 | 0 | 94.8 | 1.930 | 123.9 | 5.386 | 94.2 | - | - | - | - | - | - | - | - | 0 | 44 | 1 | 0 | 67.90 | 3.01 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 36-fetch-ahead | 0.5100 | 0.014 | 0.000 | 0.029 | 0 | 0 | 100.1 | 2.020 | 125.3 | 5.384 | 94.2 | - | - | - | - | - | - | - | - | 0 | 44 | 1 | 0 | 67.30 | 3.36 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 37-control-resets | 0.5100 | 0.238 | 0.000 | 0.066 | 0 | 0 | 102.4 | 1.989 | 124.8 | 5.356 | 94.0 | - | - | - | - | - | - | - | - | 13 | 44 | 2 | 0 | 67.90 | 3.73 | 0 | 0 | 0 | 0 | - | - | clean | - | - |
+| 38-phy-pads | 0.5000 | -0.299 | -1.857 | 0.187 | 12 | 0 | 107.2 | 0.515 | 105.4 | 8.049 | 125.8 | -0.299 | -1.981 | 53.8 | 69.5 | -0.576 | -1.981 | 0.019 | 0 | 0 | 43 | 0 | 0 | 58.07 | 12.10 | 0 | 0 | 0 | 0 | 0 | 219 | clean | 4 | equivalent |
+| 39-phy-timing | 0.5000 | 0.501 | 0.000 | 0.101 | 0 | 0 | 106.4 | 0.501 | 105.3 | 7.350 | 115.6 | 1.431 | -1.205 | 52.7 | 69.4 | -1.206 | 1.220 | -0.028 | 1 | 0 | 44 | 0 | 0 | 58.25 | 12.00 | 0 | 0 | 0 | 0 | 0 | 219 | clean | 0 | equivalent |
+| 40-parser-count | 0.5000 | 0.382 | 0.000 | 0.153 | 0 | 0 | 104.0 | 0.419 | 104.4 | 8.324 | 130.3 | 1.610 | 0.594 | 52.7 | 68.9 | 0.594 | 1.466 | 0.004 | 0 | 0 | 44 | 0 | 0 | 58.76 | 11.30 | 0 | 0 | 0 | 0 | 0 | 219 | clean | 0 | equivalent |
+| 41-decap-budget | 0.5000 | 0.382 | 0.000 | 0.153 | 0 | 0 | 104.0 | 0.419 | 104.4 | 8.324 | 130.3 | 1.610 | 0.594 | 52.7 | 68.9 | 0.594 | 1.466 | 0.004 | 0 | 0 | 44 | 0 | 0 | 58.76 | 11.30 | 0 | 0 | 0 | 0 | 0 | clean | clean | 0 | equivalent |
+| 42-decap-fill | 0.5000 | 0.382 | 0.000 | 0.153 | 0 | 0 | 104.0 | 0.419 | 104.4 | 8.324 | 130.3 | 1.610 | 0.594 | 52.7 | 68.9 | 0.594 | 1.466 | 0.004 | 0 | 0 | 44 | 0 | 0 | 58.76 | 11.30 | 0 | 0 | 0 | 0 | 0 | clean | clean | 0 | equivalent |
 <!-- /metrics -->
 
 ## Journal
@@ -86,13 +91,14 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 - [Performance push](docs/journal/performance.md)
 - [PCIe adapter](docs/journal/pcie.md)
 - [Timing optimization](docs/journal/timing-optimization.md)
+- [PCIe x1 port](docs/journal/pcie-x1.md)
 
 ## Layout of the repo
 
 | Path | Contents |
 |---|---|
 | `rtl/` | SoC RTL |
-| `tb/` | Testbench, flash and SRAM models, firmware |
+| `tb/` | Testbench, flash, SRAM, SDRAM, XIO1100 and PCIe endpoint models, firmware |
 | `constraints/` | SDC |
 | `synthesis/` | Yosys script |
 | `floorplan/`, `placement/`, `cts/`, `routing/` | OpenROAD stage scripts |
@@ -108,6 +114,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 ```
 make sim               # RTL simulation with firmware
 make -j2 gls RUN=dev    # gate-level simulation, flops starting at 0 and at 1
+make gls_sdf RUN=dev    # timed simulation of the routed netlist with the tt signoff delays
 make all RUN=dev        # synthesis through signoff, then metrics
 make <stage> RUN=dev    # synth floorplan place cts route rcx sta gds lvs klayout_drc metrics
 ```

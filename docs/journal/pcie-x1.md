@@ -98,3 +98,64 @@ The second was in the flow. The pad timing library copy keeps only the arcs the 
 At synthesis, the slow corner's worst `pclk` paths come from unbuffered high-fanout nets: one gate drives 164 loads at 16 ns. Their logic depth is about 14 ns of the 16 ns period. The credit check in front of the TLP builder and the LTSSM timeouts now come from registers.
 
 Decision: lay out the chip with the PHY pads, and close `pclk` at the slow corner from real numbers.
+
+## Layout with the PHY pads
+
+The 115 signal pads fit a 3.2 mm die at 28 to 30 a side. The receive pins are on the north side and the transmit pins on the east, with a second VDDIO pair among them. The SDRAM moves to the south-west corner, and the SRAMs stay on the west edge of the core.
+
+![layout](../../reports/42-decap-fill/layout.png)
+
+The first layout failed setup at the slow corner in three places:
+
+| Path | tt (ns) | ss (ns) |
+|---|---|---|
+| Transmit registers to the pins | -0.30 | -1.98 |
+| Phase flop to the falling-edge transmit registers | | -0.28 |
+| `pclk` through the receive parser | | -0.58 |
+
+`pipe_tx_clk` left from the root of the `pipe_rx_clk` tree, and CTS gave its pad a tree of its own, not balanced against the registers. The data reached the pins 0.9 ns behind the clock at ff, 2.2 ns at tt and 3.8 ns at ss. A falling-edge launch takes -3.05 to +1.85 ns and a rising-edge launch +0.95 to +5.85 ns.
+
+Decision: rebuild `pipe_tx_clk` from a flop on each edge, choose each half-word on the rising edge, and decode the framing symbols a clock ahead of the parser.
+
+The second layout met the pins at every corner. `pclk` still failed at ss by 1.21 ns on the parser's DW count, which chained four increments although at most one DW completes per clock. Hold at ff failed by 0.028 ns on the receive word register after detailed routing moved the skew.
+
+Decision: one DW increment per clock, and 0.4 ns of hold margin after global routing.
+
+The IR analysis counted the pads' 373 mW on the core supply and put four vias over their EM limit. `set_pdnsim_inst_power` changes only the total PDNSim prints.
+
+Decision: no switching activity on the pads and data inputs in the core-supply analysis.
+
+With 17% of the core in cells, decaps everywhere put li1 at 65% against the PDK's 60% limit. Efabless's `check_density.py` also has minimums: a 5 nF decap budget with fill cells elsewhere left diffusion at 24% of the die against 33%.
+
+Decision: fill with LibreLane's sky130 set, `sky130_ef_sc_hd__decap_12` (the same capacitance at 41% li1) and the smaller HD decaps.
+
+li1 is at 45% and diffusion at 44%. `check_density.py` still finds met1 to met3 under 35% in windows on the west side and next to the SRAMs, as on `main`.
+
+Timed simulation of the routed netlist failed six ways, all in the simulation setup:
+
+| What went wrong | Fix |
+|---|---|
+| 1.2 million fill and decap instances; SDF annotation did not finish in 52 minutes | the timing netlist leaves them out |
+| CTS names the `pclk` buffers after `u_core.u_pcie.pclk`, and iverilog cannot annotate escaped names | gates and buffers get `_` for `.` |
+| two PAD-to-IN arcs per pad, and the 1.8 V one won on every pad | each pad takes the arc of its `IB_MODE_SEL` tie |
+| the SRAM model drives X 1 ns after the rising edge (OpenRAM: "Value is arbitrary"), and the capture flops clock 1.23 ns after the SRAM | X only from 0.383 to 0.529 ns after the falling edge, the liberty's window |
+| inertial pad delays of 4.0 ns rejected the 4 ns halves of `pipe_tx_clk` | transport delays, each change landing in the order it was made |
+| open_pdks left the UDP rows for notifier and supply changes commented out, so every flop was X at time 0 | the rows restored, supply changes hold, every flop starts at 0 or 1 |
+
+With these fixes the routed netlist passes the test with the tt signoff delays. The link is up at 2.66 ms, the firmware enumerates the endpoint with ERROR at 0, and the benchmark runs in 13,174 cycles cold and 12,484 warm, with no SDRAM, PHY or endpoint violation.
+
+| Corner | Setup, worst (ns) | Hold, worst (ns) |
+|---|---|---|
+| tt | +0.38 `clk` (104.0 MHz); `mclk` 104.4 MHz; `pclk` +8.32 | +0.153 |
+| ss | +0.59 `pclk` (64.9 MHz); `clk` 52.7 MHz; `mclk` 68.9 MHz | |
+| ff | | +0.004 |
+
+| PHY pins (ns) | Receive setup | Receive hold | Transmit setup | Transmit hold |
+|---|---|---|---|---|
+| tt | +1.79 | +3.39 | +1.61 | +2.42 |
+| ss | +1.81 | +2.65 | +1.47 | +1.88 |
+| ff | +1.77 | +3.70 | +1.80 | +2.56 |
+
+Power without the pads is 58.8 mW and IR drop 11.3 mV. EM, antennas, router DRC, Magic, KLayout, the density deck, LVS and LEC are clean. The 44 SRAM inputs over the slew limit stay waived.
+
+Decision: this layout is the PCIe x1 chip.
