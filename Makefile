@@ -146,7 +146,8 @@ gls0 gls1: gls%: fw $(OUT)/primitives_%.v $(OUT)/sky130_ef_io_gls.v
 # the routed netlist with the cell timing models and the tt delays from signoff STA, pads included
 .PHONY: gls_sdf
 gls_sdf: fw $(OUT)/primitives_0.v $(OUT)/sky130_ef_io_gls.v
-	python3 sta/sdf_iverilog.py $(OUT)/chip_top.sdf $(OUT)/chip_top_iverilog.sdf $(OUT)/chip_top_pads.v
+	python3 sta/sdf_iverilog.py $(OUT)/chip_top.sdf $(OUT)/chip_top.final.v $(OUT)/chip_top_iverilog.sdf \
+	  $(OUT)/chip_top_pads.v
 	iverilog -g2012 -gspecify -ginterconnect -s tb_soc -s sdf_pads -DGLS -DSDF='"$(OUT)/chip_top_iverilog.sdf"' \
 	  -o $(OUT)/tb_gls_sdf tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v \
 	  tb/xio1100.v tb/pcie_dev.v \
