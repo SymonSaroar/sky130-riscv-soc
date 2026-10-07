@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
-module tb_soc;
-  localparam BIT = 868 * 10;
+module tb_soc #(parameter real CLK_HALF = 5, MCLK_HALF = 5);
+  localparam real BIT = 868 * 2 * CLK_HALF;
 
   reg  clk_r = 0, mclk_r = 0, rst_r = 0, rx_r = 1;
   wire clk = clk_r, mclk = mclk_r, rst_n = rst_r, uart_rx = rx_r;
@@ -8,8 +8,8 @@ module tb_soc;
   wire [15:0] gpio;
   pulldown gpio_pd [15:10] (gpio[15:10]);
   pulldown gpio_pl [7:0] (gpio[7:0]);
-  always #5 clk_r = !clk_r;
-  always #5 mclk_r = !mclk_r;
+  always #CLK_HALF clk_r = !clk_r;
+  always #MCLK_HALF mclk_r = !mclk_r;
 
   wire        sdram_clk, sdram_cke, sdram_cs_n, sdram_ras_n, sdram_cas_n, sdram_we_n;
   wire  [1:0] sdram_ba, sdram_dqm;

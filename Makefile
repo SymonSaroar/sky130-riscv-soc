@@ -143,14 +143,20 @@ gls0 gls1: gls%: fw $(OUT)/primitives_%.v $(OUT)/sky130_ef_io_gls.v
 	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v
 	vvp -n $(OUT)/tb_$@ +progress=$(OUT)/$@.time | sed 's/^/$@: /'
 
-# the routed netlist with the cell timing models and the tt delays from signoff STA, pads included
+# the routed netlist with the cell timing models and the delays from signoff STA, pads included. CORNER=ss runs the
+# slow corner at its 50 MHz clk and 62.5 MHz mclk, CORNER=ff the fast corner; the SRAM read window scales as in
+# sta/sram_lib.py.
+CORNER ?= tt
+GS := $(if $(filter tt,$(CORNER)),,_$(CORNER))
+GLS_ss := -Ptb_soc.CLK_HALF=10 -Ptb_soc.MCLK_HALF=8 -DSRAM_K=2.1
+GLS_ff := -DSRAM_K=0.64
 .PHONY: gls_sdf
 gls_sdf: fw $(OUT)/primitives_0.v $(OUT)/sky130_ef_io_gls.v
-	python3 sta/sdf_iverilog.py $(OUT)/chip_top.sdf $(OUT)/chip_top.final.v $(OUT)/chip_top_iverilog.sdf \
-	  $(OUT)/chip_top_pads.v
-	iverilog -g2012 -gspecify -ginterconnect -s tb_soc -s sdf_pads -DGLS -DSDF='"$(OUT)/chip_top_iverilog.sdf"' \
-	  -o $(OUT)/tb_gls_sdf tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v \
+	python3 sta/sdf_iverilog.py $(OUT)/chip_top$(GS).sdf $(OUT)/chip_top.final.v $(OUT)/chip_top_iverilog$(GS).sdf \
+	  $(OUT)/chip_top_pads$(GS).v
+	iverilog -g2012 -gspecify -ginterconnect -s tb_soc -s sdf_pads -DGLS -DSDF='"$(OUT)/chip_top_iverilog$(GS).sdf"' \
+	  $(GLS_$(CORNER)) -o $(OUT)/tb_gls_sdf$(GS) tb/tb_soc.v tb/spi_flash.v tb/sram_model.v tb/sdram_model.v \
 	  tb/xio1100.v tb/pcie_dev.v \
 	  $(OUT)/primitives_0.v $(SC_V)/sky130_fd_sc_hd.v $(OUT)/chip_top.final.v \
-	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v $(OUT)/chip_top_pads.v
-	vvp -n $(OUT)/tb_gls_sdf +progress=$(OUT)/gls_sdf.time
+	  $(OUT)/sky130_ef_io_gls.v $(IO_V)/sky130_fd_io.v $(OUT)/chip_top_pads$(GS).v
+	vvp -n $(OUT)/tb_gls_sdf$(GS) +progress=$(OUT)/gls_sdf$(GS).time

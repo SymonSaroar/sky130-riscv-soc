@@ -44,8 +44,8 @@ if {$corner eq "tt"} {
   report_checks -path_delay max -from [get_clocks mclk] -to [get_clocks clk] -group_path_count 5 >> $rep/cdc.rpt
   report_checks -path_delay max -from [get_clocks clk] -to [get_clocks pclk] -group_path_count 5 >> $rep/cdc.rpt
   report_checks -path_delay max -from [get_clocks pclk] -to [get_clocks clk] -group_path_count 5 >> $rep/cdc.rpt
-  write_sdf -digits 4 $out/chip_top.sdf
 }
+write_sdf -digits 4 $out/chip_top[expr {$corner eq "tt" ? "" : "_$corner"}].sdf
 
 set f [open $rep/$tag.summary w]
 foreach {k v} [list wns [sta::worst_slack_cmd max] tns [sta::total_negative_slack_cmd max] \
