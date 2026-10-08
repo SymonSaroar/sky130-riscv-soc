@@ -14,6 +14,7 @@ if {$corner eq "tt"} {
   read_liberty $out/sram_$corner.lib
 }
 read_liberty $out/gpiov2_$corner.lib
+read_liberty $out/pcie_phy_$corner.lib
 read_verilog $out/chip_top.final.v
 link_design chip_top
 source constraints/corner.tcl
@@ -44,7 +45,7 @@ foreach {k v} [list wns [sta::worst_slack_cmd max] tns [sta::total_negative_slac
 puts $f "viol_endpoints [sta::endpoint_violation_count max]"
 puts $f "hold_viol_endpoints [sta::endpoint_violation_count min]"
 # per clock domain; the SPI pins count toward clk and the SDRAM pins toward mclk
-foreach {name groups} {clk {clk spi_clk} mclk {mclk sdram_clk} pclk pclk rx_clk {rx_clk tx_clk}} {
+foreach {name groups} {clk {clk spi_clk} mclk {mclk sdram_clk} pclk pclk} {
   set ws ""
   foreach g $groups {
     set p [lindex [find_timing_paths -path_group $g -path_delay max -group_path_count 1] 0]

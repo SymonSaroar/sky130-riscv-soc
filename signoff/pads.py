@@ -7,11 +7,12 @@ out, rep = os.environ["OUT"], os.environ["REP"]
 lef = open(pdk + "/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef").read()
 size = {m[0]: (float(m[1]), float(m[2])) for m in re.findall(r"MACRO (\S+)\s.*?SIZE ([\d.]+) BY ([\d.]+)", lef, re.S)}
 supply = {"vccd": ("VCCD", "1.8 V core"), "vssd": ("VSSD", "core ground"), "vddio": ("VDDIO", "3.3 V I/O"),
-          "vssio": ("VSSIO", "I/O ground"), "vdda": ("VDDA", "3.3 V analog"), "vssa": ("VSSA", "analog ground")}
+          "vssio": ("VSSIO", "I/O ground"), "vdda": ("VDDA", "3.3 V analog"), "vssa": ("VSSA", "analog ground"),
+          "avdd": ("AVDD", "1.8 V PHY analog"), "avss": ("AVSS", "PHY analog ground")}
 
 d = open(out + "/chip_top.def").read()
 die = int(re.search(r"DIEAREA \( 0 0 \) \( (\d+) \d+ \)", d)[1]) / 1000
-pin = {inst: name.replace("\\", "") for name, inst in re.findall(r"\( PIN (\S+) \) \( (p_\S+) PAD \)", d)}
+pin = {inst: name.replace("\\", "") for name, inst in re.findall(r"\( PIN (\S+) \) \( (p_\S+) (?:P_)?PAD \)", d)}
 direction = {n.replace("\\", ""): v.lower() for n, v in re.findall(r"- (\S+) \+ NET \S+ (?:\+ SPECIAL )?\+ DIRECTION (\w+)", d)}
 inst = {}
 for name, master, x, y in re.findall(r"- (\S+) (sky130_ef_io__\S+) \+ FIXED \( (\d+) (\d+) \)", d):

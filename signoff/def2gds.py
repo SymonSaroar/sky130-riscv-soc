@@ -15,7 +15,7 @@ opt = tech.load_layout_options
 cfg = opt.lefdef_config
 cfg.map_file = pdk + "/libs.tech/klayout/tech/sky130A.map"
 cfg.lef_files = [sc + "/techlef/sky130_fd_sc_hd__nom.tlef", sc + "/lef/sky130_fd_sc_hd.lef", sc + "/lef/sky130_ef_sc_hd.lef",
-                 f"{sm}/lef/{sram}.lef", io + "/lef/sky130_ef_io.lef"]
+                 f"{sm}/lef/{sram}.lef", io + "/lef/sky130_ef_io.lef", out + "/pcie_phy.lef"]
 cfg.produce_pin_names = True
 
 ly = pya.Layout()
@@ -26,6 +26,7 @@ for c in ly.each_cell():
         c.clear()
 ly.read(sc + "/gds/sky130_fd_sc_hd.gds")
 ly.read(f"{sm}/gds/{sram}.gds")
+ly.read(out + "/pcie_phy.gds")
 # pads: the sky130_ef_io cells reference sky130_fd_io cells as empty placeholders
 for g in ["sky130_ef_io", "sky130_fd_io", "sky130_ef_io__gpiov2_pad_wrapped",
           "sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um"]:

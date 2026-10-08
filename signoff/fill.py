@@ -17,15 +17,19 @@ die = top.bbox_per_layer(ly.layer(235, 4))
 keep = die.enlarged(-um(12), -um(12))
 block = pya.Region(top.bbox().enlarged(um(10), um(10))) - pya.Region(keep)
 sram = pya.Region()
+phy = pya.Region()
 for inst in top.each_inst():
     if inst.cell.name.startswith("sky130_ef_io__"):
         block += pya.Region(inst.bbox()).sized(um(2))
     elif inst.cell.name.startswith("sky130_sram_"):
         sram += pya.Region(inst.bbox()).sized(um(2))
-# the SRAMs block diffusion, li and met1 to met3, the layers their LEF obstructs
+    elif inst.cell.name == "pcie_phy":
+        phy += pya.Region(inst.bbox()).sized(um(2))
+# the SRAMs block diffusion, li and met1 to met3 and the PHY up to met4, the layers their LEFs obstruct
 blocks = [ly.layer(n, 98) for n in (65, 67, 68, 69, 70, 71, 72)]
 for li in blocks:
-    top.shapes(li).insert((block + (sram if ly.get_info(li).layer <= 70 else pya.Region())).merged())
+    n = ly.get_info(li).layer
+    top.shapes(li).insert((block + (sram if n <= 70 else pya.Region()) + (phy if n <= 71 else pya.Region())).merged())
 os.makedirs(work, exist_ok=True)
 ly.write(work + "/chip_top.gds")
 for li in blocks:

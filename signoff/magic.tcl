@@ -1,4 +1,4 @@
-# Magic: DRC and LVS extraction. The SRAM and the pad ring cells are read as their LEF abstracts.
+# Magic: DRC and LVS extraction. The SRAM, the PCIe PHY and the pad ring cells are read as their LEF abstracts.
 set pdk  $::env(PDK_ROOT)/sky130A
 set out  $::env(OUT)
 set rep  $::env(REP)
@@ -11,6 +11,7 @@ gds read $pdk/libs.ref/sky130_fd_sc_hd/gds/sky130_fd_sc_hd.gds
 lef read $pdk/libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom.tlef
 lef read $pdk/libs.ref/sky130_sram_macros/lef/$sram.lef
 lef read $pdk/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef
+lef read $out/pcie_phy.lef
 def read $out/chip_top.def
 load chip_top
 select top cell
