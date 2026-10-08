@@ -1,6 +1,9 @@
 # Core supply on VPWR/VGND; the pad ring buses keep their own nets
-add_global_connection -net VPWR -pin_pattern {^(VPWR|VPB|vccd1|VCCD|VCCHIB)$} -power
-add_global_connection -net VGND -pin_pattern {^(VGND|VNB|vssd1|VSSD)$} -ground
+add_global_connection -net VPWR -pin_pattern {^(VPWR|VPB|vccd1|vccd|VCCD|VCCHIB)$} -power
+add_global_connection -net VGND -pin_pattern {^(VGND|VNB|vssd1|vssd|VSSD)$} -ground
+# the PCIe PHY's analog supply from the clamped3 pads' VCCD1 and VSSD1
+add_global_connection -net AVDD -pin_pattern {^(avdd|VCCD1)$} -power
+add_global_connection -net AVSS -pin_pattern {^(avss|VSSD1)$} -ground
 add_global_connection -net VDDIO -pin_pattern {^(VDDIO|VSWITCH)$} -power
 add_global_connection -net VDDIO_Q -pin_pattern {^VDDIO_Q$} -power
 add_global_connection -net VSSIO -pin_pattern {^VSSIO$} -ground
@@ -24,6 +27,8 @@ add_pdn_connect -grid core -layers {met4 met5}
 
 define_pdn_grid -macro -name sram -cells sky130_sram_2kbyte_1rw1r_32x512_8 -halo 5
 add_pdn_connect -grid sram -layers {met4 met5}
+define_pdn_grid -macro -name phy -cells pcie_phy -halo 5
+add_pdn_connect -grid phy -layers {met4 met5}
 
 pdngen
 
@@ -183,4 +188,55 @@ foreach st $straps land $landings {
     via_array $sw $via3 $fx0 $r0 $fx1 $r1 0.8 0.4
     via_array $sw $via4 $fx0 $r0 $fx1 $r1 1.6 0.8
   }
+}
+
+# PCIe PHY analog supply: AVSS and AVDD buses on met4 between the core ring and the east pads, met3 straps from the
+# clamped3 pads' core-side pins onto them, and met3 straps from the buses under the core ring to the macro's bars
+set phy [$block findInst u_phy]
+set pads {}
+foreach inst [$block getInsts] {
+  if {[string match avdd_east* [$inst getName]] || [string match avss_east* [$inst getName]]} { lappend pads $inst }
+}
+set ring_x 0
+foreach net {VPWR VGND} {
+  foreach b [ring_boxes [$block findNet $net]] {
+    lassign $b l bx0 by0 bx1 by1
+    if {$bx0 >= [$core xMax]} { set ring_x [expr {max($ring_x, $bx1)}] }
+  }
+}
+set um [ord::microns_to_dbu 1]
+array set bus [list AVSS [list [expr {$ring_x + 4 * $um}] [expr {$ring_x + 12 * $um}]] \
+                    AVDD [list [expr {$ring_x + 16 * $um}] [expr {$ring_x + 24 * $um}]]]
+array set macro_pin {AVDD avdd AVSS avss}
+array set pad_pin {AVDD VCCD1 AVSS VSSD1}
+foreach netname {AVSS AVDD} {
+  set net [$block findNet $netname]
+  set sw [odb::dbSWire_create $net ROUTED]
+  lassign $bus($netname) x0 x1
+  set ylo {}
+  set yhi {}
+  foreach inst $pads {
+    foreach r [pad_rects $inst $pad_pin($netname) met3] {
+      # pins on the core side of the pad
+      if {[lindex $r 0] > [[$inst getBBox] xMin]} continue
+      lassign [lmap v $r {expr {$v / 10 * 10}}] rx0 ry0 rx1 ry1
+      set ry0 [expr {$ry0 + 10 * ($ry0 != [lindex $r 1])}]
+      odb::dbSBox_create $sw $met3 $x0 $ry0 [expr {$rx0 + 2 * $um}] $ry1 STRIPE
+      via_array $sw $via3 $x0 $ry0 $x1 $ry1 0.8 0.4
+      lappend ylo $ry0
+      lappend yhi $ry1
+    }
+  }
+  foreach mpin [[[$phy getMaster] findMTerm $macro_pin($netname)] getMPins] {
+    foreach box [$mpin getGeometry] {
+      lassign [$phy getLocation] lx ly
+      set by0 [expr {$ly + [$box yMin]}]
+      set by1 [expr {$ly + [$box yMax]}]
+      odb::dbSBox_create $sw $met3 [expr {$lx + [$box xMin]}] $by0 $x1 $by1 STRIPE
+      via_array $sw $via3 $x0 $by0 $x1 $by1 0.8 0.4
+      lappend ylo $by0
+      lappend yhi $by1
+    }
+  }
+  odb::dbSBox_create $sw $met4 $x0 [tcl::mathfunc::min {*}$ylo] $x1 [tcl::mathfunc::max {*}$yhi] STRIPE
 }
