@@ -15,6 +15,7 @@ foreach c [split [string trim [read_file $pdk/libs.tech/openlane/sky130_fd_sc_hd
 
 read_liberty -lib $lib
 read_liberty -lib $sram
+read_liberty -lib $out/pcie_phy_tt.lib
 read_verilog -lib $io
 read_verilog {*}[glob rtl/*.v]
 # a flop whose register is marked (* keep *) stays a separate copy
@@ -31,5 +32,5 @@ setundef -zero
 hilomap -singleton -hicell sky130_fd_sc_hd__conb_1 HI -locell sky130_fd_sc_hd__conb_1 LO
 splitnets
 opt_clean -purge
-tee -o $rep/synth_stat.txt stat -liberty $lib -liberty $sram
+tee -o $rep/synth_stat.txt stat -liberty $lib -liberty $sram -liberty $out/pcie_phy_tt.lib
 write_verilog -noattr -noexpr -nohex -nodec $out/chip_top.v

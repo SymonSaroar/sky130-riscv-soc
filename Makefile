@@ -58,7 +58,13 @@ $(OUT)/gpiov2_%.lib: sta/pad_lib.py
 $(OUT)/sram_%.lib: sta/sram_lib.py
 	@mkdir -p $(OUT)
 	python3 sta/sram_lib.py $(LIB_SRAM) $* $@
-floorplan place cts route rcx sta ir: $(CORNER_LIBS)
+# PCIe PHY placeholder views from one pin table
+PHY_VIEWS := $(addprefix $(OUT)/pcie_phy,.lef .gds .v .spice _tt.lib _ss.lib _ff.lib)
+$(PHY_VIEWS) &: macros/pcie_phy.py
+	@mkdir -p $(OUT)
+	klayout -b -r macros/pcie_phy.py -rd out=$(OUT)
+floorplan place cts route rcx sta ir: $(CORNER_LIBS) $(PHY_VIEWS)
+synth: $(PHY_VIEWS)
 
 .PHONY: synth
 synth:
