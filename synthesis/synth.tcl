@@ -17,6 +17,10 @@ read_liberty -lib $lib
 read_liberty -lib $sram
 read_verilog -lib $io
 read_verilog {*}[glob rtl/*.v]
+# a flop whose register is marked (* keep *) stays a separate copy
+hierarchy -top chip_top
+yosys proc
+setattr -set keep 1 {w:*} {a:keep} %i {%ci1:+$dff[Q]} {t:$dff} %i
 # Booth multipliers, Kogge-Stone carry for adders and comparators
 synth -top chip_top -flatten -booth -run :fine
 techmap -map +/techmap.v -map +/choices/kogge-stone.v

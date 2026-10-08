@@ -54,10 +54,10 @@ module chip_top (
 `endif
 
   wire        c_clk, c_rst_n, c_uart_tx, c_uart_rx, c_spi_cs_n, c_spi_sclk, c_spi_mosi, c_spi_miso;
-  wire        c_mclk, c_sdram_clk, c_cke, c_cs_n, c_ras_n, c_cas_n, c_we_n, c_dq_oe;
+  wire        c_mclk, c_sdram_clk, c_cke, c_cs_n, c_ras_n, c_cas_n, c_we_n;
   wire  [1:0] c_ba, c_dqm;
   wire [12:0] c_a;
-  wire [15:0] c_gpio_in, c_gpio_out, c_gpio_oe, c_dq_in, c_dq_out;
+  wire [15:0] c_gpio_in, c_gpio_out, c_gpio_oe, c_dq_in, c_dq_out, c_dq_oe;
   wire        c_rx_clk, c_rx_valid, c_phy_status, c_rx_ei, c_tx_clk, c_tx_ei, c_tx_comp, c_tx_det, c_rx_pol, c_phy_rst_n;
   wire [15:0] c_rx_data, c_tx_data;
   wire  [1:0] c_rx_datak, c_tx_datak, c_pd;
@@ -131,22 +131,22 @@ module chip_top (
   pad_gpio p_gpio13      (`PWR .pad(gpio[13]),     .a(c_gpio_out[13]), .oe(c_gpio_oe[13]), .y(c_gpio_in[13]));
   pad_gpio p_gpio14      (`PWR .pad(gpio[14]),     .a(c_gpio_out[14]), .oe(c_gpio_oe[14]), .y(c_gpio_in[14]));
   pad_gpio p_gpio15      (`PWR .pad(gpio[15]),     .a(c_gpio_out[15]), .oe(c_gpio_oe[15]), .y(c_gpio_in[15]));
-  pad_gpio p_sdram_dq0   (`PWR .pad(sdram_dq[0]),  .a(c_dq_out[0]),    .oe(c_dq_oe),       .y(c_dq_in[0]));
-  pad_gpio p_sdram_dq1   (`PWR .pad(sdram_dq[1]),  .a(c_dq_out[1]),    .oe(c_dq_oe),       .y(c_dq_in[1]));
-  pad_gpio p_sdram_dq2   (`PWR .pad(sdram_dq[2]),  .a(c_dq_out[2]),    .oe(c_dq_oe),       .y(c_dq_in[2]));
-  pad_gpio p_sdram_dq3   (`PWR .pad(sdram_dq[3]),  .a(c_dq_out[3]),    .oe(c_dq_oe),       .y(c_dq_in[3]));
-  pad_gpio p_sdram_dq4   (`PWR .pad(sdram_dq[4]),  .a(c_dq_out[4]),    .oe(c_dq_oe),       .y(c_dq_in[4]));
-  pad_gpio p_sdram_dq5   (`PWR .pad(sdram_dq[5]),  .a(c_dq_out[5]),    .oe(c_dq_oe),       .y(c_dq_in[5]));
-  pad_gpio p_sdram_dq6   (`PWR .pad(sdram_dq[6]),  .a(c_dq_out[6]),    .oe(c_dq_oe),       .y(c_dq_in[6]));
-  pad_gpio p_sdram_dq7   (`PWR .pad(sdram_dq[7]),  .a(c_dq_out[7]),    .oe(c_dq_oe),       .y(c_dq_in[7]));
-  pad_gpio p_sdram_dq8   (`PWR .pad(sdram_dq[8]),  .a(c_dq_out[8]),    .oe(c_dq_oe),       .y(c_dq_in[8]));
-  pad_gpio p_sdram_dq9   (`PWR .pad(sdram_dq[9]),  .a(c_dq_out[9]),    .oe(c_dq_oe),       .y(c_dq_in[9]));
-  pad_gpio p_sdram_dq10  (`PWR .pad(sdram_dq[10]), .a(c_dq_out[10]),   .oe(c_dq_oe),       .y(c_dq_in[10]));
-  pad_gpio p_sdram_dq11  (`PWR .pad(sdram_dq[11]), .a(c_dq_out[11]),   .oe(c_dq_oe),       .y(c_dq_in[11]));
-  pad_gpio p_sdram_dq12  (`PWR .pad(sdram_dq[12]), .a(c_dq_out[12]),   .oe(c_dq_oe),       .y(c_dq_in[12]));
-  pad_gpio p_sdram_dq13  (`PWR .pad(sdram_dq[13]), .a(c_dq_out[13]),   .oe(c_dq_oe),       .y(c_dq_in[13]));
-  pad_gpio p_sdram_dq14  (`PWR .pad(sdram_dq[14]), .a(c_dq_out[14]),   .oe(c_dq_oe),       .y(c_dq_in[14]));
-  pad_gpio p_sdram_dq15  (`PWR .pad(sdram_dq[15]), .a(c_dq_out[15]),   .oe(c_dq_oe),       .y(c_dq_in[15]));
+  pad_gpio p_sdram_dq0   (`PWR .pad(sdram_dq[0]),  .a(c_dq_out[0]),    .oe(c_dq_oe[0]),    .y(c_dq_in[0]));
+  pad_gpio p_sdram_dq1   (`PWR .pad(sdram_dq[1]),  .a(c_dq_out[1]),    .oe(c_dq_oe[1]),    .y(c_dq_in[1]));
+  pad_gpio p_sdram_dq2   (`PWR .pad(sdram_dq[2]),  .a(c_dq_out[2]),    .oe(c_dq_oe[2]),    .y(c_dq_in[2]));
+  pad_gpio p_sdram_dq3   (`PWR .pad(sdram_dq[3]),  .a(c_dq_out[3]),    .oe(c_dq_oe[3]),    .y(c_dq_in[3]));
+  pad_gpio p_sdram_dq4   (`PWR .pad(sdram_dq[4]),  .a(c_dq_out[4]),    .oe(c_dq_oe[4]),    .y(c_dq_in[4]));
+  pad_gpio p_sdram_dq5   (`PWR .pad(sdram_dq[5]),  .a(c_dq_out[5]),    .oe(c_dq_oe[5]),    .y(c_dq_in[5]));
+  pad_gpio p_sdram_dq6   (`PWR .pad(sdram_dq[6]),  .a(c_dq_out[6]),    .oe(c_dq_oe[6]),    .y(c_dq_in[6]));
+  pad_gpio p_sdram_dq7   (`PWR .pad(sdram_dq[7]),  .a(c_dq_out[7]),    .oe(c_dq_oe[7]),    .y(c_dq_in[7]));
+  pad_gpio p_sdram_dq8   (`PWR .pad(sdram_dq[8]),  .a(c_dq_out[8]),    .oe(c_dq_oe[8]),    .y(c_dq_in[8]));
+  pad_gpio p_sdram_dq9   (`PWR .pad(sdram_dq[9]),  .a(c_dq_out[9]),    .oe(c_dq_oe[9]),    .y(c_dq_in[9]));
+  pad_gpio p_sdram_dq10  (`PWR .pad(sdram_dq[10]), .a(c_dq_out[10]),   .oe(c_dq_oe[10]),   .y(c_dq_in[10]));
+  pad_gpio p_sdram_dq11  (`PWR .pad(sdram_dq[11]), .a(c_dq_out[11]),   .oe(c_dq_oe[11]),   .y(c_dq_in[11]));
+  pad_gpio p_sdram_dq12  (`PWR .pad(sdram_dq[12]), .a(c_dq_out[12]),   .oe(c_dq_oe[12]),   .y(c_dq_in[12]));
+  pad_gpio p_sdram_dq13  (`PWR .pad(sdram_dq[13]), .a(c_dq_out[13]),   .oe(c_dq_oe[13]),   .y(c_dq_in[13]));
+  pad_gpio p_sdram_dq14  (`PWR .pad(sdram_dq[14]), .a(c_dq_out[14]),   .oe(c_dq_oe[14]),   .y(c_dq_in[14]));
+  pad_gpio p_sdram_dq15  (`PWR .pad(sdram_dq[15]), .a(c_dq_out[15]),   .oe(c_dq_oe[15]),   .y(c_dq_in[15]));
 
   // PCIe PHY inputs, 1.8 V levels
   pad_gpio #(.DM(3'b001), .IB(1'b1)) p_pipe_rx_clk          (`PWR .pad(pipe_rx_clk),          .a(1'b0), .oe(1'b0), .y(c_rx_clk));

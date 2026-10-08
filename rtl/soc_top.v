@@ -26,7 +26,7 @@ module soc_top (
   output [12:0] sdram_a,
   output  [1:0] sdram_dqm,
   output [15:0] sdram_dq_out,
-  output        sdram_dq_oe,
+  output [15:0] sdram_dq_oe,
   input  [15:0] sdram_dq_in,
   // PCIe, TI-PIPE 16-bit SDR to the XIO1100
   input         pipe_rx_clk,
