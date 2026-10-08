@@ -11,6 +11,6 @@ estimate_parasitics -global_routing
 if {$corner eq "ff"} {
   repair_timing -hold -hold_margin 0.1
 } else {
-  repair_timing -setup
+  repair_timing -setup -setup_margin 0.15
 }
 write_db $out/grt.odb
