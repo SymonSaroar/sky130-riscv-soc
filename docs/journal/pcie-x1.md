@@ -159,3 +159,53 @@ With these fixes the routed netlist passes the test with the tt signoff delays. 
 Power without the pads is 58.8 mW and IR drop 11.3 mV. EM, antennas, router DRC, Magic, KLayout, the density deck, LVS and LEC are clean. The 44 SRAM inputs over the slew limit stay waived.
 
 Decision: this layout is the PCIe x1 chip.
+
+## On-chip variation
+
+Signoff so far took each corner as one uniform die. LibreLane's sky130 configuration adds 5% of on-chip variation on top (`TIME_DERATING_CONSTRAINT` 5, applied as `set_timing_derate -early 0.95 -late 1.05`), as OpenLane did, next to the 0.25 ns of clock uncertainty this flow already uses. With the derate, the layout above fails at every corner:
+
+| Corner | Failing paths | Worst (ns) |
+|---|---|---|
+| tt | `clk` core path; SDRAM data output enable | -0.17; -0.16 |
+| ss | `pclk` through the receive parser; `clk` | -0.27; -0.10 |
+| ff | hold, 60 endpoints | -0.088 |
+
+One flop drove the output enable of all 16 SDRAM data pads through an `inv_8` and a `buf_12`, 0.3 ns before the pads.
+
+Decision: sign off with the 5% derate, give each SDRAM data pad its own output enable flop, and repair timing at the slow and fast corners.
+
+Yosys merges equal flops even when their registers carry `(* keep *)`; the attribute has to reach the flop cells, and synthesis now sets it there after `proc`.
+
+OpenSTA here can hold several corners and modes in one session (`define_scene`). On this layout it gives core paths the slack of the per-corner sessions, but the clocks generated at output ports keep one latency for all scenes: an SDRAM output reads -2.26 ns against -0.16 ns in its own session. Repair at the fast and slow corners therefore runs after the typical-corner repair on global routes, each corner in a session of its own with its own constraints: hold at ff, then setup at ss.
+
+The first slow-corner session reported -31.7 ns. `set_layer_rc` writes its values into the database's layers, and each stage derived its wire RC from the database it loaded, so every stage scaled the wire capacitance once more: 1.91 at placement, 1.91² at CTS and 1.91³ on global routes. The clock pad net that OpenRCX extracts at 0.114 pF was estimated at 0.50 pF on global routes, and at 3.47 pF in a session reloading that database. Every estimate since global-route RC came from the LEF layers was pessimistic for this reason.
+
+Decision: take wire RC from the tech LEF, read before the database, in every stage.
+
+With these changes the slow corner closes for `clk`, `mclk` and `pclk`, and hold at the fast corner keeps 0.067 ns. Two groups still miss: four CPU paths at tt by 0.06 ns, and the TI-PIPE transmit pins at ss by 0.26 ns. Each transmit flop reached its pad through two `buf_12` wire buffers, 1.29 ns at the slow corner, and the forwarded `pipe_tx_clk` went through two more, 0.64 ns. The CPU paths are ones that repair after global routing could not buffer: it ran with `-skip_buffering`, a guard against the estimates the RC fix corrected.
+
+Decision: start the cell that drives each output pad next to its pad and hold it there through global placement, and let repair after global routing insert buffers.
+
+![layout](../../reports/44-pad-drivers/layout.png)
+
+Timing closes at every corner with the derate:
+
+| Corner | Setup, worst (ns) | Hold, worst (ns) |
+|---|---|---|
+| tt | +0.14 `mclk` (101.4 MHz); `clk` +0.16 (101.6 MHz); `pclk` +8.45 | +0.240 |
+| ss | +0.26 `clk` (50.7 MHz); `mclk` +1.10 (67.1 MHz); `pclk` +0.88 (66.1 MHz) | +0.380 |
+| ff | | +0.044 |
+
+| PHY pins (ns) | Receive setup | Receive hold | Transmit setup | Transmit hold |
+|---|---|---|---|---|
+| tt | +1.87 | +2.69 | +1.11 | +1.51 |
+| ss | +2.07 | +1.46 | +0.50 | +0.38 |
+| ff | +1.81 | +3.23 | +1.41 | +1.92 |
+
+Power without the pads is 58.0 mW and IR drop 11.5 mV. Electromigration, antennas, router DRC, KLayout, the density deck and LVS are clean, Magic finds nothing outside the I/O cells, and the routed netlist is proven equivalent to the synthesized one. The 44 SRAM inputs over the slew limit stay waived. The RTL with the per-pad output enables passes the test.
+
+`make gls_sdf` also takes `CORNER=ss` and `CORNER=ff`: the clocks at that corner's specification and the SRAM's read window scaled like its liberty.
+
+The layout before these changes has 45.2% poly across the die and 17.7 to 68.1% in `check_density.py`'s windows. The script sets no limit for poly, and SkyWater's rules have no poly density rule.
+
+Decision: the layout in `reports/44-pad-drivers` is the PCIe x1 chip.

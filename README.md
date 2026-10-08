@@ -4,7 +4,7 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
 
 ## Branch status
 
-This branch holds the SoC with a PCIe Gen1 x1 root port for the TI XIO1100 PHY inside the standalone chip from `main`: 115 signal pads on a 3.2 mm die, three timing corners and the fab checks. The layout in `reports/42-decap-fill` passes signoff at all three corners and the test in timed simulation of the routed netlist.
+This branch holds the SoC with a PCIe Gen1 x1 root port for the TI XIO1100 PHY inside the standalone chip from `main`: 115 signal pads on a 3.2 mm die, three timing corners with 5% on-chip variation, and the fab checks. The layout in `reports/44-pad-drivers` passes all of them.
 
 ## The SoC
 
@@ -33,7 +33,7 @@ Details are in [docs/spec_v6.md](docs/spec_v6.md).
 
 ## Results
 
-All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26; `pipe_rx_clk` is 8 ns from row 38, where the chip grows to 3.2 mm. `_ss_` columns are the slow corner (ss, 100 C, 1.6 V) with `clk` at 20 ns and `mclk` at 16 ns, and `_ff` the fast corner.
+All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26; `pipe_rx_clk` is 8 ns from row 38, where the chip grows to 3.2 mm. `_ss_` columns are the slow corner (ss, 100 C, 1.6 V) with `clk` at 20 ns and `mclk` at 16 ns, and `_ff` the fast corner. From row 43, timing includes 5% on-chip variation.
 
 <!-- metrics -->
 | run | place_density | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | wns_pclk_ns | fmax_pclk_mhz | wns_rx_clk_ns | wns_ss_ns | fmax_ss_mhz | fmax_mclk_ss_mhz | wns_pclk_ss_ns | wns_rx_clk_ss_ns | whs_ff_ns | hold_viol_ff | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | ir_drop_mv | grt_congestion | route_drc | magic_drc | klayout_drc | klayout_drc_waived | density | lvs | em_viol | lec |
@@ -80,6 +80,8 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 40-parser-count | 0.5000 | 0.382 | 0.000 | 0.153 | 0 | 0 | 104.0 | 0.419 | 104.4 | 8.324 | 130.3 | 1.610 | 0.594 | 52.7 | 68.9 | 0.594 | 1.466 | 0.004 | 0 | 0 | 44 | 0 | 0 | 58.76 | 11.30 | 0 | 0 | 0 | 0 | 0 | 219 | clean | 0 | equivalent |
 | 41-decap-budget | 0.5000 | 0.382 | 0.000 | 0.153 | 0 | 0 | 104.0 | 0.419 | 104.4 | 8.324 | 130.3 | 1.610 | 0.594 | 52.7 | 68.9 | 0.594 | 1.466 | 0.004 | 0 | 0 | 44 | 0 | 0 | 58.76 | 11.30 | 0 | 0 | 0 | 0 | 0 | clean | clean | 0 | equivalent |
 | 42-decap-fill | 0.5000 | 0.382 | 0.000 | 0.153 | 0 | 0 | 104.0 | 0.419 | 104.4 | 8.324 | 130.3 | 1.610 | 0.594 | 52.7 | 68.9 | 0.594 | 1.466 | 0.004 | 0 | 0 | 44 | 0 | 0 | 58.76 | 11.30 | 0 | 0 | 0 | 0 | 0 | clean | clean | 0 | equivalent |
+| 43-on-chip-variation | 0.5000 | -0.064 | -0.160 | 0.239 | 4 | 0 | 99.4 | 0.177 | 101.8 | 8.183 | 127.9 | 0.566 | -0.255 | 51.1 | 67.4 | 0.683 | -0.255 | 0.067 | 0 | 0 | 44 | 0 | 0 | 53.84 | 11.00 | 0 | 0 | - | - | - | - | - | 0 | - |
+| 44-pad-drivers | 0.5000 | 0.137 | 0.000 | 0.240 | 0 | 0 | 101.6 | 0.137 | 101.4 | 8.449 | 132.4 | 1.114 | 0.263 | 50.7 | 67.1 | 0.879 | 0.495 | 0.044 | 0 | 0 | 44 | 0 | 0 | 57.96 | 11.50 | 0 | 0 | 0 | 0 | 0 | clean | clean | 0 | equivalent |
 <!-- /metrics -->
 
 ## Journal
@@ -114,7 +116,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 ```
 make sim               # RTL simulation with firmware
 make -j2 gls RUN=dev    # gate-level simulation, flops starting at 0 and at 1
-make gls_sdf RUN=dev    # timed simulation of the routed netlist with the tt signoff delays
+make gls_sdf RUN=dev    # timed simulation of the routed netlist with the tt signoff delays; CORNER=ss|ff
 make all RUN=dev        # synthesis through signoff, then metrics
 make <stage> RUN=dev    # synth floorplan place cts route rcx sta gds lvs klayout_drc metrics
 ```
