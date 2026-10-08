@@ -4,7 +4,7 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
 
 ## Branch status
 
-This branch holds the SoC with a PCIe Gen1 x1 root port for the TI XIO1100 PHY inside the standalone chip from `main`: 115 signal pads on a 3.2 mm die, three timing corners with 5% on-chip variation, and the fab checks. The layout in `reports/44-pad-drivers` passes all of them.
+This branch holds the SoC with a PCIe Gen1 x1 root port and the PCIe PHY on the die, as a hard macro behind an on-chip PIPE, inside the standalone chip from `main`. The macro is a placeholder with the views a licensed PHY ships with; [docs/hard_phy.md](docs/hard_phy.md) covers a real one in its place. The lane leaves the chip on analog pads.
 
 ## The SoC
 
@@ -25,11 +25,11 @@ This branch holds the SoC with a PCIe Gen1 x1 root port for the TI XIO1100 PHY i
                              |                    |                    |
        +------+------+-----+-------+------+  SDRAM controller     PCIe Gen1 x1 root port
        | UART | GPIO | SPI | timer | INTC |   (100 MHz)            (62.5 MHz)
-       +------+------+-----+-------+------+       |                    | TI-PIPE, 125 MHz
-                                           32 MB SDR SDRAM      TI XIO1100 PHY
+       +------+------+-----+-------+------+       |                    | PIPE 32-bit, 62.5 MHz
+                                           32 MB SDR SDRAM      PCIe PHY macro, 2.5 Gb/s lane
 ```
 
-Details are in [docs/spec_v6.md](docs/spec_v6.md).
+Details are in [docs/spec_v7.md](docs/spec_v7.md).
 
 ## Results
 
@@ -94,13 +94,15 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 - [PCIe adapter](docs/journal/pcie.md)
 - [Timing optimization](docs/journal/timing-optimization.md)
 - [PCIe x1 port](docs/journal/pcie-x1.md)
+- [PCIe PHY on die](docs/journal/pcie-phy.md)
 
 ## Layout of the repo
 
 | Path | Contents |
 |---|---|
 | `rtl/` | SoC RTL |
-| `tb/` | Testbench, flash, SRAM, SDRAM, XIO1100 and PCIe endpoint models, firmware |
+| `tb/` | Testbench, flash, SRAM, SDRAM, PCIe PHY, lane and endpoint models, firmware |
+| `macros/` | PCIe PHY placeholder views |
 | `constraints/` | SDC |
 | `synthesis/` | Yosys script |
 | `floorplan/`, `placement/`, `cts/`, `routing/` | OpenROAD stage scripts |
