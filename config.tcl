@@ -38,20 +38,21 @@ proc read_libs {} {
 proc load {stage} {
   global out pdk
   read_libs
-  read_db $out/$stage.odb
-  read_sdc constraints/soc.sdc
-  set_placement_padding -global -left $::dpl_pad -right $::dpl_pad
+  # wire RC from the tech LEF, taken before read_db: set_layer_rc stores its values in the database's layers
   set tech [[ord::get_db] getTech]
   foreach name {met1 met2 met3 met4 met5} {
     set l [$tech findLayer $name]
     set w [ord::dbu_to_microns [$l getWidth]]
-    set r [expr {[$l getResistance] / $w / 1000.0}]
-    set c [expr {[$l getCapacitance] * $w + 2 * [$l getEdgeCapacitance]}]
-    set_layer_rc -layer $name -resistance $r -capacitance [expr {$c * $::grt_cap_scale}]
-    if {$name eq "met2"} {
-      set_wire_rc -signal -resistance $r -capacitance [expr {$c * $::place_cap_scale}]
-    }
+    set r($name) [expr {[$l getResistance] / $w / 1000.0}]
+    set c($name) [expr {[$l getCapacitance] * $w + 2 * [$l getEdgeCapacitance]}]
   }
+  read_db $out/$stage.odb
+  read_sdc constraints/soc.sdc
+  set_placement_padding -global -left $::dpl_pad -right $::dpl_pad
+  foreach name {met1 met2 met3 met4 met5} {
+    set_layer_rc -layer $name -resistance $r($name) -capacitance [expr {$c($name) * $::grt_cap_scale}]
+  }
+  set_wire_rc -signal -resistance $r(met2) -capacitance [expr {$c(met2) * $::place_cap_scale}]
   set_wire_rc -clock -layer met5
   set f [open $pdk/libs.tech/openlane/sky130_fd_sc_hd/no_synth.cells]
   set_dont_use [concat [split [string trim [read $f]]] *lpflow* *probe*]
