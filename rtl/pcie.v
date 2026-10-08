@@ -1,5 +1,5 @@
-// PCIe x1 root port for a TI XIO1100 PHY. AXI4-Lite slave and APB registers on clk; transaction layer, data link
-// layer and LTSSM on pclk; TI-PIPE registers on pipe_rx_clk.
+// PCIe x1 root port for the PHY macro. AXI4-Lite slave and APB registers on clk; PIPE registers, transaction
+// layer, data link layer and LTSSM on pclk, the PHY's MaxPCLK.
 // AXI: 0x4000_0000 to 0x4FFF_FFFF become MRd32 and MWr32 of one DW at the same address; 0x5000_0000 to
 // 0x5FFF_FFFF are configuration space in ECAM layout, CfgRd0 and CfgWr0 to bus 1, device 0. One request in flight.
 // A request that fails returns FFFF_FFFFh and sets a bit in ERROR.
@@ -30,17 +30,16 @@ module pcie #(parameter TSCALE = 1) (
   input       [3:2] paddr,
   input      [31:0] pwdata,
   output reg [31:0] prdata,
-  // TI-PIPE
-  input             pipe_rx_clk,
-  input      [15:0] pipe_rx_data,
-  input       [1:0] pipe_rx_datak,
+  // PIPE
+  input             pipe_pclk,
+  input      [31:0] pipe_rx_data,
+  input       [3:0] pipe_rx_datak,
   input       [2:0] pipe_rx_status,
   input             pipe_rx_valid,
   input             pipe_phy_status,
   input             pipe_rx_elecidle,
-  output            pipe_tx_clk,
-  output     [15:0] pipe_tx_data,
-  output      [1:0] pipe_tx_datak,
+  output     [31:0] pipe_tx_data,
+  output      [3:0] pipe_tx_datak,
   output            pipe_tx_elecidle,
   output            pipe_tx_compliance,
   output            pipe_tx_det_loopback,
@@ -98,7 +97,8 @@ module pcie #(parameter TSCALE = 1) (
   end
 
   // ---------------- clock crossing ----------------
-  wire        pclk, prst;
+  wire        pclk = pipe_pclk;
+  wire        prst;
   wire        c_empty;
   reg         c_pop, r_push;
   wire [68:0] c_data;
@@ -257,13 +257,12 @@ module pcie #(parameter TSCALE = 1) (
   assign st_p = st_q;
 
   pcie_pipe u_pipe (
-    .arst(arst), .rx_clk(pipe_rx_clk),
+    .arst(arst), .pclk(pclk),
     .rx_data(pipe_rx_data), .rx_datak(pipe_rx_datak), .rx_status(pipe_rx_status), .rx_valid(pipe_rx_valid),
     .phy_status(pipe_phy_status), .rx_elecidle(pipe_rx_elecidle),
-    .tx_clk(pipe_tx_clk), .tx_data(pipe_tx_data), .tx_datak(pipe_tx_datak), .tx_elecidle(pipe_tx_elecidle),
+    .tx_data(pipe_tx_data), .tx_datak(pipe_tx_datak), .tx_elecidle(pipe_tx_elecidle),
     .tx_compliance(pipe_tx_compliance), .tx_det_lb(pipe_tx_det_loopback), .rx_polarity(pipe_rx_polarity),
-    .powerdown(pipe_powerdown),
-    .pclk(pclk), .prst(prst),
+    .powerdown(pipe_powerdown), .prst(prst),
     .r_data(r_d), .r_k(r_k), .r_st(r_st), .r_val(r_val), .r_phys(r_phys), .r_ei(r_ei),
     .t_data(t_d), .t_k(t_k), .t_comp(t_comp), .t_ei(t_ei), .t_det(t_det), .t_pol(t_pol), .t_pd(t_pd)
   );

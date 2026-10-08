@@ -1,30 +1,27 @@
-// TI-PIPE front end on pipe_rx_clk (125 MHz, two symbols per clock). Receive pins are captured on the falling
-// edge, then on the rising edge, and two words are paired into four symbols for pclk. pclk is pipe_rx_clk divided
-// by 2 in a flop; words cross on the rising edge where pclk falls, half a pclk period from either pclk edge.
-// Transmit half-words leave falling-edge registers, low half first; pipe_tx_clk comes from a flop on each edge.
+// PIPE registers for the PHY macro, 32 bits per pclk with symbol 0 in bits 7:0. pclk is the PHY's MaxPCLK through
+// the clock tree, which also clocks the PHY's PCLK pin. One RxStatus, RxValid and PhyStatus per clock stand for both
+// 16-bit words of the MAC side.
 module pcie_pipe (
   input             arst,          // asynchronous: chip reset or the PHY held in reset
-  input             rx_clk,
-  input      [15:0] rx_data,
-  input       [1:0] rx_datak,
+  input             pclk,
+  input      [31:0] rx_data,
+  input       [3:0] rx_datak,
   input       [2:0] rx_status,
   input             rx_valid,
   input             phy_status,
   input             rx_elecidle,
-  output            tx_clk,
-  output reg [15:0] tx_data,
-  output reg  [1:0] tx_datak,
+  output reg [31:0] tx_data,
+  output reg  [3:0] tx_datak,
   output reg        tx_elecidle,
   output reg        tx_compliance,
   output reg        tx_det_lb,
   output reg        rx_polarity,
   output reg  [1:0] powerdown,
-  // pclk side: symbol 0 in bits 7:0
-  output            pclk,
+  // MAC side: symbol 0 in bits 7:0
   output            prst,
   output reg [31:0] r_data,
   output reg  [3:0] r_k,
-  output reg  [5:0] r_st,          // RX_STATUS of the low and high word
+  output reg  [5:0] r_st,          // RxStatus of the low and high word
   output reg  [1:0] r_val,
   output reg  [1:0] r_phys,
   output reg        r_ei,
@@ -36,61 +33,25 @@ module pcie_pipe (
   input             t_pol,
   input       [1:0] t_pd
 );
-  // resets: asserted at once, released on the clock they reset
-  reg [1:0] rr, pr;
-  reg       ph, ps;
-  always @(posedge rx_clk or posedge arst)
-    if (arst) rr <= 2'b00; else rr <= {rr[0], 1'b1};
-  wire rrst = !rr[1];
-  always @(posedge rx_clk or posedge arst)
-    if (arst) ph <= 1'b0; else if (rrst) ph <= 1'b0; else ph <= !ph;
-  assign pclk = ph;
-  // ps follows ph and carries the phase to data pins, so the pclk net drives clock pins only
-  always @(posedge rx_clk or posedge arst)
-    if (arst) ps <= 1'b0; else if (rrst) ps <= 1'b0; else ps <= !ps;
+  // reset: asserted at once, released on the second pclk edge
+  reg [1:0] pr;
   always @(posedge pclk or posedge arst)
     if (arst) pr <= 2'b00; else pr <= {pr[0], 1'b1};
   assign prst = !pr[1];
 
-  // receive: {data, k, status, valid, phy_status, elecidle} per word
-  reg [23:0] rx_n, rx_p, rx_q;
-  reg [47:0] rx2;
-  always @(negedge rx_clk) rx_n <= {rx_data, rx_datak, rx_status, rx_valid, phy_status, rx_elecidle};
-  always @(posedge rx_clk) begin
-    rx_p <= rx_n;
-    rx_q <= rx_p;
-    if (ps) rx2 <= {rx_p, rx_q};
-  end
   always @(posedge pclk) begin
-    r_data <= {rx2[47:32], rx2[23:8]};
-    r_k    <= {rx2[31:30], rx2[7:6]};
-    r_st   <= {rx2[29:27], rx2[5:3]};
-    r_val  <= {rx2[26], rx2[2]};
-    r_phys <= {rx2[25], rx2[1]};
-    r_ei   <= rx2[24];
+    r_data <= rx_data;
+    r_k    <= rx_datak;
+    r_st   <= {2{rx_status}};
+    r_val  <= {2{rx_valid}};
+    r_phys <= {2{phy_status}};
+    r_ei   <= rx_elecidle;
+    tx_data  <= t_data;
+    tx_datak <= t_k;
   end
 
-  // transmit: the next half-word is chosen on the rising edge and leaves a falling-edge register, low half first
-  localparam [23:0] TH_RESET = {2'b10, 1'b0, 1'b0, 1'b1, 19'b0};   // P1, electrical idle
-  reg [42:0] tw;
-  reg [23:0] th;           // {powerdown, polarity, detect, elecidle, compliance, k, data}
-  always @(posedge rx_clk or posedge arst)
-    if (arst) begin
-      tw <= {TH_RESET[23:19], 38'b0};
-      th <= TH_RESET;
-    end else begin
-      if (ps) tw <= {t_pd, t_pol, t_det, t_ei, t_comp, t_k, t_data};
-      th <= {tw[42:38], ps ? {tw[37], tw[35:34], tw[31:16]} : {tw[36], tw[33:32], tw[15:0]}};
-    end
-  always @(negedge rx_clk or posedge arst)
-    if (arst) {powerdown, rx_polarity, tx_det_lb, tx_elecidle, tx_compliance, tx_datak, tx_data} <= TH_RESET;
-    else      {powerdown, rx_polarity, tx_det_lb, tx_elecidle, tx_compliance, tx_datak, tx_data} <= th;
-
-  // pipe_tx_clk from a flop on each edge, so it leaves through the same clock tree and flops as the data
-  reg tc_p, tc_n;
-  always @(posedge rx_clk or posedge arst)
-    if (arst) tc_p <= 1'b0; else tc_p <= !tc_p;
-  always @(negedge rx_clk or posedge arst)
-    if (arst) tc_n <= 1'b0; else tc_n <= tc_p;
-  assign tx_clk = tc_p ^ tc_n;
+  // control pins at their PIPE reset values while the PHY is in reset: P1, electrical idle
+  always @(posedge pclk or posedge arst)
+    if (arst) {powerdown, rx_polarity, tx_det_lb, tx_elecidle, tx_compliance} <= {2'b10, 1'b0, 1'b0, 1'b1, 1'b0};
+    else {powerdown, rx_polarity, tx_det_lb, tx_elecidle, tx_compliance} <= {t_pd, t_pol, t_det, t_ei, t_comp[0]};
 endmodule
