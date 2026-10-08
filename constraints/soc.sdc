@@ -7,6 +7,9 @@ create_generated_clock -name pclk -source [get_ports pipe_rx_clk] -divide_by 2 \
   [get_pins -of_objects [get_nets u_core.u_pcie.pclk] -filter "direction == output"]
 create_generated_clock -name tx_clk -source [get_ports pipe_rx_clk] -divide_by 1 [get_ports pipe_tx_clk]
 set_clock_uncertainty 0.25 [all_clocks]
+# on-chip variation: 5% on every cell and wire delay
+set_timing_derate -early 0.95
+set_timing_derate -late 1.05
 
 # clock domain crossings: bounded delay, no phase relationship
 set_max_delay 10 -ignore_clock_latency -from [get_clocks clk] -to [get_clocks mclk]
