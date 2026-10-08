@@ -32,9 +32,10 @@ def width(layer, x0, y0, x1, y1):
     return max(b.width(), b.height()) * ly.dbu
 
 
-def cuts(pair, x, y):
+# PDNSim may put a via's two nodes apart, the lower one on the nearest node of its metal: look across both
+def cuts(pair, x0, y0, x1, y1):
     name, cut = via[pair]
-    p = pya.Region(pya.Box(um(x) - 1, um(y) - 1, um(x) + 1, um(y) + 1))
+    p = pya.Region(pya.Box(um(min(x0, x1)) - 1, um(min(y0, y1)) - 1, um(max(x0, x1)) + 1, um(max(y0, y1)) + 1))
     lo, hi = (shapes(metal[m], p.bbox()).interacting(p) for m in pair)
     n = pya.Region(top.begin_shapes_rec_touching(ly.find_layer(*cut), (lo & hi).bbox())).inside(lo & hi).count()
     return n or pya.Region(top.begin_shapes_rec_touching(ly.find_layer(*cut), p.bbox().enlarged(um(2), um(2)))).count()
@@ -54,7 +55,7 @@ for net in ("VPWR", "VGND"):
             pair = tuple(sorted((a, b)))
             if pair not in via or i <= limit[via[pair][0]]:
                 continue
-            kind, cap = via[pair][0], limit[via[pair][0]] * cuts(pair, x0, y0)
+            kind, cap = via[pair][0], limit[via[pair][0]] * cuts(pair, x0, y0, x1, y1)
         if cap == 0:
             over.append(f"{net} {kind} {i:.3f} mA at ({x0:.2f}, {y0:.2f}), no metal found at the node")
             continue
