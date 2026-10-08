@@ -1,13 +1,10 @@
 source config.tcl
-load cts
+load grt
 set_propagated_clock [all_clocks]
 
 set_routing_layers -signal met1-met5 -clock met1-met5
-global_route -congestion_report_file $rep/congestion.rpt
+global_route
 estimate_parasitics -global_routing
-repair_design -slew_margin 50 -cap_margin 10
-repair_timing -setup -skip_buffering
-repair_timing -hold -hold_margin 0.4
 # slew and load once more on the gates timing repair cloned or resized, with margin
 repair_design -slew_margin 50 -cap_margin 10
 global_route -start_incremental

@@ -77,6 +77,9 @@ cts:
 
 .PHONY: route
 route:
+	openroad -no_init -threads max -exit -log $(OUT)/grt.log routing/grt.tcl > /dev/null
+	for c in ff ss; do CORNER=$$c openroad -no_init -threads max -exit -log $(OUT)/grt_$$c.log routing/corner.tcl \
+	  > /dev/null || exit 1; done
 	openroad -no_init -threads max -exit -log $(OUT)/route.log routing/route.tcl > /dev/null
 	openroad -no_init -threads max -exit -log $(OUT)/finish.log routing/finish.tcl > /dev/null
 

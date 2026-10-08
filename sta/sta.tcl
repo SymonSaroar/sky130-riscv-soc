@@ -16,19 +16,8 @@ if {$corner eq "tt"} {
 read_liberty $out/gpiov2_$corner.lib
 read_verilog $out/chip_top.final.v
 link_design chip_top
-# the slow corner is specified at clk 50 MHz and mclk 62.5 MHz, crossings bounded by 16 ns
-if {$corner eq "ss"} {
-  set f [open constraints/soc.sdc]
-  set sdc [string map {"-name clk  -period 10" "-name clk  -period 20" "-name mclk -period 10" "-name mclk -period 16"
-                       "set_max_delay 10" "set_max_delay 16"} [read $f]]
-  close $f
-  set f [open $out/soc_ss.sdc w]
-  puts -nonewline $f $sdc
-  close $f
-  read_sdc $out/soc_ss.sdc
-} else {
-  read_sdc constraints/soc.sdc
-}
+source constraints/corner.tcl
+read_corner_sdc $corner $out
 set_propagated_clock [all_clocks]
 read_spef $out/chip_top.$rc($corner).spef
 
