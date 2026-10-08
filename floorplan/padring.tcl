@@ -2,30 +2,23 @@
 # pairs, and the vssd/vccd pair keeps bus slices of at least 12 um on its outer sides, where its overlays reach.
 # Signal pads are netlist instances p_<name>.p; conn is a slice that ties VCCHIB to VCCD and VSWITCH to VDDIO.
 # Rows are in the cells' own left-to-right order: north and west run with the coordinate, south and east against it.
-set row(south) {conn gpio3 gpio2 gpio1 gpio0 vdda vssa mclk sdram_clk sdram_cke sdram_cs_n sdram_ras_n sdram_cas_n
-                sdram_we_n sdram_dqm0 sdram_dqm1 vddio vssio sdram_ba0 sdram_ba1 sdram_a0 sdram_a1 sdram_a2 sdram_a3
-                sdram_a4 sdram_a5 vssd vccd sdram_a6 sdram_a7 sdram_a8 sdram_a9 sdram_a10 sdram_a11 sdram_a12}
-set row(east)  {conn pipe_tx_data0 pipe_tx_data1 pipe_tx_data2 pipe_tx_data3 pipe_tx_data4 pipe_tx_data5 pipe_tx_data6
-                pipe_tx_data7 vddio vssio pipe_tx_clk pipe_tx_data8 pipe_tx_data9 pipe_tx_data10 pipe_tx_data11
-                pipe_tx_data12 pipe_tx_data13 pipe_tx_data14 pipe_tx_data15 pipe_tx_datak0 pipe_tx_datak1 vssd vccd
-                pipe_tx_elecidle pipe_tx_compliance pipe_tx_det_loopback pipe_rx_polarity pipe_powerdown0
-                pipe_powerdown1 vddio vssio pipe_reset_n gpio15 gpio14}
-set row(north) {conn rst_n clk uart_rx uart_tx pipe_rx_elecidle pipe_phy_status pipe_rx_valid pipe_rx_status2
-                pipe_rx_status1 pipe_rx_status0 pipe_rx_datak1 pipe_rx_datak0 vddio vssio pipe_rx_data15
-                pipe_rx_data14 pipe_rx_data13 pipe_rx_data12 pipe_rx_data11 pipe_rx_data10 pipe_rx_data9 pipe_rx_data8
-                pipe_rx_clk vssd vccd pipe_rx_data7 pipe_rx_data6 pipe_rx_data5 pipe_rx_data4 pipe_rx_data3
-                pipe_rx_data2 pipe_rx_data1 pipe_rx_data0}
-set row(west)  {conn sdram_dq0 sdram_dq1 sdram_dq2 sdram_dq3 sdram_dq4 sdram_dq5 sdram_dq6 sdram_dq7 vddio vssio
-                sdram_dq8 sdram_dq9 sdram_dq10 sdram_dq11 sdram_dq12 sdram_dq13 sdram_dq14 sdram_dq15 vssd vccd
-                spi_cs_n spi_sclk spi_mosi spi_miso gpio4 gpio5 gpio6 gpio7 gpio8 gpio9 gpio10 gpio11 gpio12 gpio13}
+set row(south) {conn sdram_a0 sdram_a1 sdram_a2 sdram_a3 vddio vssio sdram_a4 sdram_a5 sdram_a6 sdram_a7 sdram_a8
+                vssd vccd sdram_a9 sdram_a10 sdram_a11 sdram_a12 vdda vssa sdram_ba0 sdram_ba1 gpio0 gpio1}
+set row(east)  {conn sdram_dq0 sdram_dq1 sdram_dq2 sdram_dq3 vddio vssio avss avdd pcie_rext pcie_refclk_n pcie_refclk_p
+                pcie_rxn pcie_rxp pcie_txn pcie_txp avss avdd vssd vccd sdram_dq4 sdram_dq5 sdram_dq6 sdram_dq7 sdram_dq8}
+set row(north) {conn spi_cs_n spi_sclk spi_mosi spi_miso uart_tx uart_rx rst_n clk vddio vssio mclk sdram_clk
+                sdram_cke sdram_cs_n vssd vccd sdram_ras_n sdram_cas_n sdram_we_n sdram_dqm0 sdram_dqm1 gpio2 gpio3}
+set row(west)  {conn gpio15 gpio14 gpio13 gpio12 gpio11 gpio10 vddio vssio gpio9 gpio8 gpio7 gpio6 gpio5 gpio4
+                vssd vccd sdram_dq15 sdram_dq14 sdram_dq13 sdram_dq12 sdram_dq11 sdram_dq10 sdram_dq9}
 
 array set supply_pad {
   vccd  sky130_ef_io__vccd_lvc_clamped_pad   vssd  sky130_ef_io__vssd_lvc_clamped_pad
   vddio sky130_ef_io__vddio_hvc_clamped_pad  vssio sky130_ef_io__vssio_hvc_clamped_pad
   vdda  sky130_ef_io__vdda_hvc_clamped_pad   vssa  sky130_ef_io__vssa_hvc_clamped_pad
+  avdd  sky130_ef_io__vccd_lvc_clamped3_pad  avss  sky130_ef_io__vssd_lvc_clamped3_pad
   conn  sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 }
-array set mirrored {vssio 1 vssa 1 vssd 1}
+array set mirrored {vssio 1 vssa 1 vssd 1 avss 1}
 array set base {south R180 north R0 west R90 east R270}
 array set flip {south MX north MY west MYR90 east MXR90}
 set corner sky130_ef_io__corner_pad
@@ -78,7 +71,8 @@ foreach side {south east north west} {
   set len [expr {$d - $lo - ($lo - $o)}]
   set used 0
   foreach p $pads { set used [expr {$used + [lindex [io_size $p] 0]}] }
-  set free [expr {int(round($len - $used))}]
+  # each avss/avdd pair keeps a 12 um slice on its outer sides, like vssd/vccd
+  set free [expr {int(round($len - $used)) - 24 * [llength [lsearch -all $pads avss]]}]
   if {$free < 24} { error "pad ring: the $side side needs [expr {24 - $free}] um more" }
 
   # in the cells' own order: the spare length split around the vssd/vccd pair, gpio pads alternately mirrored
@@ -86,12 +80,14 @@ foreach side {south east north west} {
   set g 0
   foreach p $pads {
     if {$p eq "vssd"} { lappend seq [list gap [expr {$free / 2}]] }
+    if {$p eq "avss"} { lappend seq [list gap 12] }
     if {[info exists supply_pad($p)]} {
       lappend seq [list $p [info exists mirrored($p)]]
     } else {
       lappend seq [list $p [expr {[incr g] % 2 == 0}]]
     }
     if {$p eq "vccd"} { lappend seq [list gap [expr {$free - $free / 2}]] }
+    if {$p eq "avdd"} { lappend seq [list gap 12] }
   }
   if {$side in {south east}} { set seq [lreverse $seq] }
 

@@ -21,7 +21,7 @@ foreach layer {li1 met1 met2 met3 met4 met5} {
 
 source floorplan/padring.tcl
 # chip pins on the bond pads
-place_io_terminals [get_pins */PAD]
+place_io_terminals [get_pins {*/PAD */P_PAD}]
 
 # Program SRAM in the lower-left corner, cache SRAM in the upper-left corner (mirrored),
 # with routing channels on their outer sides and both fetch ports facing the core.
@@ -32,6 +32,21 @@ place_macro -macro_name u_core.u_sram.mem -orientation R0 \
   -location [list $x0 [expr {[ord::dbu_to_microns [$c yMin]] + $macro_channel}]]
 place_macro -macro_name u_core.u_icache.mem -orientation MX \
   -location [list $x0 [expr {[ord::dbu_to_microns [$c yMax]] - $macro_channel - $h}]]
+
+# PCIe PHY against the east edge of the core, centred on its pads: no rows between its pad-side pins and the core
+# ring, so its analog supply straps pass under the ring clear of the rails' vias
+set ys {}
+foreach inst [[ord::get_db_block] getInsts] {
+  if {[string match p_pcie_* [$inst getName]]} {
+    set bb [$inst getBBox]
+    lappend ys [expr {([$bb yMin] + [$bb yMax]) / 2}]
+  }
+}
+set m [[ord::get_db] findMaster pcie_phy]
+set yc [ord::dbu_to_microns [expr {([tcl::mathfunc::min {*}$ys] + [tcl::mathfunc::max {*}$ys]) / 2}]]
+place_macro -macro_name u_phy -orientation R0 \
+  -location [list [expr {[ord::dbu_to_microns [$c xMax]] - [ord::dbu_to_microns [$m getWidth]]}] \
+                  [expr {$yc - [ord::dbu_to_microns [$m getHeight]] / 2}]]
 
 tapcell -distance 13 -tapcell_master sky130_fd_sc_hd__tapvpwrvgnd_1 \
   -endcap_master sky130_fd_sc_hd__decap_3 -halo_width_x 10 -halo_width_y 10

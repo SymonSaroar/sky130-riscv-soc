@@ -8,8 +8,8 @@ set tech_lef $sc/techlef/sky130_fd_sc_hd__nom.tlef
 set out      $::env(OUT)
 set rep      $::env(REP)
 
-# floorplan: 3.2 mm die, the pad ring 20 um in from the edge, the core inside the pad ring and the power ring
-set die      3200
+# floorplan: 2.4 mm die, the pad ring 20 um in from the edge, the core inside the pad ring and the power ring
+set die      2400
 set io_off   20
 set core_off 285
 set macro_channel 40
@@ -34,9 +34,11 @@ proc read_libs {{corner tt}} {
   read_lef $sc/lef/sky130_ef_sc_hd.lef
   read_lef $sm/lef/$sram.lef
   read_lef $io/lef/sky130_ef_io.lef
+  read_lef $::env(OUT)/pcie_phy.lef
   read_liberty $sc/lib/sky130_fd_sc_hd__$pvt($corner).lib
   read_liberty [expr {$corner eq "tt" ? "$sm/lib/${sram}_TT_1p8V_25C.lib" : "$::env(OUT)/sram_$corner.lib"}]
   read_liberty $::env(OUT)/gpiov2_$corner.lib
+  read_liberty $::env(OUT)/pcie_phy_$corner.lib
 }
 
 proc load {stage {corner tt}} {

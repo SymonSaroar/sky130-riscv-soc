@@ -5,7 +5,8 @@ import pya
 
 W, H = 800.0, 800.0
 NAME = "pcie_phy"
-# PIPE on the north edge, lane and analog pins on the south edge, supplies as met4 stripes
+# PIPE on the west edge, which faces the core; lane, reference clock, REXT and the analog supply bars on the east
+# edge, which faces the pads; VCCD and VSSD as met4 stripes for the core grid
 PIPE_IN = [("pclk", 1), ("reset_n", 1), ("tx_data", 32), ("tx_datak", 4), ("tx_elecidle", 1), ("tx_compliance", 1),
            ("tx_detectrx_loopback", 1), ("rx_polarity", 1), ("powerdown", 2)]
 PIPE_OUT = [("max_pclk", 1), ("rx_data", 32), ("rx_datak", 4), ("rx_valid", 1), ("rx_status", 3), ("rx_elecidle", 1),
@@ -18,7 +19,7 @@ T_SETUP, T_HOLD, T_CQ, T_TR = 1.0, 0.5, 1.5, 0.2
 SCALE = {"tt": 1.0, "ss": 2.1, "ff": 0.64}
 LIB_NAME = {"tt": "tt_025C_1v80", "ss": "ss_100C_1v60", "ff": "ff_n40C_1v95"}
 LEAKAGE_NW = 10e6                 # 10 mW on VCCD
-LAYER = {"met2": (69, 20, 16, 5), "met4": (71, 20, 16, 5)}
+LAYER = {"met3": (70, 20, 16, 5), "met4": (71, 20, 16, 5)}
 BOUNDARY = (235, 4)
 
 def bits(name, n):
@@ -31,16 +32,19 @@ pipe_pins = [(p, "input") for name, n in PIPE_IN for p in bits(name, n)] + \
 # pin rectangles (x0, y0, x1, y1) in um
 rects = {}
 pitch = 5.0
-x = (W - pitch * (len(pipe_pins) - 1)) / 2
+y = (H - pitch * (len(pipe_pins) - 1)) / 2
 for p, _ in pipe_pins:
-    rects[p] = ("met2", [(x - 0.14, H - 2.0, x + 0.14, H)])
-    x += pitch
-x = (W - 60.0 * (len(LANE) - 1)) / 2
-for p, _ in LANE:
-    rects[p] = ("met2", [(x - 1.0, 0.0, x + 1.0, 4.0)])
-    x += 60.0
-for i, (p, _) in enumerate(SUPPLY):
-    rects[p] = ("met4", [(x0 + 12.0 * i, 10.0, x0 + 12.0 * i + 6.0, H - 10.0) for x0 in range(40, int(W) - 60, 100)])
+    rects[p] = ("met3", [(0.0, y - 0.15, 2.0, y + 0.15)])
+    y += pitch
+# the pad-side pins at the 75 um pitch of the analog pads, TXP lowest, the supply bars in the gaps next to the outer
+# analog pads
+for i, (p, _) in enumerate(LANE):
+    y = H / 2 + 75.0 * (i - 3)
+    rects[p] = ("met3", [(W - 4.0, y - 2.0, W, y + 2.0)])
+rects["avdd"] = ("met3", [(W - 4.0, H / 2 + 167.5, W, H / 2 + 207.5)])
+rects["avss"] = ("met3", [(W - 4.0, H / 2 - 207.5, W, H / 2 - 167.5)])
+for i, p in enumerate(("vccd", "vssd")):
+    rects[p] = ("met4", [(x0 + 20.0 * i, 10.0, x0 + 20.0 * i + 6.0, H - 10.0) for x0 in range(40, int(W) - 60, 100)])
 
 
 def lef():
@@ -50,17 +54,19 @@ def lef():
     for p, use in [(p, None) for p, _ in pipe_pins] + [(p, None) for p, _ in LANE] + SUPPLY:
         layer, rs = rects[p]
         d = "INOUT" if use else dirs[p].upper()
-        s.append(f"  PIN {p}\n    DIRECTION {d} ;\n    USE {use or ('CLOCK' if p in ('pclk', 'max_pclk') else 'SIGNAL')} ;")
+        # MaxPCLK is a signal pin, so OpenROAD takes it as the driver of the pclk tree
+        s.append(f"  PIN {p}\n    DIRECTION {d} ;\n    USE {use or ('CLOCK' if p == 'pclk' else 'SIGNAL')} ;")
         s.append("    PORT")
         for r in rs:
             s.append(f"      LAYER {layer} ;\n        RECT {r[0]:.3f} {r[1]:.3f} {r[2]:.3f} {r[3]:.3f} ;")
         s.append(f"    END\n  END {p}")
-    # blocked below met5 apart from the pins: met2 clear of the pin rows, met4 between the stripes
+    # blocked below met5 apart from the pins: met3 clear of the pin bands at the west and east edges, met4 between
+    # the stripes
     s.append("  OBS")
-    for layer in ("li1", "met1", "met3"):
+    for layer in ("li1", "met1", "met2"):
         s.append(f"    LAYER {layer} ;\n      RECT 0.000 0.000 {W:.3f} {H:.3f} ;")
-    s.append(f"    LAYER met2 ;\n      RECT 0.000 6.000 {W:.3f} {H - 4.0:.3f} ;")
-    xs = sorted(r for p, _ in SUPPLY for r in rects[p][1])
+    s.append(f"    LAYER met3 ;\n      RECT 6.000 0.000 {W - 6.0:.3f} {H:.3f} ;")
+    xs = sorted(r for p in ("vccd", "vssd") for r in rects[p][1])
     s.append("    LAYER met4 ;")
     edge = 0.0
     for r in xs:
@@ -93,7 +99,7 @@ def lib(corner):
         if name == "pclk":
             s.append("      clock : true;\n      capacitance : 0.020;")
         elif name == "max_pclk":
-            s.append("      clock : true;")
+            pass        # from the PLL: no arc from PCLK; create_clock sits on this pin
         elif d == "input":
             s.append("      capacitance : 0.005;")
             for kind, v in (("setup_rising", T_SETUP * (k if corner == "ss" else 1.0)), ("hold_rising", T_HOLD)):
