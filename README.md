@@ -4,7 +4,7 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
 
 ## Branch status
 
-This branch holds the SoC with a PCIe Gen1 x1 root port and the PCIe PHY on the die, as a hard macro behind an on-chip PIPE, inside the standalone chip from `main`. The macro is a placeholder with the views a licensed PHY ships with; [docs/hard_phy.md](docs/hard_phy.md) covers a real one in its place. The lane leaves the chip on analog pads.
+This branch holds the SoC with a PCIe Gen1 x1 root port and the PCIe PHY on the die, as a hard macro behind an on-chip PIPE, inside the standalone chip from `main`. The macro is a placeholder with the views a licensed PHY ships with; [docs/hard_phy.md](docs/hard_phy.md) covers a real one in its place. The lane leaves the chip on analog pads. The layout in `reports/45-phy-macro` passes the fab checks and closes timing at three corners with 5% on-chip variation.
 
 ## The SoC
 
@@ -31,9 +31,24 @@ This branch holds the SoC with a PCIe Gen1 x1 root port and the PCIe PHY on the 
 
 Details are in [docs/spec_v7.md](docs/spec_v7.md).
 
+## The chip
+
+![chip layout](reports/45-phy-macro/layout.png)
+
+| | |
+|---|---|
+| Die | 2.4 x 2.4 mm standalone die, SkyWater seal ring, 64 digital signal pads, 7 analog pads for the PCIe lane and 22 supply pads in a ring built to SkyWater's I/O guide |
+| PCIe PHY | 800 x 800 µm placeholder macro against the east edge of the core, its lane pins level with their pads, AVDD and AVSS from their own clamped pads |
+| Clocks | `clk` and `mclk` at 100 MHz typical, 50 and 62.5 MHz at the slow corner; `pclk` at 62.5 MHz from the PHY at every corner |
+| Timing | With 5% on-chip variation: tt +0.13 / +0.17 ns setup, +0.219 ns hold; ss +0.23 / +1.06 / +0.56 ns setup; ff +0.052 ns hold |
+| Power | 76.3 mW without the pad cells, 10 mW of it the placeholder's; 15.5 mV IR drop; every power-grid segment within its electromigration limit |
+| Physical checks | KLayout DRC clean on the whole GDS with nothing waived, LVS clean with the PHY as a black box, antennas 0, every layer filled by the PDK fill generator, PDK density deck clean |
+| Equivalence | The routed netlist is proven equivalent to the synthesized one |
+| Simulation | The test passes on the RTL with the lane as 2.5 Gb/s bit streams through the analog pads |
+
 ## Results
 
-All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26; `pipe_rx_clk` is 8 ns from row 38, where the chip grows to 3.2 mm. `_ss_` columns are the slow corner (ss, 100 C, 1.6 V) with `clk` at 20 ns and `mclk` at 16 ns, and `_ff` the fast corner. From row 43, timing includes 5% on-chip variation.
+All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26; `pipe_rx_clk` is 8 ns from row 38, where the chip grows to 3.2 mm. `_ss_` columns are the slow corner (ss, 100 C, 1.6 V) with `clk` at 20 ns and `mclk` at 16 ns, and `_ff` the fast corner. From row 43, timing includes 5% on-chip variation. Row 45 moves the PHY onto the die: a 2.4 mm chip, with `pclk` at 16 ns from the PHY's MaxPCLK and no `pipe_rx_clk`.
 
 <!-- metrics -->
 | run | place_density | wns_ns | tns_ns | whs_ns | viol_endpoints | hold_viol | fmax_mhz | wns_mclk_ns | fmax_mclk_mhz | wns_pclk_ns | fmax_pclk_mhz | wns_rx_clk_ns | wns_ss_ns | fmax_ss_mhz | fmax_mclk_ss_mhz | wns_pclk_ss_ns | wns_rx_clk_ss_ns | whs_ff_ns | hold_viol_ff | slew_viol | slew_waived | cap_viol | antenna_nets | power_mw | ir_drop_mv | grt_congestion | route_drc | magic_drc | klayout_drc | klayout_drc_waived | density | lvs | em_viol | lec |
@@ -82,6 +97,7 @@ All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timin
 | 42-decap-fill | 0.5000 | 0.382 | 0.000 | 0.153 | 0 | 0 | 104.0 | 0.419 | 104.4 | 8.324 | 130.3 | 1.610 | 0.594 | 52.7 | 68.9 | 0.594 | 1.466 | 0.004 | 0 | 0 | 44 | 0 | 0 | 58.76 | 11.30 | 0 | 0 | 0 | 0 | 0 | clean | clean | 0 | equivalent |
 | 43-on-chip-variation | 0.5000 | -0.064 | -0.160 | 0.239 | 4 | 0 | 99.4 | 0.177 | 101.8 | 8.183 | 127.9 | 0.566 | -0.255 | 51.1 | 67.4 | 0.683 | -0.255 | 0.067 | 0 | 0 | 44 | 0 | 0 | 53.84 | 11.00 | 0 | 0 | - | - | - | - | - | 0 | - |
 | 44-pad-drivers | 0.5000 | 0.137 | 0.000 | 0.240 | 0 | 0 | 101.6 | 0.137 | 101.4 | 8.449 | 132.4 | 1.114 | 0.263 | 50.7 | 67.1 | 0.879 | 0.495 | 0.044 | 0 | 0 | 44 | 0 | 0 | 57.96 | 11.50 | 0 | 0 | 0 | 0 | 0 | clean | clean | 0 | equivalent |
+| 45-phy-macro | 0.5000 | 0.127 | 0.000 | 0.219 | 0 | 0 | 101.3 | 0.166 | 101.7 | 8.219 | 128.5 | - | 0.227 | 50.6 | 66.9 | 0.563 | - | 0.052 | 0 | 0 | 44 | 0 | 0 | 76.34 | 15.50 | 0 | 0 | 0 | 0 | 0 | clean | clean | 0 | equivalent |
 <!-- /metrics -->
 
 ## Journal
