@@ -37,4 +37,6 @@ The `pclk` figures include the PIPE paths into and out of the macro. Power witho
 
 The GDS holds the placeholder: an outline with pins. A chip that links to a device needs a licensed PHY in its place, as [hard_phy.md](../hard_phy.md) sets out.
 
-Decision: the layout in `reports/45-phy-macro` is the PCIe PHY chip.
+The closest open SKY130 serial link, [OpenSerDes](https://arxiv.org/abs/2105.13256), shows 2 Gb/s in post-layout simulation, below the 2.5 GT/s of a PCIe lane.
+
+Decision: this branch stays a reference for integrating a hard PHY, with the layout in `reports/45-phy-macro`; the PCIe chip is the one on `pcie-x1`.

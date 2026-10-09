@@ -4,7 +4,7 @@ A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each resu
 
 ## Branch status
 
-This branch holds the SoC with a PCIe Gen1 x1 root port and the PCIe PHY on the die, as a hard macro behind an on-chip PIPE, inside the standalone chip from `main`. The macro is a placeholder with the views a licensed PHY ships with; [docs/hard_phy.md](docs/hard_phy.md) covers a real one in its place. The lane leaves the chip on analog pads. The layout in `reports/45-phy-macro` passes the fab checks and closes timing at three corners with 5% on-chip variation.
+This branch is a reference for integrating a PCIe PHY on the die: the SoC with a PCIe Gen1 x1 root port, the PHY as a hard macro behind an on-chip PIPE and the lane on analog pads, inside the standalone chip from `main`. The macro is an empty placeholder with the views a licensed PHY ships with, and a chip built from this branch has no working PCIe link; [docs/hard_phy.md](docs/hard_phy.md) covers a real PHY in its place. The working PCIe chip is on `pcie-x1`. The layout in `reports/45-phy-macro` passes the fab checks and closes timing at three corners with 5% on-chip variation.
 
 ## The SoC
 
