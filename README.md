@@ -31,6 +31,21 @@ This branch holds the SoC with a PCIe Gen1 x1 root port for the TI XIO1100 PHY i
 
 Details are in [docs/spec_v6.md](docs/spec_v6.md).
 
+## The chip
+
+![chip layout](reports/44-pad-drivers/layout.png)
+
+| | |
+|---|---|
+| Die | 3.2 x 3.2 mm standalone die, SkyWater seal ring, 115 signal pads and 20 supply pads in a ring built to SkyWater's I/O guide |
+| PCIe | Gen1 x1 root port; TI-PIPE to a TI XIO1100 PHY, 16 bits each way at 125 MHz, every PHY pin with 0.38 ns or more to spare |
+| Clocks | `clk` and `mclk` at 100 MHz typical, 50 and 62.5 MHz at the slow corner; `pclk` at 62.5 MHz at every corner |
+| Timing | With 5% on-chip variation: tt +0.16 / +0.14 ns setup, +0.240 ns hold; ss +0.26 / +1.10 / +0.88 ns setup; ff +0.044 ns hold |
+| Power | 58.0 mW without the pad cells, 11.5 mV IR drop from the supply pads, every power-grid segment within its electromigration limit |
+| Physical checks | KLayout DRC clean on the whole GDS with nothing waived, LVS clean, antennas 0, every layer filled by the PDK fill generator, PDK density deck clean |
+| Equivalence | The routed netlist is proven equivalent to the synthesized one |
+| Simulation | The test passes on the RTL; the routed netlist of the layout before the on-chip-variation changes passes it with the tt signoff delays, the link up at 2.66 ms |
+
 ## Results
 
 All numbers come from `reports/metrics.csv`, which `make metrics` updates. Timing is at the typical corner (tt, 25 C, 1.8 V) with OpenRCX parasitics. `clk` is 20 ns up to row 19, 15 ns from row 20 and 10 ns from row 30; `mclk` is 10 ns from row 11; `pclk` is 16 ns from row 26; `pipe_rx_clk` is 8 ns from row 38, where the chip grows to 3.2 mm. `_ss_` columns are the slow corner (ss, 100 C, 1.6 V) with `clk` at 20 ns and `mclk` at 16 ns, and `_ff` the fast corner. From row 43, timing includes 5% on-chip variation.
