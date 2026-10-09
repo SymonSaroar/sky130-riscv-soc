@@ -39,6 +39,11 @@ subprocess.run(["python3", pdk + "/libs.tech/magic/seal_ring_generator/sky130_ge
 ly.read(out + "/advSeal_6um_gen.gds")
 top.insert(pya.CellInstArray(ly.cell("advSeal_6um_gen").cell_index(), pya.Trans()))
 
+# every cell the chip places has layout: a cell read only from its LEF would reach the fab empty
+empty = sorted({i.cell.name for i in top.each_inst() if i.cell.bbox().empty()})
+if empty:
+    raise SystemExit("cells without layout: " + " ".join(empty))
+
 final = pya.Layout()
 final.dbu = ly.dbu
 final.create_cell("chip_top").copy_tree(top)
