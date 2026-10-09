@@ -28,7 +28,7 @@ ly.read(sc + "/gds/sky130_fd_sc_hd.gds")
 ly.read(f"{sm}/gds/{sram}.gds")
 ly.read(out + "/pcie_phy.gds")
 # pads: the sky130_ef_io cells reference sky130_fd_io cells as empty placeholders
-for g in ["sky130_ef_io", "sky130_fd_io", "sky130_ef_io__gpiov2_pad_wrapped",
+for g in ["sky130_ef_io", "sky130_fd_io", "sky130_ef_io__gpiov2_pad_wrapped", "sky130_ef_io__analog",
           "sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um"]:
     ly.read(f"{io}/gds/{g}.gds")
 
