@@ -8,7 +8,7 @@
 | Standard cells | sky130_fd_sc_hd |
 | I/O cells | sky130_ef_io |
 | Clocks | `clk` 100 MHz (10 ns) for the system, `mclk` 100 MHz (10 ns) for the SDRAM controller, `pclk` 62.5 MHz (16 ns) from the PCIe PHY's MaxPCLK |
-| Form | Standalone die: pad ring of 64 digital signal pads, 7 analog pads for the PCIe lane and their supply pads, seal ring |
+| Form | Standalone die, 2.4 x 2.4 mm: pad ring of 64 digital signal pads, 7 analog pads for the PCIe lane and their supply pads, seal ring |
 | Supplies | VCCD 1.8 V core, VDDIO 3.3 V pads, VDDA 3.3 V, AVDD 1.8 V for the PCIe PHY's analog circuits |
 | PCIe PHY | `pcie_phy` hard macro, x1 Gen1, PIPE 32-bit at 62.5 MHz with PCLK as a PHY input. A placeholder with the views of a licensed PHY: LEF, liberty, GDS, black box and SPICE subcircuit |
 
@@ -127,10 +127,11 @@ Root port, x1, 2.5 GT/s. The PHY does 8b/10b, scrambling, the elastic buffer and
 | Item | Value |
 |---|---|
 | Size | 800 x 800 µm. Routing below met5 blocked except at the pins; the met5 grid crosses it |
-| Pins | PIPE on met2 along the edge that faces the core, 5 µm apart; TXP, TXN, RXP, RXN, REFCLKP, REFCLKN and REXT on 2 µm met2 pins 60 µm apart along the edge that faces the pads; VCCD, VSSD, AVDD and AVSS as met4 stripes every 100 µm |
+| Pins | PIPE on met3 along the west edge, which faces the core, 5 µm apart. TXP, TXN, RXP, RXN, REFCLKP, REFCLKN and REXT on met3 along the east edge, which faces the pads, at the analog pads' 75 µm pitch; AVDD and AVSS as 40 µm met3 bars in the gaps next to the outer ones. VCCD and VSSD as met4 stripes every 100 µm |
 | Timing | PIPE inputs: setup 1.0 ns and hold 0.5 ns at PCLK rising. PIPE outputs 1.5 ns after PCLK rising, 0.2 ns edges. Typical-corner values; delays scale x2.1 at the slow corner and x0.64 at the fast one, setup x2.1 at the slow corner |
 | Power | 10 mW on VCCD in the liberty |
-| Supplies | VCCD and VSSD from the core grid; AVDD and AVSS from their own pads |
+| Supplies | VCCD and VSSD from the core grid through the met5 stripes over the macro. AVDD and AVSS on met4 buses between the core ring and the PHY pads: met3 straps from the clamped3 pads' VCCD1 and VSSD1 pins onto the buses, and from the buses under the core ring onto the macro's bars |
+| Placement | Against the east edge of the core, centred on its pads, so no rows lie between its pad-side pins and the core ring |
 | Views | Generated from one pin table: LEF, liberty for three corners, GDS with the pins and the outline, Verilog black box, SPICE subcircuit |
 
 ### Logical physical layer
@@ -204,7 +205,7 @@ The ring follows SkyWater's `sky130_fd_io` user guide. Corners and supply pads a
 - Supply pads come in pairs: `vddio` with `vssio` and `vdda` with `vssa` back to back, the second one mirrored; `vssd` and `vccd` on their compliant sides, with a bus slice of at least 12 µm on each outer side.
 - One slice per side ties VCCHIB to VCCD and VSWITCH to VDDIO. Bus slices fill the rest of each side.
 - The pad cells' high-voltage enables come from their own tie outputs.
-- The PCIe lane, reference clock and REXT pads sit together on one side next to the PHY macro, between two AVDD/AVSS pairs (`vccd_lvc_clamped3` and `vssd_lvc_clamped3`, whose VCCD1 and VSSD1 pins feed the macro).
+- The PCIe lane, reference clock and REXT pads sit together in the middle of the east side, next to the PHY macro, between two AVSS/AVDD pairs (`vssd_lvc_clamped3` and `vccd_lvc_clamped3`, whose VCCD1 and VSSD1 pins feed the macro). Each pair keeps a 12 µm bus slice on its outer sides, like VSSD/VCCD.
 
 The SkyWater seal ring, from the PDK's generator, takes the outer 6 µm of the die. The pad ring starts 20 µm in.
 

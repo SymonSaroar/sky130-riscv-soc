@@ -30,6 +30,6 @@ The PHY must do 8b/10b, the elastic buffer with SKP add and remove, receiver det
 ## Signoff
 
 - STA with the vendor's liberty at every corner the chip is signed off at.
-- LVS with the vendor's netlist in place of the black box; DRC on the full GDS, with the vendor's waivers for the macro.
+- LVS with the vendor's netlist in place of the black box. Netgen pairs the bits of a bus port in the order the netlist lists them, so the netlist's bus pins must run in the routed Verilog's order, most significant bit first. DRC on the full GDS, with the vendor's waivers for the macro.
 - The vendor's ESD and latch-up rules for the macro and its pads.
 - Simulation with the vendor's model behind the same testbench, then the compliance tests the vendor recommends.
