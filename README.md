@@ -2,6 +2,8 @@
 
 A RISC-V SoC taken from RTL to GDSII on SKY130 with open-source tools. Each result of the flow is committed with its reports, and the journal records what it showed and what changed next.
 
+Write-ups: [44 runs to signoff](https://portfolio.symonsaroar.workers.dev/blog/44-runs-to-signoff-sky130/?utm_source=github&utm_medium=sky130-readme) tells how the design closed timing run by run, and [Migrating a SKY130 RISC-V SoC to GF180MCU](https://portfolio.symonsaroar.workers.dev/blog/sky130-to-gf180-migration/?utm_source=github&utm_medium=sky130-readme) covers the same SoC on a second process.
+
 ## The SoC
 
 ```
